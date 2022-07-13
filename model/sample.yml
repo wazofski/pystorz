@@ -1,0 +1,14 @@
+---
+kind: object
+name: Student
+props:
+  name: string
+  age: int
+---
+kind: object
+name: Teacher
+props:
+  name: string
+  age: int
+  subject: string
+  phd: bool
