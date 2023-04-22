@@ -1,5 +1,5 @@
-import os
-import string
+import os, shutil
+import black
 import logging
 from typing import List
 from io import StringIO
@@ -60,29 +60,32 @@ def Generate(model: str) -> None:
         structs, resources = load_model(model)
 
         imports = [
-            "json",
+            # "json",
         ]
 
-        b = string.Template(
-            render("templates/imports.pytext", {"imports": imports}))
+        b = StringIO()
+
+        b.write(render("mgen/templates/imports.pytext", {"imports": imports}))
         b.write(compileResources(resources))
         b.write(compileStructs(structs))
 
         res = b.getvalue().replace("&#34;", "\"")
-        # res, err = Source(bytes(str.encode("utf-8")))
 
-        # if err:
-        #     log.error(err)
-        #     res = str.encode("utf-8")
+        # refactor and format python code
+        res = reformat_python_code(res)
 
         targetDir = "generated"
-        os.RemoveAll(targetDir)
+        
+        if os.path.exists(targetDir):
+            # delete the directory with contents
+            shutil.rmtree(targetDir)
 
-        utils.ExportFile(targetDir, "objects.go", res.decode("utf-8"))
+        utils.export_file(targetDir, "model.py", res)
 
         return None
     except Exception as e:
-        return e
+        raise e
+        # return e
 
 
 # class _Interface:
@@ -93,9 +96,11 @@ def Generate(model: str) -> None:
 
 
 def compileResources(resources: List[_Resource]) -> str:
-    b = string.Template("")
+    b = StringIO()
 
     for r in resources:
+        log.info(f"Compiling resource {r.Name}...")
+        
         props = [
             {
                 "Name": "Meta",
@@ -129,16 +134,16 @@ def compileResources(resources: List[_Resource]) -> str:
         )
 
         b.write(compileStruct(s))
-        b.write(render("templates/meta.pytext", {"resource": r}))
-        b.write(render("templates/clone.pytext", {"struct": s}))
+        b.write(render("mgen/templates/meta.pytext", {"resource": r}))
+        b.write(render("mgen/templates/clone.pytext", {"struct": s}))
 
-    b.write(render("templates/schema.pytext", {"resources": resources}))
+    b.write(render("mgen/templates/schema.pytext", {"resources": resources}))
 
     return b.getvalue()
 
 
 def compileStructs(structs: List[_Struct]) -> str:
-    b = string.Template("")
+    b = StringIO()
 
     for s in structs:
         b.write(compileStruct(s))
@@ -147,6 +152,8 @@ def compileStructs(structs: List[_Struct]) -> str:
 
 
 def compileStruct(s: _Struct) -> str:
+    log.info(f"Compiling struct {s.Name}...")
+
     b = StringIO()
     methods = []
 
@@ -160,27 +167,27 @@ def compileStruct(s: _Struct) -> str:
             methods.append(f"Set{p.Name}(v {p.Type})")
 
         if p.Name == "External":
-            b.write(render("templates/specinternal.pytext",
+            b.write(render("mgen/templates/specinternal.pytext",
                     {'A': s.Name, 'B': p.Type}))
 
     impl = s.Implements + ["json.Unmarshaler"]
 
-    b.write(render("templates/interface.pytext",
+    b.write(render("mgen/templates/interface.pytext",
             {'Name': s.Name, 'Methods': methods, 'Implements': impl}))
-    b.write(render("templates/structure.pytext", s.__dict__))
-    b.write(render("templates/unmarshall.pytext", s.__dict__))
+    b.write(render("mgen/templates/structure.pytext", s.__dict__))
+    b.write(render("mgen/templates/unmarshall.pytext", s.__dict__))
 
     return b.getvalue()
 
 
 def render(rpath: str, data: dict) -> str:
-    path = os.path.join(utils.RuntimeDir(), rpath)
+    path = os.path.join(utils.runtime_dir(), rpath)
 
     with open(path, 'r') as f:
         content = f.read()
 
     t = Template(content)
-    return t.render(data)
+    return t.render(data=data)
 
 
 def addDefaultPropValues(props: List[_Prop]) -> List[_Prop]:
@@ -213,3 +220,18 @@ def typeDefault(tp: str) -> str:
     if tp == "float":
         return "0.0"
     return f"{tp}Factory()"
+
+
+def reformat_python_code(code_str):
+    try:
+        # Parse the code string with Black's mode to get the abstract syntax tree (AST).
+        # parsed_code = black.parse_string(code_str, mode=black.FileMode())
+
+        # Reformat the code string using the parsed AST.
+        formatted_code = black.format_str(code_str, mode=black.FileMode())
+
+        return formatted_code
+
+    except Exception as e:
+        log.error("failed to reformat code:", e)
+        return code_str

@@ -26,16 +26,6 @@ def clone_object(obj: store.Object, schema: store.SchemaHolder) -> store.Object:
     return ret
 
 
-def read_stream(r: io.ReadCloser) -> bytes:
-    b = bytearray()
-    while True:
-        chunk = r.read(512)
-        if not chunk:
-            break
-        b += chunk
-    return bytes(b)
-
-
 def unmarshal_object(body: bytes, schema: store.SchemaHolder, kind: str) -> store.Object:
     resource = schema.ObjectForKind(kind)
     err = json.loads(body, object_hook=lambda d: resource.__dict__.update(d))
@@ -86,4 +76,5 @@ def export_file(target_dir: str, name: str, content: str) -> None:
 
 
 def runtime_dir() -> str:
-    return pathlib.Path(__file__).parent.absolute()
+    rd = pathlib.Path(__file__).parent.parent.absolute()
+    return rd

@@ -1,7 +1,8 @@
 import json
-from generated import WorldFactory, WorldKind, Schema, NestedWorldFactory
 
 def test_mgen():
+    from generated.model import WorldFactory, WorldKind, Schema, NestedWorldFactory
+    
     world = WorldFactory()
 
     # Test factory method

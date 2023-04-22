@@ -4,14 +4,14 @@ class _Schema:
         self.objects = objects
     
     def object_for_kind(self, kind):
-		{{- range . }}
+        {% for r in data["resources"] %}
+		
+        if kind == "{{r.Name}}":
+            return {{r.Name}}Factory()
+        else if kind == "{{r.IdentityPrefix()}}":
+            return {{r.Name}}Factory()
 
-        if kind == "{{.Name}}":
-            return {{.Name}}Factory()
-        else if kind == "{{.IdentityPrefix}}":
-            return {{.Name}}Factory()
-
-		{{ end }}
+		{% endfor %}
         
 		return None
     
@@ -20,7 +20,9 @@ class _Schema:
 
 def schema():
     objects = [
-        {{- range . }} "{{.Name}}", {{- end }}
+        {% for r in data["resources"] %}
+        "{{r.Name}}",
+        {% endfor %}
     ]
 
     return _Schema(objects)
