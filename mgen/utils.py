@@ -1,5 +1,9 @@
 import os
 import re
+import logging
+
+log = logging.getLogger(__name__)
+log.debug('loading utils.py...')
 
 
 def yaml_files(path):
@@ -10,6 +14,7 @@ def yaml_files(path):
     for root, dirs, files in os.walk(path):
         for name in files:
             if lib_regex.match(name):
+                log.debug(f"found yaml file: {name}")
                 res.append(os.path.join(root, name))
 
     return res

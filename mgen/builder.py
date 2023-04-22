@@ -1,4 +1,5 @@
-import os, shutil
+import os
+import shutil
 import black
 import logging
 from typing import List
@@ -10,12 +11,7 @@ from mgen.loader import load_model, Resource
 from utils import utils
 
 log = logging.getLogger(__name__)
-
-
-class _Tuple:
-    def __init__(self, A: str, B: str):
-        self.A = A
-        self.B = B
+log.debug('loading builder.py...')
 
 
 class _Prop:
@@ -75,7 +71,7 @@ def Generate(model: str) -> None:
         res = reformat_python_code(res)
 
         targetDir = "generated"
-        
+
         if os.path.exists(targetDir):
             # delete the directory with contents
             shutil.rmtree(targetDir)
@@ -100,7 +96,7 @@ def compileResources(resources: List[Resource]) -> str:
 
     for r in resources:
         log.info(f"Compiling resource {r.Name}...")
-        
+
         props = [
             {
                 "Name": "Meta",
@@ -127,7 +123,6 @@ def compileResources(resources: List[Resource]) -> str:
         s = _Struct(
             Name=r.Name,
             Props=props,
-            Embeds=[],
             Implements=[
                 "store.Object"
             ]

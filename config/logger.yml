@@ -9,12 +9,12 @@ handlers:
     formatter: simple
     stream: ext://sys.stdout
 loggers:
-  loader:
+  mgen.loader:
     level: DEBUG
     handlers: [console]
     propagate: no
-  builder:
-    level: INFO
+  mgen.builder:
+    level: DEBUG
     handlers: [console]
     propagate: no
 root:

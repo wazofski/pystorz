@@ -1,10 +1,4 @@
 import json
-import logging, logging.config
-
-import yaml
-with open('config/logger.yml', 'r') as f:
-    logging.config.dictConfig(yaml.safe_load(f.read()))
-
 
 def test_mgen():
     from generated.model import WorldFactory, WorldKind, Schema, NestedWorldFactory
