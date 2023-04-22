@@ -1,65 +1,50 @@
-func (entity *_{{.Name}}) UnmarshalJSON(data []byte) error {
-	rawMap := make(map[string]*json.RawMessage)
-	err := json.Unmarshal(data, &rawMap)
-	if err != nil {
-		return err
-	}
+{% raw %}
+def UnmarshalJSON(entity, data):
+	rawMap = {}
+	err = json.loads(data, rawMap)
+	if err:
+	return err
 
-	for key, rawValue := range rawMap {
-		if rawValue == nil {
+	for key, rawValue in rawMap.items():
+		if rawValue is None:
 			continue
-		}
-		switch key {
-		{{ range .Props }}
-		case "{{.Json}}":
-			{{ if .IsArray }}
-			res := {{ .Default }}
-			rawList := []*json.RawMessage {}
-			err = json.Unmarshal(*rawValue, &rawList)
-			if err != nil {
+		{% for prop in props %}
+		if key == "{{prop.Json}}":
+			{% if prop.IsArray %}
+			res = {{ prop.Default }}
+			rawList = []
+			err = json.loads(rawValue, rawList)
+			if err:
 				return err
-			}
 
-			for _, rw := range rawList {
-				ud := {{.StrippedDefault}}
-				err = json.Unmarshal(*rw, &ud)
-				if err != nil {
+			for rw in rawList:
+				ud = {{prop.StrippedDefault}}
+				err = json.loads(rw, ud)
+				if err:
 					return err
-				}
-				res = append(res, ud)
-			}
+				res.append(ud)
 
-			entity.{{.Name}}_ = &res
-			{{ else }}{{ if .IsMap }}
-			res := {{ .Default }}
-			rawSubmap := make(map[string]*json.RawMessage)
-			err = json.Unmarshal(*rawValue, &rawSubmap)
-			if err != nil {
+			entity.{{prop.Name}}_ = res
+			{% elif prop.IsMap %}
+			res = {{ prop.Default }}
+			rawSubmap = {}
+			err = json.loads(rawValue, rawSubmap)
+			if err:
 				return err
-			}
 
-			for k, rw := range rawSubmap {
-				ud := {{.StrippedDefault}}
-				err = json.Unmarshal(*rw, &ud)
-				if err != nil {
+			for k, rw in rawSubmap.items():
+				ud = {{prop.StrippedDefault}}
+				err = json.loads(rw, ud)
+				if err:
 					return err
-				}
 				res[k] = ud
-			}
 
-			entity.{{.Name}}_ = &res
-			{{ else }}
-			err := json.Unmarshal(*rawValue, entity.{{.Name}}_)
-			if err != nil {
+			entity.{{prop.Name}}_ = res
+			{% else %}
+			err = json.loads(rawValue, entity.{{prop.Name}}_)
+			if err:
 				return err
-			}
-			{{ end }}
-			{{ end }}
-		{{ end }}
-
-		default:
-		}
-	}
-	return nil
-}
-
+			{% endif %}
+		{% endfor %}
+	return None
+{% endraw %}

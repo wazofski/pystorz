@@ -1,8 +1,8 @@
 
-type {{ .Name }} interface {
-{{ range .Implements }}
-	{{ . }}{{ end }}
-	
-{{ range .Methods }}
-	{{ . }}{{ end }}
-}
+class {{ data["name"] }}:
+
+{% for method in data["methods"] %}
+	def {{ method }}(self):
+		pass
+
+{% endfor %}

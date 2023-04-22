@@ -1,9 +1,8 @@
+{% raw %}
+def ExternalInternalSet(entity, val):
+	converted = val
+	entity.External_ = converted
 
-func (entity *_{{ .A }}) ExternalInternalSet(val interface{}) {
-	converted := val.({{ .B }})
-	entity.External_ = &converted
-}
-
-func (entity *_{{ .A }}) ExternalInternal() interface{} {
+def ExternalInternal(entity):
 	return entity.External()
-}
+{% endraw %}

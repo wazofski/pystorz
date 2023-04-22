@@ -1,24 +1,15 @@
 
-func (entity *_{{.Name}}) Metadata() store.Meta {
-	return *entity.Meta_
-}
+	def Metadata(entity):
+		return entity.Meta_
 
-func (entity *_{{.Name}}) PrimaryKey() string {
-	return string(entity.{{.Pkey}})
-}
+	def PrimaryKey(entity):
+		return str(entity.Pkey)
 
-func {{.Name}}Identity(pkey string) store.ObjectIdentity {
-	return store.ObjectIdentity(
-		fmt.Sprintf("%s/%s", 
-			"{{ .IdentityPrefix }}",
-			pkey))
-}
+	def NameIdentity(pkey):
+		return store.ObjectIdentity(f"{ {{ .IdentityPrefix }} }/{ pkey }")
 
-func {{.Name}}KindIdentity() store.ObjectIdentity {
-	return store.ObjectIdentity("{{ .IdentityPrefix }}/")
-}
+	def NameKindIdentity():
+		return store.ObjectIdentity(f"{ {{ .IdentityPrefix }} }/")
 
-func {{.Name}}Kind() string {
-	return "{{ .Name }}"
-}
-
+	def NameKind():
+		return "{{ .Name }}"
