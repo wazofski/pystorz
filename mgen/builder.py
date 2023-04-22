@@ -4,19 +4,19 @@ import logging
 from typing import List
 from io import StringIO
 
-from string import Template
+from jinja2 import Template
 
-from mgen.loader import loadModel, _Resource
+from mgen.loader import load_model, _Resource
 from utils import utils
 
 log = logging.getLogger(__name__)
-
 
 
 class _Tuple:
     def __init__(self, A: str, B: str):
         self.A = A
         self.B = B
+
 
 class _Prop:
     def __init__(self, name: str, json: str, type: str, default: str):
@@ -47,6 +47,7 @@ class _Prop:
     def StrippedDefault(self):
         return typeDefault(self.StrippedType())
 
+
 class _Struct:
     def __init__(self, name: str, props: List[_Prop], implements: List[str]):
         self.Name = name
@@ -54,39 +55,41 @@ class _Struct:
         self.Implements = implements
 
 
-
 def Generate(model: str) -> None:
-    structs, resources = loadModel(model)
+    try:
+        structs, resources = load_model(model)
 
-    imports = [
-        "fmt",
-        "encoding/json",
-        "github.com/wazofski/storz/utils",
-        "github.com/wazofski/storz/store",
-    ]
+        imports = [
+            "json",
+        ]
 
-    b = string.Template(render("templates/imports.gotext", {"imports": imports}))
-    b.write(compileResources(resources))
-    b.write(compileStructs(structs))
+        b = string.Template(
+            render("templates/imports.pytext", {"imports": imports}))
+        b.write(compileResources(resources))
+        b.write(compileStructs(structs))
 
-    res = b.getvalue().replace("&#34;", "\"")
-    # res, err = Source(bytes(str.encode("utf-8")))
+        res = b.getvalue().replace("&#34;", "\"")
+        # res, err = Source(bytes(str.encode("utf-8")))
 
-    # if err:
-    #     log.error(err)
-    #     res = str.encode("utf-8")
+        # if err:
+        #     log.error(err)
+        #     res = str.encode("utf-8")
 
-    targetDir = "generated"
-    os.RemoveAll(targetDir)
+        targetDir = "generated"
+        os.RemoveAll(targetDir)
 
-    utils.ExportFile(targetDir, "objects.go", res.decode("utf-8"))
+        utils.ExportFile(targetDir, "objects.go", res.decode("utf-8"))
+
+        return None
+    except Exception as e:
+        return e
 
 
-class _Interface:
-    def __init__(self, Name: str, Methods: List[str], Implements: List[str]):
-        self.Name = Name
-        self.Methods = Methods
-        self.Implements = Implements
+# class _Interface:
+#     def __init__(self, Name: str, Methods: List[str], Implements: List[str]):
+#         self.Name = Name
+#         self.Methods = Methods
+#         self.Implements = Implements
 
 
 def compileResources(resources: List[_Resource]) -> str:
@@ -126,12 +129,13 @@ def compileResources(resources: List[_Resource]) -> str:
         )
 
         b.write(compileStruct(s))
-        b.write(render("templates/meta.gotext", {"resource": r}))
-        b.write(render("templates/clone.gotext", {"struct": s}))
+        b.write(render("templates/meta.pytext", {"resource": r}))
+        b.write(render("templates/clone.pytext", {"struct": s}))
 
-    b.write(render("templates/schema.gotext", {"resources": resources}))
+    b.write(render("templates/schema.pytext", {"resources": resources}))
 
     return b.getvalue()
+
 
 def compileStructs(structs: List[_Struct]) -> str:
     b = string.Template("")
@@ -156,15 +160,18 @@ def compileStruct(s: _Struct) -> str:
             methods.append(f"Set{p.Name}(v {p.Type})")
 
         if p.Name == "External":
-            b.write(render("templates/specinternal.gotext", {'A': s.Name, 'B': p.Type}))
+            b.write(render("templates/specinternal.pytext",
+                    {'A': s.Name, 'B': p.Type}))
 
     impl = s.Implements + ["json.Unmarshaler"]
 
-    b.write(render("templates/interface.gotext", {'Name': s.Name, 'Methods': methods, 'Implements': impl}))
-    b.write(render("templates/structure.gotext", s.__dict__))
-    b.write(render("templates/unmarshall.gotext", s.__dict__))
+    b.write(render("templates/interface.pytext",
+            {'Name': s.Name, 'Methods': methods, 'Implements': impl}))
+    b.write(render("templates/structure.pytext", s.__dict__))
+    b.write(render("templates/unmarshall.pytext", s.__dict__))
 
     return b.getvalue()
+
 
 def render(rpath: str, data: dict) -> str:
     path = os.path.join(utils.RuntimeDir(), rpath)
@@ -174,6 +181,7 @@ def render(rpath: str, data: dict) -> str:
 
     t = Template(content)
     return t.render(data)
+
 
 def addDefaultPropValues(props: List[_Prop]) -> List[_Prop]:
     res = []
@@ -186,6 +194,7 @@ def addDefaultPropValues(props: List[_Prop]) -> List[_Prop]:
         res.append(_Prop(p.Name, p.Json, p.Type, typeDefault(p.Type)))
 
     return res
+
 
 def typeDefault(tp: str) -> str:
     if tp.startswith("[]"):

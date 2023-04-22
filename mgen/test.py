@@ -1,0 +1,83 @@
+import json
+from generated import WorldFactory, WorldKind, Schema, NestedWorldFactory
+
+def test_mgen():
+    world = WorldFactory()
+
+    # Test factory method
+    assert world is not None
+    assert world.External() is not None
+    assert world.Internal() is not None
+
+    # Test setters and getters
+    world.External().SetName("abc")
+    assert world.External().Name() == "abc"
+
+    world.External().Nested().SetAlive(True)
+    assert world.External().Nested().Alive() is True
+
+    world.External().Nested().SetCounter(10)
+    assert world.External().Nested().Counter() == 10
+
+    world.Internal().SetDescription("qwe")
+    assert world.Internal().Description() == "qwe"
+
+    # Test metadata
+    assert world.Metadata().Kind() == WorldKind()
+
+    # Test deserialization
+    world.External().Nested().SetCounter(10)
+    world.External().Nested().SetAlive(True)
+    world.External().Nested().SetAnotherDescription("qwe")
+    world.External().SetName("abc")
+    world.Internal().SetDescription("qwe")
+    world.Internal().SetList([NestedWorldFactory(), NestedWorldFactory()])
+
+    world.Internal().SetMap({
+        "a": NestedWorldFactory(),
+        "b": NestedWorldFactory(),
+    })
+
+    world.Internal().Map()["a"].SetL1([False, False, True])
+
+    data = json.dumps(world, indent=2)
+    newWorld = WorldFactory()
+    json.loads(data, object_hook=newWorld.from_dict)
+
+    assert newWorld.External().Nested().Alive() is True
+    assert newWorld.External().Nested().Counter() == 10
+    assert newWorld.External().Name() == "abc"
+    assert newWorld.Internal().Description() == "qwe"
+    assert len(newWorld.Internal().List()) == 2
+    data2 = json.dumps(newWorld, indent=2)
+    assert data == data2
+
+    # Test schema
+    schema = Schema()
+    obj = schema.ObjectForKind(str(world.Metadata().Kind()))
+    assert obj is not None
+    anotherWorld = obj.create()
+    assert anotherWorld is not None
+
+    # Test cloning
+    world.External().Nested().SetCounter(10)
+    world.External().Nested().SetAlive(True)
+    world.External().Nested().SetAnotherDescription("qwe")
+    world.External().SetName("abc")
+    world.Internal().SetDescription("qwe")
+    world.Internal().SetList([NestedWorldFactory(), NestedWorldFactory()])
+
+    world.Internal().SetMap({
+        "a": NestedWorldFactory(),
+        "b": NestedWorldFactory(),
+    })
+
+    world.Internal().Map()["a"].SetL1([False, False, True])
+
+    newWorld = world.Clone()
+    assert newWorld.External().Nested().Alive() is True
+    assert newWorld.External().Nested().Counter() == 10
+    assert newWorld.External().Nested().AnotherDescription() == "qwe"
+    assert newWorld.External().Name() == "abc"
+    assert newWorld.Internal().Description() == "qwe"
+    assert len(newWorld.Internal().List()) == 2

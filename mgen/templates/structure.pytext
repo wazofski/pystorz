@@ -1,0 +1,34 @@
+{{% set name =  %}}
+class {{ name }}:
+    {% for embed in data.Embeds %}
+    {{ embed }}
+    {% endfor %}
+
+    {% for prop in data.Props %}
+    {{ prop.Name }} = None
+    {% endfor %}
+
+    {% for prop in data.Props %}
+    {% if prop.Name != "External" %}
+
+    def Set{{ prop.Name }}(self, val):
+        self.{{ prop.Name }}_ = val
+
+    @property
+    def {{ prop.Name }}(self):
+        return self.{{ prop.Name }}_
+
+    {% endif %}
+    {% endfor %}
+
+    def {{ name }}Factory():
+        {% for prop in data.Props %}{{ prop.Name }}_ = {{ prop.Default }}
+        {% endfor %}
+
+        return _{{ name }}(
+            {% for prop in data.Props %}{{ prop.Name }}_={{ prop.Name }}_,
+            {% endfor %}
+        )
+
+    def clone(entity):
+        return utils.clone_object(entity, schema())
