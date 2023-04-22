@@ -6,7 +6,7 @@ from io import StringIO
 
 from jinja2 import Template
 
-from mgen.loader import load_model, _Resource
+from mgen.loader import load_model, Resource
 from utils import utils
 
 log = logging.getLogger(__name__)
@@ -95,7 +95,7 @@ def Generate(model: str) -> None:
 #         self.Implements = Implements
 
 
-def compileResources(resources: List[_Resource]) -> str:
+def compileResources(resources: List[Resource]) -> str:
     b = StringIO()
 
     for r in resources:

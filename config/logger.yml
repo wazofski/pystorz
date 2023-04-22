@@ -9,11 +9,11 @@ handlers:
     formatter: simple
     stream: ext://sys.stdout
 loggers:
-  werkzeug:
+  loader:
     level: DEBUG
     handlers: [console]
     propagate: no
-  neo4j:
+  builder:
     level: INFO
     handlers: [console]
     propagate: no
