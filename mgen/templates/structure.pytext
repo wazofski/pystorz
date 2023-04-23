@@ -1,23 +1,18 @@
  
 
 def {{ data.name }}Factory():
+	ret = _{{ data.name }}()
 	{% for prop in data.properties %}
-	{{ prop.name }}_ = {{ prop.default }}
-	{% endfor %}
+	ret.{{ prop.name }}_ = {{ prop.default }}{% endfor %}
+	
+	return ret
 
-	return _{{ data.name }}(
-		{% for prop in data.properties %}
-		{{ prop.name }}_={{ prop.name }}_,
-		{% endfor %}
-	)
 
- 
 class _{{ data.name }}({{data.implements}}):
 
 	def __init__(self):
 		{% for prop in data.properties %}
-		{{ prop.name }}_ = None
-		{% endfor %}
+		self.{{ prop.name }}_ = None{% endfor %}
 
 	{% for prop in data.properties %}
 	{% if prop.name != "External" %}
@@ -25,7 +20,6 @@ class _{{ data.name }}({{data.implements}}):
 	def Set{{ prop.name }}(self, val):
 		self.{{ prop.name }}_ = val
 
-	@property
 	def {{ prop.name }}(self):
 		return self.{{ prop.name }}_
 
@@ -33,5 +27,5 @@ class _{{ data.name }}({{data.implements}}):
 	{% endfor %}
 
 	def clone(entity):
-		return utils.clone_object(entity, schema())
+		return utils.clone_object(entity, Schema())
 

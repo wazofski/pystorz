@@ -2,6 +2,6 @@
 	def ExternalInternalSet(self, val):
 		self.External_ = val
 
-	def ExternalInternal(entity):
-		return entity.External_
+	def External(self):
+		return self.External_
 	

@@ -19,7 +19,7 @@ class _Schema:
 	def types(self):
 		return self.objects
 
-def schema():
+def Schema():
 	objects = [
 		{% for r in data["resources"] %}
 		"{{r.name}}",

@@ -15,7 +15,7 @@ class Object:
     def ToJson(self):
         pass
     
-    def FromJson(cls, dict) -> Exception:
+    def FromDict(self, dict) -> Exception:
         pass
 
     def PrimaryKey(self) -> str:

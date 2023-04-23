@@ -1,11 +1,5 @@
-	{% raw %}
-	def UnmarshalJSON(entity, data):
-		rawMap = {}
-		err = json.loads(data, rawMap)
-		if err:
-		return err
-
-		for key, rawValue in rawMap.items():
+	def FromDict(self, data):
+		for key, rawValue in data.items():
 			if rawValue is None:
 				continue
 			{% for prop in props %}
@@ -47,4 +41,4 @@
 				{% endif %}
 			{% endfor %}
 		return None
-	{% endraw %}
+	

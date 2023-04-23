@@ -24,7 +24,7 @@ def test_mgen():
     assert world.Internal().Description() == "qwe"
 
     # Test metadata
-    assert world.Metadata().Kind() == WorldKind()
+    assert world.Metadata().Kind() == WorldKind
 
     # Test deserialization
     world.External().Nested().SetCounter(10)
@@ -41,9 +41,9 @@ def test_mgen():
 
     world.Internal().Map()["a"].SetL1([False, False, True])
 
-    data = json.dumps(world, indent=2)
+    data = world.ToJson()
     newWorld = WorldFactory()
-    json.loads(data, object_hook=newWorld.from_dict)
+    json.loads(data, object_hook=newWorld.FromDict)
 
     assert newWorld.External().Nested().Alive() is True
     assert newWorld.External().Nested().Counter() == 10

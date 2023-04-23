@@ -1,15 +1,14 @@
 
-	def Metadata(entity):
-		return entity.Meta_
+	def Metadata(self):
+		return self.Meta_
 
-	def PrimaryKey(entity):
-		return str(entity.Pkey)
+	def PrimaryKey(self):
+		return str(self.Pkey)
 
-	def NameIdentity(pkey):
-		return store.ObjectIdentity(f"{ {{ data.IdentityPrefix() }} }/{ pkey }")
 
-	def NameKindIdentity():
-		return store.ObjectIdentity(f"{ {{ data.IdentityPrefix() }} }/")
+def {{data.name}}Identity(pkey):
+	return store.ObjectIdentity("{{ data.IdentityPrefix() }}/" + pkey )
 
-	def NameKind():
-		return "{{ data.Name }}"
+{{data.name}}KindIdentity = store.ObjectIdentity("{{ data.IdentityPrefix() }}/")
+
+{{data.name}}Kind = "{{ data.name }}"

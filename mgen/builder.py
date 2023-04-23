@@ -116,15 +116,12 @@ def compileStruct(s: Struct) -> str:
 
     for p in s.properties:
         if p.name != "Meta":
-            methods.append(f"{p.name}(self) -> {p.StrippedType()}")
+            # methods.append(f"{p.name}(self) -> {p.StrippedType()}")
+            methods.append(f"{p.name}(self)")
 
         if p.name != "Meta" and p.name != "External" and p.name != "Internal":
-            methods.append(f"Set{p.name}(self, val: {p.StrippedType()})")
-
-        if p.name == "External":
-            b.write(render("mgen/templates/specinternal.pytext", None))
-
-    # impl = s.implements + ["json.Unmarshaler"]
+            # methods.append(f"Set{p.name}(self, val: {p.StrippedType()})")
+            methods.append(f"Set{p.name}(self, val)")
 
     b.write(render("mgen/templates/interface.pytext",
             {
@@ -133,8 +130,12 @@ def compileStruct(s: Struct) -> str:
                 'implements': "store.Object"
             }))
 
+    for p in s.properties:
+        if p.name == "External":
+            b.write(render("mgen/templates/specinternal.pytext", None))
+
     b.write(render("mgen/templates/structure.pytext", s))
-    # b.write(render("mgen/templates/unmarshall.pytext", s))
+    b.write(render("mgen/templates/unmarshall.pytext", s))
 
     return b.getvalue()
 

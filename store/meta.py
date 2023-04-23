@@ -1,29 +1,29 @@
 from store import store
 
 class Meta:
-    def kind(self) -> str:
+    def Kind(self) -> str:
         pass
 
-    def identity(self) -> store.ObjectIdentity:
+    def Identity(self) -> store.ObjectIdentity:
         pass
 
-    def created(self) -> str:
+    def Created(self) -> str:
         pass
 
-    def updated(self) -> str:
+    def Updated(self) -> str:
         pass
 
 class MetaSetter:
-    def set_kind(self, kind: str) -> None:
+    def SetKind(self, kind: str) -> None:
         pass
 
-    def set_identity(self, identity: store.ObjectIdentity) -> None:
+    def SetIdentity(self, identity: store.ObjectIdentity) -> None:
         pass
 
-    def set_created(self, created: str) -> None:
+    def SetCreated(self, created: str) -> None:
         pass
 
-    def set_updated(self, updated: str) -> None:
+    def SetUpdated(self, updated: str) -> None:
         pass
 
 class MetaHolder:
@@ -37,37 +37,37 @@ class metaWrapper(Meta, MetaSetter):
         self.created_ = None
         self.updated_ = None
 
-    def kind(self) -> str:
+    def Kind(self) -> str:
         return self.kind_
 
-    def created(self) -> str:
+    def Created(self) -> str:
         return self.created_
 
-    def updated(self) -> str:
+    def Updated(self) -> str:
         return self.updated_
 
-    def identity(self) -> store.ObjectIdentity:
+    def Identity(self) -> store.ObjectIdentity:
         return self.identity_
 
-    def set_kind(self, kind: str) -> None:
+    def SetKind(self, kind: str) -> None:
         self.kind_ = kind
 
-    def set_identity(self, identity: store.ObjectIdentity) -> None:
+    def SetIdentity(self, identity: store.ObjectIdentity) -> None:
         self.identity_ = identity
 
-    def set_created(self, created: str) -> None:
+    def SetCreated(self, created: str) -> None:
         self.created_ = created
 
-    def set_updated(self, updated: str) -> None:
+    def SetUpdated(self, updated: str) -> None:
         self.updated_ = updated
 
 def MetaFactory(kind: str) -> Meta:
     emptyIdentity = store.ObjectIdentityFactory()
     
     mw = metaWrapper()
-    mw.set_kind(kind)
-    mw.set_identity(emptyIdentity)
-    mw.set_created("")
-    mw.set_updated("")
+    mw.SetKind(kind)
+    mw.SetIdentity(emptyIdentity)
+    mw.SetCreated("")
+    mw.SetUpdated("")
 
     return mw
