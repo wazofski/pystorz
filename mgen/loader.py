@@ -136,7 +136,7 @@ def make_prop_caller_string(pkey: str):
     tok = pkey.split(".")
     cap = []
     for t in tok:
-        cap.append("{}".format(capitalize(t)))
+        cap.append("{}()".format(capitalize(t)))
 
     return ".".join(cap)
 

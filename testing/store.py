@@ -13,46 +13,42 @@ def common_test_suite(clt):
     newWorldDescription = "is only beoaoqwiewioqu"
 
     def test_clear_everything():
-        ret, err = clt.List(model.WorldKindIdentity)
-        assert err == None
+        ret = clt.List(model.WorldKindIdentity)
         for r in ret:
-            err = clt.Delete(r.Metadata().Identity())
-            assert err == None
+            clt.Delete(r.Metadata().Identity())
 
-        ret, err = clt.List(model.SecondWorldKindIdentity)
-        assert err == None
+        ret = clt.List(model.SecondWorldKindIdentity)
         for r in ret:
-            err = clt.Delete(r.Metadata().Identity())
-            assert err == None
+            clt.Delete(r.Metadata().Identity())
 
-        ret, _ = clt.List(model.SecondWorldKindIdentity)
+        ret = clt.List(model.SecondWorldKindIdentity)
         assert len(ret) == 0
-        ret, _ = clt.List(model.WorldKindIdentity)
+        ret = clt.List(model.WorldKindIdentity)
         assert len(ret) == 0
 
-        # ret, err = clt.List(model.ThirdWorldKindIdentity)
-        # assert err == None
+        # ret = clt.List(model.ThirdWorldKindIdentity)
+        #
         # for r in ret:
-        #     err = clt.Delete(r.Metadata().Identity())
-        #     assert err == None
+        #     clt.Delete(r.Metadata().Identity())
+        #
 
     def test_list_empty_lists():
-        ret, err = clt.list(model.WorldKindIdentity)
-        assert err is None
+        ret = clt.List(model.WorldKindIdentity)
+
         assert ret is not None
         assert len(ret) == 0
 
     def test_post_objects():
         w = model.WorldFactory()
         w.External().SetName("abc")
-        ret, err = clt.create(w)
-        assert err is None
+        ret = clt.Create(w)
+
         assert ret is not None
         assert len(ret.Metadata().Identity()) != 0
 
     def test_list_single_object():
-        ret, err = clt.list(model.WorldKindIdentity)
-        assert err is None
+        ret = clt.List(model.WorldKindIdentity)
+
         assert ret is not None
         assert len(ret) == 1
         world = ret[0]
@@ -61,24 +57,24 @@ def common_test_suite(clt):
     def test_post_other_objects():
         w = model.SecondWorldFactory()
         w.External().SetName("abc")
-        ret, err = clt.Create(w)
-        assert err == None
+        ret = clt.Create(w)
+
         assert ret != None
         assert len(ret.Metadata().Identity()) != 0
-        ret, err = clt.Get(ret.Metadata().Identity())
-        assert err == None
+        ret = clt.Get(ret.Metadata().Identity())
+
         assert ret != None
         w = ret
         assert w != None
-        ret, err = clt.Get(model.SecondWorldIdentity("abc"))
-        assert err == None
+        ret = clt.Get(model.SecondWorldIdentity("abc"))
+
         assert ret != None
         w = ret
         assert w != None
 
     def test_get_objects():
-        ret, err = clt.Get(model.WorldIdentity("abc"))
-        assert err == None
+        ret = clt.Get(model.WorldIdentity("abc"))
+
         assert ret != None
         assert len(ret.Metadata().Identity()) != 0
         world = ret
@@ -89,9 +85,14 @@ def common_test_suite(clt):
 
         w.External().SetName("abc")
 
-        ret, err = clt.Create(w)
+        err = None
+        try:
+            ret = clt.Create(w)
+        except Exception as e:
+            err = e
 
         assert err is not None
+        log.info("expected err: {}".format(err))
         assert ret is None
 
     def test_can_put_objects():
@@ -100,11 +101,10 @@ def common_test_suite(clt):
         w.External().SetName("abc")
         w.External().SetDescription("def")
 
-        ret, err = clt.Update(
-                              model.WorldIdentity("abc"),
-                              w)
+        ret = clt.Update(
+            model.WorldIdentity("abc"),
+            w)
 
-        assert err is None
         assert ret is not None
 
         world = ret
@@ -116,24 +116,30 @@ def common_test_suite(clt):
 
         w.External().SetName("def")
 
-        ret, err = clt.Update(
-                              model.WorldIdentity("abc"), w)
-        assert err is None
+        ret = clt.Update(
+            model.WorldIdentity("abc"), w)
+
         assert ret is not None
 
         world = ret
         assert world is not None
         assert world.External().Name() == "def"
 
-        ret, err = clt.Get(
-                           model.WorldIdentity("abc"))
+        try:
+            ret = None
+            ret = clt.Get(model.WorldIdentity("abc"))
+        except Exception as e:
+            err = e
+
         assert err is not None
+        log.info("expected err: {}".format(err))
+
         assert ret is None
 
     def test_can_put_objects_by_id():
-        ret, err = clt.Get(
-                           model.WorldIdentity("def"))
-        assert err is None
+        ret = clt.Get(
+            model.WorldIdentity("def"))
+
         assert ret is not None
 
         world = ret
@@ -142,12 +148,10 @@ def common_test_suite(clt):
 
         log.info(utils.pp(world))
 
-        ret, err = clt.Update(
-                              world.Metadata().Identity(), world)
+        ret = clt.Update(world.Metadata().Identity(), world)
 
         log.info(utils.pp(ret))
 
-        assert err is None
         assert ret is not None
 
         world = ret
@@ -159,125 +163,218 @@ def common_test_suite(clt):
         assert world is not None
         world.External().SetName("zxcxzcxz")
 
-        ret, err = clt.Update(model.WorldIdentity("zcxzcxzc"), world)
+        err = None
+        try:
+            ret = None
+            ret = clt.Update(model.WorldIdentity("zcxzcxzc"), world)
+        except Exception as e:
+            err = e
+
         assert err is not None
+        log.info("expected err: {}".format(err))
         assert ret is None
 
     def test_cannot_put_nonexistent_objects_by_id():
         world = model.WorldFactory()
         world.External().SetName("zxcxzcxz")
 
-        ret, err = clt.Update(world.Metadata().Identity(), world)
+        err = None
+        try:
+            ret = None
+            ret = clt.Update(world.Metadata().Identity(), world)
+        except Exception as e:
+            err = e
+
         assert err is not None
+        log.info("expected err: {}".format(err))
+
         assert ret is None
 
     def test_cannot_put_objects_of_wrong_type():
         world = model.SecondWorldFactory()
         world.External().SetName("zxcxzcxz")
 
-        ret, err = clt.Update(model.WorldIdentity("qwe"), world)
+        err = None
+        try:
+            ret = None
+            ret = clt.Update(model.WorldIdentity("qwe"), world)
+        except Exception as e:
+            err = e
+
         assert err is not None
+        log.info("expected err: {}".format(err))
+
         assert ret is None
 
     def test_can_get_objects():
-        ret, err = clt.Get(model.WorldIdentity("def"))
-        assert err is None
+        ret = clt.Get(model.WorldIdentity("def"))
+
         assert ret is not None
 
         world = ret
         assert world is not None
 
     def test_can_get_objects_by_id():
-        ret, err = clt.Get(model.WorldIdentity("def"))
-        assert err is None
+        ret = clt.Get(model.WorldIdentity("def"))
+
         assert ret is not None
 
         world = ret
         assert world is not None
 
-        ret, err = clt.Get(world.Metadata().Identity())
-        assert err is None
+        ret = clt.Get(world.Metadata().Identity())
+
         assert ret is not None
 
         world = ret
         assert world is not None
 
     def test_cannot_get_nonexistent_objects():
-        ret, err = clt.Get(model.WorldIdentity("zxcxzczx"))
+        err = None
+        try:
+            ret = None
+            ret = clt.Get(model.WorldIdentity("zxcxzczx"))
+        except Exception as e:
+            err = e
+
         assert err is not None
+        log.info("expected err: {}".format(err))
+
         assert ret is None
 
     def test_cannot_get_nonexistent_objects_by_id():
-        ret, err = clt.Get(store.ObjectIdentity("id/kjjakjjsadldkjalkdajs"))
+        err = None
+        try:
+            ret = None
+            ret = clt.Get(store.ObjectIdentity("id/kjjakjjsadldkjalkdajs"))
+        except Exception as e:
+            err = e
+
         assert err is not None
+        log.info("expected err: {}".format(err))
+
         assert ret is None
 
     def test_can_delete_objects():
         w = model.WorldFactory()
         w.External().SetName("tobedeleted")
 
-        ret, err = clt.Create(w)
-        assert err is None
+        ret = clt.Create(w)
+
         assert ret is not None
 
-        err = clt.Delete(model.WorldIdentity(w.External().Name()))
-        assert err is None
+        clt.Delete(model.WorldIdentity(w.External().Name()))
 
-        ret, err = clt.Get(model.WorldIdentity(w.External().Name()))
+        err = None
+        try:
+            ret = None
+            ret = clt.Get(model.WorldIdentity(w.External().Name()))
+        except Exception as e:
+            err = e
+
         assert err is not None
+        log.info("expected err: {}".format(err))
+
         assert ret is None
 
     def test_can_delete_objects_by_id():
         w = model.WorldFactory()
         w.External().SetName("tobedeleted")
 
-        ret, err = clt.Create(w)
-        assert err is None
+        ret = clt.Create(w)
+
         assert ret is not None
         w = ret
 
-        err = clt.Delete(w.Metadata().Identity())
-        assert err is None
+        clt.Delete(w.Metadata().Identity())
 
-        ret, err = clt.Get(w.Metadata().Identity())
+        err = None
+        try:
+            ret = None
+            ret = clt.Get(w.Metadata().Identity())
+        except Exception as e:
+            err = e
+
         assert err is not None
+        log.info("expected err: {}".format(err))
+
         assert ret is None
 
     def test_delete_nonexistent_objects():
-        err = clt.Delete(model.WorldIdentity("akjsdhsajkhdaskjh"))
+        err = None
+        try:
+            clt.Delete(model.WorldIdentity("akjsdhsajkhdaskjh"))
+        except Exception as e:
+            err = e
+
         assert err is not None
+        log.info("expected err: {}".format(err))
 
     def test_delete_nonexistent_objects_by_id():
-        err = clt.Delete(store.ObjectIdentity("id/kjjakjjsadldkjalkdajs"))
+        err = None
+        try:
+            clt.Delete(store.ObjectIdentity("id/kjjakjjsadldkjalkdajs"))
+        except Exception as e:
+            err = e
+
         assert err is not None
+        log.info("expected err: {}".format(err))
 
     def test_get_nil_identity():
-        _, err = clt.Get("")
+        err = None
+        try:
+            clt.Get("")
+        except Exception as e:
+            err = e
+
         assert err is not None
+        log.info("expected err: {}".format(err))
 
     def test_create_nil_object():
-        _, err = clt.Create(None)
+        err = None
+        try:
+            clt.Create(None)
+        except Exception as e:
+            err = e
+
         assert err is not None
+        log.info("expected err: {}".format(err))
 
     def test_put_nil_identity():
-        _, err = clt.Update("", model.WorldFactory())
+        err = None
+        try:
+            clt.Update("", model.WorldFactory())
+        except Exception as e:
+            err = e
+
         assert err is not None
+        log.info("expected err: {}".format(err))
 
     def test_put_nil_object():
-        _, err = clt.Update(model.WorldIdentity("qwe"), None)
+        err = None
+        try:
+            clt.Update(model.WorldIdentity("qwe"), None)
+        except Exception as e:
+            err = e
+
         assert err is not None
+        log.info("expected err: {}".format(err))
 
     def test_delete_nil_identity():
-        err = clt.Delete("")
+        err = None
+        try:
+            clt.Delete("")
+        except Exception as e:
+            err = e
+
         assert err is not None
+        log.info("expected err: {}".format(err))
 
     def test_create_multiple_objects():
-        ret, err = clt.list(model.WorldKindIdentity)
-        assert err is None
+        ret = clt.List(model.WorldKindIdentity)
 
         for r in ret:
-            err = clt.delete(r.Metadata().Identity())
-            assert err is None
+            clt.delete(r.Metadata().Identity())
 
         world = model.WorldFactory()
         world.External().SetName(worldName)
@@ -287,76 +384,70 @@ def common_test_suite(clt):
         world2.External().SetName(anotherWorldName)
         world2.External().SetDescription(newWorldDescription)
 
-        _, err = clt.create(world)
-        assert err is None
-        _, err = clt.create(world2)
-        assert err is None
+        clt.Create(world)
+
+        clt.Create(world2)
 
         world3 = model.SecondWorldFactory()
         world3.External().SetName(anotherWorldName)
         world3.External().SetDescription(newWorldDescription)
 
-        _, err = clt.create(world3)
-        assert err is None
+        clt.Create(world3)
 
-    def test_can_list_multiple_objects(self):
-        ret, err = clt.List(
+    def test_can_list_multiple_objects():
+        ret = clt.List(
             model.WorldKindIdentity)
 
-        self.assertIsNone(err)
-        self.assertIsNotNone(ret)
-        self.assertEqual(len(ret), 2)
+        assert ret is not None
+        assert len(ret) == 2
 
         ret.sort(key=lambda r: r.External().Name())
 
         world = ret[0]
-        self.assertEqual(world.External().Name(), worldName)
-        self.assertEqual(world.External().Description(), worldDescription)
+        assert world.External().Name() == worldName
+        assert world.External().Description() == worldDescription
 
         world2 = ret[1]
-        self.assertEqual(world2.External().Name(), anotherWorldName)
-        self.assertEqual(world2.External().Description(), newWorldDescription)
+        assert world2.External().Name() == anotherWorldName
+        assert world2.External().Description() == newWorldDescription
 
-    def test_can_list_and_sort_multiple_objects(self):
-        ret, err = clt.List(
+    def test_can_list_and_sort_multiple_objects():
+        ret = clt.List(
             model.WorldKindIdentity,
             options.OrderBy("external.name"))
 
-        self.assertIsNone(err)
-        self.assertIsNotNone(ret)
-        self.assertEqual(len(ret), 2)
+        assert ret is not None
+        assert len(ret) == 2
 
         world = ret[0]
-        self.assertEqual(world.External().Name(), worldName)
-        self.assertEqual(world.External().Description(), worldDescription)
+        assert world.External().Name() == worldName
+        assert world.External().Description() == worldDescription
 
         world2 = ret[1]
-        self.assertEqual(world2.External().Name(), anotherWorldName)
-        self.assertEqual(world2.External().Description(), newWorldDescription)
+        assert world2.External().Name() == anotherWorldName
+        assert world2.External().Description() == newWorldDescription
 
-        ret, err = clt.List(
+        ret = clt.List(
             model.WorldKindIdentity,
             options.OrderBy("external.name"),
             options.OrderDescending())
 
-        self.assertIsNone(err)
-        self.assertIsNotNone(ret)
-        self.assertEqual(len(ret), 2)
+        assert ret is not None
+        assert len(ret) == 2
 
         world = ret[1]
         world2 = ret[0]
-        self.assertEqual(world.External().Name(), worldName)
-        self.assertEqual(world2.External().Name(), anotherWorldName)
+        assert world.External().Name() == worldName
+        assert world2.External().Name() == anotherWorldName
 
     def test_list_and_paginate_multiple_objects():
-        ret, err = clt.list(
-            
+        ret = clt.List(
+
             model.WorldKindIdentity,
             options.OrderBy("external.name"),
             options.PageSize(1)
         )
 
-        assert err is None
         assert ret is not None
         assert len(ret) == 1
 
@@ -364,30 +455,28 @@ def common_test_suite(clt):
         assert world.External().Name() == worldName
         assert world.External().Description() == worldDescription
 
-        ret, err = clt.list(
-            
+        ret = clt.List(
+
             model.WorldKindIdentity,
             options.OrderBy("external.name"),
             options.PageSize(1),
             options.PageOffset(1)
         )
 
-        assert err is None
         assert ret is not None
         assert len(ret) == 1
 
         world = ret[0]
         assert world.External().Name() == anotherWorldName
 
-        ret, err = clt.list(
-            
+        ret = clt.List(
+
             model.WorldKindIdentity,
             options.OrderBy("external.name"),
             options.PageOffset(1),
             options.PageSize(1000)
         )
 
-        assert err is None
         assert ret is not None
         assert len(ret) == 1
 
@@ -395,10 +484,8 @@ def common_test_suite(clt):
         assert world.External().Name() == anotherWorldName
 
     def test_list_and_filter_by_primary_key():
-        ret, err = clt.List(
+        ret = clt.List(
             model.WorldKindIdentity)
-
-        assert err is None
 
         keys = []
         for o in ret:
@@ -406,54 +493,47 @@ def common_test_suite(clt):
 
         assert len(keys) == 2
 
-        ret, err = clt.List(
+        ret = clt.List(
             model.WorldKindIdentity,
             options.KeyFilter(keys[0], keys[1]))
 
-        assert err is None
         assert len(ret) == 2
 
         for k in keys:
-            ret, err = clt.List(
+            ret = clt.List(
                 model.WorldKindIdentity,
                 options.KeyFilter(k))
 
-            assert err is None
             assert len(ret) == 1
             assert ret[0].PrimaryKey() == k
 
     def test_list_and_filter_by_nonexistent_props():
-        ret, err = clt.List(
-            
+        ret = clt.List(
             model.WorldKindIdentity,
             options.PropFilter("metadata.askdjhasd", "asdsadas"))
 
-        assert err is not None
         assert ret is None
 
     def test_cannot_list_specific_object():
-        ret, err = clt.List(
+        ret = clt.List(
             model.WorldIdentity(worldName))
 
         assert ret is None
-        assert err is not None
 
     def test_cannot_list_specific_nonexistent_object():
-        ret, err = clt.List(
+        ret = clt.List(
             model.WorldIdentity("akjhdsjkhdaskjhdaskj"))
 
         assert ret is None
-        assert err is not None
 
     world_id = ""
 
     def test_list_and_filter():
-        ret, err = clt.List(
+        ret = clt.List(
             model.WorldKindIdentity,
             options.PropFilter("external.name", worldName)
         )
 
-        assert err is None
         assert ret is not None
         assert len(ret) == 1
 
@@ -465,12 +545,11 @@ def common_test_suite(clt):
         world_id = world.Metadata().Identity()
 
     def test_list_and_filter_by_id():
-        ret, err = clt.List(
+        ret = clt.List(
             model.WorldKindIdentity,
             options.PropFilter("metadata.identity", str(world_id))
         )
 
-        assert err is None
         assert ret is not None
         assert len(ret) == 1
 

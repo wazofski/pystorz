@@ -29,132 +29,94 @@ class SqliteStore:
 
     def TestConnection(self):
         if self.DB is not None:
-            return None
+            return
 
         self.DB = self.MakeConnection()
+        self._prepareTables()
 
-        # t = sqlite3.connect("asdsa")
-        # err = self.DB.ping()
-        # if err is not None:
-        #     return err
-
-        return self._prepareTables()
+        # TODO check connection
 
     def Create(self, obj, opt=[]):
         if obj is None:
-            return None, constants.ErrObjectNil
+            raise Exception(constants.ErrObjectNil)
 
-        log.Printf("create %s", obj.PrimaryKey())
+        log.info("create {}".format(obj.PrimaryKey()))
 
         copt = options.CommonOptionHolderFactory()
         for o in opt:
-            err = o.ApplyFunction()(copt)
-            if err is not None:
-                return None, err
+            o.ApplyFunction()(copt)
 
         lk = obj.Metadata().Kind().lower()
         path = "{}/{}".format(lk, obj.PrimaryKey())
-        existing, _ = self.Get(store.ObjectIdentity(path))
+        existing = self.Get(store.ObjectIdentity(path))
         if existing is not None:
-            return None, constants.ErrObjectExists
+            raise Exception(constants.ErrObjectExists)
 
-        err = self.TestConnection()
-        if err is not None:
-            return None, err
+        self.TestConnection()
 
-        err = self._setIdentity(
+        self._setIdentity(
             obj.Metadata().Identity().Path(),
             obj.PrimaryKey(),
             obj.Metadata().Kind())
 
-        if err is not None:
-            return None, err
+        self._setObject(obj.PrimaryKey(), obj.Metadata().Kind(), obj)
 
-        err = self._setObject(obj.PrimaryKey(), obj.Metadata().Kind(), obj)
-        if err is not None:
-            return None, err
-
-        return obj.Clone(), None
+        return obj.Clone()
 
     def Update(self, identity, obj, *opt):
-        log.Printf("update %s", identity.Path())
+        log.info("update {}".format(identity.Path()))
+
         copt = options.CommonOptionHolderFactory()
 
         for o in opt:
-            err = o.ApplyFunction()(copt)
-            if err is not None:
-                return None, err
+            o.ApplyFunction()(copt)
 
         if obj is None:
-            return None, constants.ErrObjectNil
+            raise Exception(constants.ErrObjectNil)
 
-        existing, _ = self.Get(identity)
+        existing = self.Get(identity)
         if existing is None:
-            return None, constants.ErrNoSuchObject
+            raise Exception(constants.ErrNoSuchObject)
 
-        err = self.TestConnection()
-        if err is not None:
-            return None, err
+        self.TestConnection()
 
-        err = self._removeIdentity(existing.Metadata().Identity().Path())
-        if err is not None:
-            log.Printf("%s", err)
+        self._removeIdentity(existing.Metadata().Identity().Path())
+        self._setIdentity(obj.Metadata().Identity().Path(),
+                          obj.PrimaryKey(), obj.Metadata().Kind())
 
-        err = self._setIdentity(obj.Metadata().Identity().Path(),
-                                obj.PrimaryKey(), obj.Metadata().Kind())
-
-        if err is not None:
-            return None, err
-
-        err = self._removeObject(existing.PrimaryKey(),
-                                 existing.Metadata().Kind())
-        if err is not None:
-            return None, err
-
-        err = self._setObject(obj.PrimaryKey(), obj.Metadata().Kind(), obj)
-        if err is not None:
-            return None, err
-
-        return obj.Clone(), None
+        self._removeObject(existing.PrimaryKey(),
+                           existing.Metadata().Kind())
+        
+        self._setObject(obj.PrimaryKey(), obj.Metadata().Kind(), obj)
+        
+        return obj.Clone()
 
     def Delete(self, identity, *opt):
-        log.Printf("delete %s", identity.Path())
+        log.info("delete {}".format(identity.Path()))
         copt = options.CommonOptionHolderFactory()
 
         for o in opt:
-            err = o.ApplyFunction()(copt)
-            if err is not None:
-                return err
-
-        existing, _ = self.Get(identity)
+            o.ApplyFunction()(copt)
+        
+        existing = self.Get(identity)
         if existing is None:
-            return constants.ErrNoSuchObject
+            raise Exception(constants.ErrNoSuchObject)
 
-        err = self.TestConnection()
-        if err is not None:
-            return err
-
-        err = self._removeIdentity(existing.Metadata().Identity().Path())
-        if err is not None:
-            return err
-
-        return self._removeObject(existing.PrimaryKey(), existing.Metadata().Kind())
+        self.TestConnection()
+        
+        self._removeIdentity(existing.Metadata().Identity().Path())        
+        self._removeObject(existing.PrimaryKey(), existing.Metadata().Kind())
 
     def Get(self, identity, *opt):
-        log.Printf("get %s", identity.Path())
+        log.info("get {}".format(identity.Path()))
 
-        err = None
         copt = options.CommonOptionHolderFactory()
         for o in opt:
-            err = o.ApplyFunction()(copt)
-            if err != None:
-                return None, err
-
-        err = self.TestConnection()
-        if err != None:
-            return None, err
-
-        pkey, typ, err = self.getIdentity(identity.Path())
+            o.ApplyFunction()(copt)
+        
+        self.TestConnection()
+        
+        pkey, typ, err = self._getIdentity(identity.Path())
         if err == None:
             return self._getObject(pkey, typ)
 
@@ -165,7 +127,7 @@ class SqliteStore:
         return None, constants.ErrNoSuchObject
 
     def List(self, identity, *opt):
-        print("list", identity)
+        log.info("list {}".format(identity))
 
         if len(identity.Key()) > 0:
             return None, constants.ErrInvalidPath
@@ -216,10 +178,7 @@ class SqliteStore:
         cursor.execute(query)
         rows = cursor.fetchall()
 
-        res = self._parseObjectRows(rows, identity.Type())
-        # rows.Close()
-
-        return res, None
+        return self._parseObjectRows(rows, identity.Type())
 
     def _prepareTables(self):
         create = '''
@@ -244,49 +203,45 @@ class SqliteStore:
         cursor.execute(create)
 
     def _getIdentity(self, path):
-        row = self.DB.execute(
-            "SELECT Pkey, Type FROM IdIndex WHERE Path=?", path)
-        result = row.fetchone()
+        cursor = self.DB.cursor()
+        cursor.execute(
+            "SELECT Pkey, Type FROM IdIndex WHERE Path='{}'".format(path))
+        result = cursor.fetchone()
 
         if result is not None:
             pkey, typ = result
-            return pkey, typ, None
+            return pkey, typ
         else:
-            return None, None, Exception("Identity not found")
+            raise Exception(constants.ErrNoSuchObject)
 
     def _setIdentity(self, path, pkey, typ):
         query = ""
         existing_pkey, existing_typ, _ = self.getIdentity(path)
 
         if existing_pkey is not None and existing_typ is not None:
-            query = "UPDATE IdIndex SET Pkey=?, Type=? WHERE Path=?"
+            query = "UPDATE IdIndex SET Pkey='{}', Type='{}' WHERE Path='{}'".format(pkey, typ, path)
         else:
-            query = "INSERT INTO IdIndex (Pkey, Type, Path) VALUES (?, ?, ?)"
+            query = "INSERT INTO IdIndex (Pkey, Type, Path) VALUES ('{}', '{}', '{}')".format(pkey, typ, path)
 
-        try:
-            self.DB.execute(query, pkey, typ.lower(), path)
-        except Exception as e:
-            return e
+        cur = self.DB.cursor()
+        cur.execute(query)
 
     def _removeIdentity(self, path):
-        query = "DELETE FROM IdIndex WHERE Path = ?"
+        query = "DELETE FROM IdIndex WHERE Path = '{}'".format(path)
 
-        try:
-            self.DB.execute(query, path)
-        except Exception as e:
-            return e
+        self.DB.execute(query)
 
     def _getObject(self, pkey, typ):
         cursor = self.DB.cursor()
         cursor.execute(
-            "SELECT Object FROM Objects WHERE Pkey=? AND Type=?", pkey, typ.lower())
+            "SELECT Object FROM Objects WHERE Pkey='{}' AND Type='{}'".format(pkey, typ.lower()))
         result = cursor.fetchone()
 
         if result is not None:
             data = result[0]
             return self._parseObjectRow(data, typ)
         else:
-            return None, Exception("Object not found")
+            raise Exception(constants.ErrNoSuchObject)
 
     def _setObject(self, pkey, typ, obj):
         query = ""
@@ -301,20 +256,17 @@ class SqliteStore:
 
         cursor = self.DB.cursor()
         cursor.execute(query, data, pkey, typ.lower())
-    
+
     def _removeObject(self, pkey, typ):
         query = "DELETE FROM Objects WHERE Pkey = ? AND Type = ?"
         cursor = self.DB.cursor()
         cursor.execute(query, pkey, typ.lower())
-        
+
     def _parseObjectRow(self, data, typ):
         return utils.unmarshal_object(data, self.Schema, typ)
-        
+
     def _parseObjectRows(self, rows, typ):
         res = []
         for row in rows:
-            data = row[0]
-            obj, error = self._parseObjectRow(data, typ)
-            if error is not None:
-                return None, error
-            res.append(obj)
+            res.append(self._parseObjectRow(row[0], typ))
+        return res

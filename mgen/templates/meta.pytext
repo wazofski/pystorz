@@ -3,7 +3,7 @@
 		return self.Meta_
 
 	def PrimaryKey(self):
-		return str(self.Pkey)
+		return str(self.{{data.primary_key}})
 
 
 def {{data.name}}Identity(pkey):
