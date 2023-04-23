@@ -4,7 +4,7 @@ class _Schema:
 	def __init__(self, objects):
 		self.objects = objects
 	
-	def object_for_kind(self, kind):
+	def ObjectForKind(self, kind):
 		{% for r in data["resources"] %}
 		
 		if kind == "{{r.name}}":

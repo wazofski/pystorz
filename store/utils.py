@@ -21,8 +21,8 @@ class _MetaHolder:
 
 def clone_object(obj: store.Object, schema: store.SchemaHolder) -> store.Object:
     ret = schema.ObjectForKind(obj.Metadata().Kind())
-    jsn = json.dumps(obj, default=lambda x: x.to_dict())
-    ret.__dict__ = json.loads(jsn)
+    jsn = obj.ToJson()
+    ret.FromJson(jsn)
     return ret
 
 

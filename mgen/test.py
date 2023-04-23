@@ -42,22 +42,26 @@ def test_mgen():
     world.Internal().Map()["a"].SetL1([False, False, True])
 
     data = world.ToJson()
+    print(data)
+    
     newWorld = WorldFactory()
-    json.loads(data, object_hook=newWorld.FromDict)
+    newWorld.FromJson(data)
+    
+    print(newWorld.ToJson())
 
     assert newWorld.External().Nested().Alive() is True
     assert newWorld.External().Nested().Counter() == 10
     assert newWorld.External().Name() == "abc"
     assert newWorld.Internal().Description() == "qwe"
     assert len(newWorld.Internal().List()) == 2
-    data2 = json.dumps(newWorld, indent=2)
+    data2 = newWorld.ToJson()
     assert data == data2
 
     # Test schema
     schema = Schema()
     obj = schema.ObjectForKind(str(world.Metadata().Kind()))
     assert obj is not None
-    anotherWorld = obj.create()
+    anotherWorld = obj.Clone()
     assert anotherWorld is not None
 
     # Test cloning

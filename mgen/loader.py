@@ -78,7 +78,7 @@ def load_model(path: str):
     for y in yamls:
         model = read_model(y)
 
-        log.debug("model: {}".format(jopp(model)))
+        # log.debug("model: {}".format(jopp(model)))
 
         for m in model["types"]:
             if m["kind"] == "Struct":

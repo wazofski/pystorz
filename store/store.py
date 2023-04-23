@@ -1,21 +1,29 @@
 import uuid
 import json
-import logging
 from typing import List
 
 
-
 class Object:
+
+    def __init__(self):
+        raise Exception("Object is an interface")
+
     def MetaHolder(self):
         pass
 
     def Clone(self):
         pass
 
-    def ToJson(self):
+    def ToJson(self) -> str:
         pass
-    
+
+    def FromJson(self, jstr):
+        pass
+
     def FromDict(self, dict) -> Exception:
+        pass
+
+    def ToDict(self) -> dict:
         pass
 
     def PrimaryKey(self) -> str:
@@ -31,11 +39,36 @@ class ExternalHolder:
 
 
 class ObjectList(List[Object]):
+
     pass
 
 
-class ObjectIdentity(str):
-    pass
+class ObjectIdentity:
+    def __init__(self, id: str):
+        self.id_ = id
+
+    def FromString(self, str) -> Exception:
+        self.id_ = str
+
+    def __str__(self) -> str:
+        return self.id_
+
+    def Path(self) -> str:
+        if '/' in self:
+            tokens = self.split('/')
+            return f"{tokens[0].lower()}/{tokens[1]}"
+        else:
+            return f"id/{self}"
+
+    def Type(self) -> str:
+        return self.Path().split('/')[0]
+
+    def Key(self) -> str:
+        tokens = self.Path(self).split('/')
+        if len(tokens) > 1:
+            return tokens[1]
+        else:
+            return ""
 
 
 def ObjectIdentityFactory() -> ObjectIdentity:
@@ -44,26 +77,6 @@ def ObjectIdentityFactory() -> ObjectIdentity:
     id = id[5:25]
 
     return ObjectIdentity(id)
-
-
-def Path(self) -> str:
-    if '/' in self:
-        tokens = self.split('/')
-        return f"{tokens[0].lower()}/{tokens[1]}"
-    else:
-        return f"id/{self}"
-
-
-def Type(self) -> str:
-    return Path(self).split('/')[0]
-
-
-def Key(self) -> str:
-    tokens = Path(self).split('/')
-    if len(tokens) > 1:
-        return tokens[1]
-    else:
-        return ""
 
 
 class Store:

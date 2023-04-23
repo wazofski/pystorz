@@ -1,44 +1,84 @@
+	
+	def FromJson(self, jstr):
+		data = json.loads(jstr)
+		return self.FromDict(data)
+
+
+	def ToJson(self):
+		return json.dumps(self.ToDict())
+
+
+	def ToDict(self):
+		data = {}
+		{% for prop in data.properties %}
+		{% if prop.IsArray() %}
+		rawList = []
+		for v in self.{{prop.name}}_:
+			if hasattr(v, "ToDict"):
+				rawList.append(v.ToDict())
+			else:
+				rawList.append(v)
+
+		data["{{prop.json}}"] = rawList
+		{% elif prop.IsMap() %}
+		rawSubmap = {}
+		for k, v in self.{{prop.name}}_.items():
+			if hasattr(v, "ToDict"):
+				rawSubmap[k] = v.ToDict()
+			else:
+				rawSubmap[k] = v
+
+		data["{{prop.json}}"] = rawSubmap
+		{% else %}
+		if self.{{prop.name}}_:
+			if hasattr(self.{{prop.name}}_, "ToDict"):
+				data["{{prop.json}}"] = self.{{prop.name}}_.ToDict()
+			else:
+				data["{{prop.json}}"] = self.{{prop.name}}_
+		
+		{% endif %}
+		{% endfor %}
+		return data
+	
+
 	def FromDict(self, data):
 		for key, rawValue in data.items():
 			if rawValue is None:
 				continue
-			{% for prop in props %}
-			if key == "{{prop.Json}}":
-				{% if prop.IsArray %}
-				res = {{ prop.Default }}
-				rawList = []
-				err = json.loads(rawValue, rawList)
-				if err:
-					return err
+			
+			{% for prop in data.properties %}
+			if key == "{{prop.json}}":
+				{% if prop.IsArray() %}
+				res = {{ prop.default }}
 
-				for rw in rawList:
-					ud = {{prop.StrippedDefault}}
-					err = json.loads(rw, ud)
-					if err:
-						return err
+				for rw in rawValue:
+					ud = {{prop.StrippedDefault()}}
+					if hasattr(ud, "FromDict"):
+						ud.FromDict(rw)
+					else:
+						ud = rw
 					res.append(ud)
 
-				entity.{{prop.Name}}_ = res
-				{% elif prop.IsMap %}
-				res = {{ prop.Default }}
-				rawSubmap = {}
-				err = json.loads(rawValue, rawSubmap)
-				if err:
-					return err
+				self.{{prop.name}}_ = res
+				{% elif prop.IsMap() %}
+				res = {{ prop.default }}
+				
+				for rk, rw in rawValue.items():
+					ud = {{prop.StrippedDefault()}}
+					if hasattr(ud, "FromDict"):
+						ud.FromDict(rw)
+					else:
+						ud = rw
+					res[rk] = ud
 
-				for k, rw in rawSubmap.items():
-					ud = {{prop.StrippedDefault}}
-					err = json.loads(rw, ud)
-					if err:
-						return err
-					res[k] = ud
-
-				entity.{{prop.Name}}_ = res
+				self.{{prop.name}}_ = res
 				{% else %}
-				err = json.loads(rawValue, entity.{{prop.Name}}_)
-				if err:
-					return err
+				if hasattr(self.{{prop.name}}_, "FromDict"):
+					self.{{prop.name}}_.FromDict(rawValue)
+				else:
+					self.{{prop.name}}_ = rawValue
+				
 				{% endif %}
 			{% endfor %}
-		return None
+		
 	

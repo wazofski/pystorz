@@ -1,4 +1,6 @@
+import json
 from store import store
+
 
 class Meta:
     def Kind(self) -> str:
@@ -13,6 +15,16 @@ class Meta:
     def Updated(self) -> str:
         pass
 
+    def ToJson(self) -> str:
+        pass
+
+    def FromDict(self, d: dict) -> None:
+        pass
+
+    def ToDict(self) -> str:
+        pass
+
+
 class MetaSetter:
     def SetKind(self, kind: str) -> None:
         pass
@@ -26,9 +38,11 @@ class MetaSetter:
     def SetUpdated(self, updated: str) -> None:
         pass
 
+
 class MetaHolder:
     def metadata(self) -> Meta:
         pass
+
 
 class metaWrapper(Meta, MetaSetter):
     def __init__(self):
@@ -61,9 +75,28 @@ class metaWrapper(Meta, MetaSetter):
     def SetUpdated(self, updated: str) -> None:
         self.updated_ = updated
 
+    def ToJson(self) -> str:
+        return json.dumps(self.ToDict())
+
+    def ToDict(self) -> str:
+        return {
+            "kind": self.Kind(),
+            "identity": str(self.Identity()),
+            "created": self.Created(),
+            "updated": self.Updated(),
+        }
+
+    def FromDict(self, d: dict) -> None:
+        self.SetKind(d["kind"])
+        self.SetIdentity(store.ObjectIdentityFactory())
+        self.Identity().FromString(d["identity"])
+        self.SetCreated(d["created"])
+        self.SetUpdated(d["updated"])
+
+
 def MetaFactory(kind: str) -> Meta:
     emptyIdentity = store.ObjectIdentityFactory()
-    
+
     mw = metaWrapper()
     mw.SetKind(kind)
     mw.SetIdentity(emptyIdentity)

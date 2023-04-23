@@ -26,6 +26,6 @@ class _{{ data.name }}({{data.implements}}):
 	{% endif %}
 	{% endfor %}
 
-	def clone(entity):
+	def Clone(entity):
 		return utils.clone_object(entity, Schema())
 
