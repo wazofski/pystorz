@@ -9,8 +9,9 @@ log = logging.getLogger(__name__)
 
 
 def SqliteConnection(path):
-    def __call__():
+    def func():
         return sqlite3.connect(path)
+    return func
 
 
 # def MySqlConnection(path):
@@ -28,17 +29,14 @@ class SqliteStore:
 
     def TestConnection(self):
         if self.DB is not None:
-            if self.DB.ping() is None:
-                return None
+            return None
 
-        err = None
-        self.DB, err = self.MakeConnection()
-        if err is not None:
-            return err
+        self.DB = self.MakeConnection()
 
-        err = self.DB.ping()
-        if err is not None:
-            return err
+        # t = sqlite3.connect("asdsa")
+        # err = self.DB.ping()
+        # if err is not None:
+        #     return err
 
         return self._prepareTables()
 
@@ -174,53 +172,52 @@ class SqliteStore:
 
         copt = options.CommonOptionHolderFactory()
         for o in opt:
-            err = o.ApplyFunction()(copt)
-            if err is not None:
-                return None, err
+            o.ApplyFunction()(copt)
 
         err = self.TestConnection()
         if err is not None:
             return None, err
 
-        query = "SELECT Object FROM Objects WHERE Type = ?"
+        query = "SELECT Object FROM Objects WHERE Type = '{}'".format(
+            identity.Type())
 
         # pkey filter
-        if copt.KeyFilter is not None:
+        if copt.key_filter is not None:
             query = query + \
-                " AND Pkey IN ('{}')".format("', '".join(copt.KeyFilter))
+                " AND Pkey IN ('{}')".format("', '".join(copt.key_filter))
 
         # prop filter
-        if copt.PropFilter is not None:
+        if copt.prop_filter is not None:
             obj = self.Schema.ObjectForKind(identity.Type())
             if obj is None:
                 return None, constants.ErrNoSuchObject
-            if utils.ObjectPath(obj, copt.PropFilter.Key) is None:
+            if utils.ObjectPath(obj, copt.prop_filter.Key) is None:
                 return None, constants.ErrInvalidFilter
             query = query + " AND json_extract(Object, '$.{}') = '{}'".format(
-                copt.PropFilter.Key, copt.PropFilter.Value)
+                copt.prop_filter.Key, copt.prop_filter.Value)
 
-        if len(copt.OrderBy) > 0:
-            query = "SELECT Object FROM Objects WHERE Type = ? ORDER BY json_extract(Object, '$.{}')".format(
-                copt.OrderBy)
-            if copt.OrderIncremental:
+        if len(copt.order_by) > 0:
+            query = "SELECT Object FROM Objects WHERE Type = '{}' ORDER BY json_extract(Object, '$.{}')".format(
+                identity.Type(), copt.order_by)
+            if copt.order_incremental:
                 query = query + " ASC"
             else:
                 query = query + " DESC"
 
-        if copt.PageSize > 0:
-            query = query + " LIMIT {}".format(copt.PageSize)
+        if copt.page_size > 0:
+            query = query + " LIMIT {}".format(copt.page_size)
 
-        if copt.PageOffset > 0:
-            query = query + " OFFSET {}".format(copt.PageOffset)
+        if copt.page_offset > 0:
+            query = query + " OFFSET {}".format(copt.page_offset)
 
         print(query)
+        cursor = self.DB.cursor()
 
-        rows, err = self.DB.Query(query, identity.Type())
-        if err is not None:
-            return None, err
+        cursor.execute(query)
+        rows = cursor.fetchall()
 
         res = self._parseObjectRows(rows, identity.Type())
-        rows.Close()
+        # rows.Close()
 
         return res, None
 
@@ -231,10 +228,10 @@ class SqliteStore:
             Pkey NVARCHAR(50) NOT NULL,
             Type VARCHAR(25) NOT NULL);
         '''
-        try:
-            self.DB.execute(create)
-        except Exception as e:
-            return e
+
+        cursor = self.DB.cursor()
+
+        cursor.execute(create)
 
         create = '''
         CREATE TABLE IF NOT EXISTS Objects (
@@ -243,10 +240,8 @@ class SqliteStore:
             Object JSON,
             PRIMARY KEY (Pkey,Type));
         '''
-        try:
-            self.DB.execute(create)
-        except Exception as e:
-            return e
+
+        cursor.execute(create)
 
     def _getIdentity(self, path):
         row = self.DB.execute(
@@ -282,9 +277,10 @@ class SqliteStore:
             return e
 
     def _getObject(self, pkey, typ):
-        row = self.DB.execute(
+        cursor = self.DB.cursor()
+        cursor.execute(
             "SELECT Object FROM Objects WHERE Pkey=? AND Type=?", pkey, typ.lower())
-        result = row.fetchone()
+        result = cursor.fetchone()
 
         if result is not None:
             data = result[0]
@@ -301,27 +297,19 @@ class SqliteStore:
         else:
             query = "INSERT INTO Objects (Object, Pkey, Type) VALUES (?, ?, ?)"
 
-        data = json.dumps(obj)
+        data = obj.ToJson()
 
-        try:
-            self.DB.execute(query, data, pkey, typ.lower())
-        except Exception as e:
-            return e
-
+        cursor = self.DB.cursor()
+        cursor.execute(query, data, pkey, typ.lower())
+    
     def _removeObject(self, pkey, typ):
         query = "DELETE FROM Objects WHERE Pkey = ? AND Type = ?"
-
-        try:
-            self.DB.execute(query, pkey, typ.lower())
-        except Exception as e:
-            return e
-
+        cursor = self.DB.cursor()
+        cursor.execute(query, pkey, typ.lower())
+        
     def _parseObjectRow(self, data, typ):
-        try:
-            return utils.unmarshal_object(data, self.Schema, typ)
-        except Exception as e:
-            return None, e
-
+        return utils.unmarshal_object(data, self.Schema, typ)
+        
     def _parseObjectRows(self, rows, typ):
         res = []
         for row in rows:

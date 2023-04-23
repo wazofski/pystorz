@@ -54,8 +54,8 @@ class ObjectIdentity:
         return self.id_
 
     def Path(self) -> str:
-        if '/' in self:
-            tokens = self.split('/')
+        if '/' in self.id_:
+            tokens = self.id_.split('/')
             return f"{tokens[0].lower()}/{tokens[1]}"
         else:
             return f"id/{self}"
@@ -64,7 +64,7 @@ class ObjectIdentity:
         return self.Path().split('/')[0]
 
     def Key(self) -> str:
-        tokens = self.Path(self).split('/')
+        tokens = self.Path().split('/')
         if len(tokens) > 1:
             return tokens[1]
         else:

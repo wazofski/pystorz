@@ -61,7 +61,7 @@ def compileResources(resources: List[Resource]) -> str:
     b = StringIO()
 
     for r in resources:
-        log.info(f"Compiling resource {r.name}...")
+        log.debug(f"Compiling resource {r.name}...")
 
         props = [
             Prop(

@@ -13,31 +13,31 @@ def common_test_suite(clt):
     newWorldDescription = "is only beoaoqwiewioqu"
 
     def test_clear_everything():
-        ret, err = clt.List(model.WorldKindIdentity())
+        ret, err = clt.List(model.WorldKindIdentity)
         assert err == None
         for r in ret:
             err = clt.Delete(r.Metadata().Identity())
             assert err == None
 
-        ret, err = clt.List(model.SecondWorldKindIdentity())
+        ret, err = clt.List(model.SecondWorldKindIdentity)
         assert err == None
         for r in ret:
             err = clt.Delete(r.Metadata().Identity())
             assert err == None
 
-        ret, _ = clt.List(model.SecondWorldKindIdentity())
+        ret, _ = clt.List(model.SecondWorldKindIdentity)
         assert len(ret) == 0
-        ret, _ = clt.List(model.WorldKindIdentity())
+        ret, _ = clt.List(model.WorldKindIdentity)
         assert len(ret) == 0
 
-        # ret, err = clt.List(model.ThirdWorldKindIdentity())
+        # ret, err = clt.List(model.ThirdWorldKindIdentity)
         # assert err == None
         # for r in ret:
         #     err = clt.Delete(r.Metadata().Identity())
         #     assert err == None
 
     def test_list_empty_lists():
-        ret, err = clt.list(model.WorldKindIdentity())
+        ret, err = clt.list(model.WorldKindIdentity)
         assert err is None
         assert ret is not None
         assert len(ret) == 0
@@ -51,7 +51,7 @@ def common_test_suite(clt):
         assert len(ret.Metadata().Identity()) != 0
 
     def test_list_single_object():
-        ret, err = clt.list(model.WorldKindIdentity())
+        ret, err = clt.list(model.WorldKindIdentity)
         assert err is None
         assert ret is not None
         assert len(ret) == 1
@@ -272,7 +272,7 @@ def common_test_suite(clt):
         assert err is not None
 
     def test_create_multiple_objects():
-        ret, err = clt.list(model.WorldKindIdentity())
+        ret, err = clt.list(model.WorldKindIdentity)
         assert err is None
 
         for r in ret:
@@ -301,7 +301,7 @@ def common_test_suite(clt):
 
     def test_can_list_multiple_objects(self):
         ret, err = clt.List(
-            model.WorldKindIdentity())
+            model.WorldKindIdentity)
 
         self.assertIsNone(err)
         self.assertIsNotNone(ret)
@@ -319,7 +319,7 @@ def common_test_suite(clt):
 
     def test_can_list_and_sort_multiple_objects(self):
         ret, err = clt.List(
-            model.WorldKindIdentity(),
+            model.WorldKindIdentity,
             options.OrderBy("external.name"))
 
         self.assertIsNone(err)
@@ -335,7 +335,7 @@ def common_test_suite(clt):
         self.assertEqual(world2.External().Description(), newWorldDescription)
 
         ret, err = clt.List(
-            model.WorldKindIdentity(),
+            model.WorldKindIdentity,
             options.OrderBy("external.name"),
             options.OrderDescending())
 
@@ -351,7 +351,7 @@ def common_test_suite(clt):
     def test_list_and_paginate_multiple_objects():
         ret, err = clt.list(
             
-            model.WorldKindIdentity(),
+            model.WorldKindIdentity,
             options.OrderBy("external.name"),
             options.PageSize(1)
         )
@@ -366,7 +366,7 @@ def common_test_suite(clt):
 
         ret, err = clt.list(
             
-            model.WorldKindIdentity(),
+            model.WorldKindIdentity,
             options.OrderBy("external.name"),
             options.PageSize(1),
             options.PageOffset(1)
@@ -381,7 +381,7 @@ def common_test_suite(clt):
 
         ret, err = clt.list(
             
-            model.WorldKindIdentity(),
+            model.WorldKindIdentity,
             options.OrderBy("external.name"),
             options.PageOffset(1),
             options.PageSize(1000)
@@ -396,7 +396,7 @@ def common_test_suite(clt):
 
     def test_list_and_filter_by_primary_key():
         ret, err = clt.List(
-            model.WorldKindIdentity())
+            model.WorldKindIdentity)
 
         assert err is None
 
@@ -407,7 +407,7 @@ def common_test_suite(clt):
         assert len(keys) == 2
 
         ret, err = clt.List(
-            model.WorldKindIdentity(),
+            model.WorldKindIdentity,
             options.KeyFilter(keys[0], keys[1]))
 
         assert err is None
@@ -415,7 +415,7 @@ def common_test_suite(clt):
 
         for k in keys:
             ret, err = clt.List(
-                model.WorldKindIdentity(),
+                model.WorldKindIdentity,
                 options.KeyFilter(k))
 
             assert err is None
@@ -425,7 +425,7 @@ def common_test_suite(clt):
     def test_list_and_filter_by_nonexistent_props():
         ret, err = clt.List(
             
-            model.WorldKindIdentity(),
+            model.WorldKindIdentity,
             options.PropFilter("metadata.askdjhasd", "asdsadas"))
 
         assert err is not None
@@ -449,7 +449,7 @@ def common_test_suite(clt):
 
     def test_list_and_filter():
         ret, err = clt.List(
-            model.WorldKindIdentity(),
+            model.WorldKindIdentity,
             options.PropFilter("external.name", worldName)
         )
 
@@ -466,7 +466,7 @@ def common_test_suite(clt):
 
     def test_list_and_filter_by_id():
         ret, err = clt.List(
-            model.WorldKindIdentity(),
+            model.WorldKindIdentity,
             options.PropFilter("metadata.identity", str(world_id))
         )
 

@@ -28,8 +28,8 @@ def clone_object(obj: store.Object, schema: store.SchemaHolder) -> store.Object:
 
 def unmarshal_object(body: bytes, schema: store.SchemaHolder, kind: str) -> store.Object:
     resource = schema.ObjectForKind(kind)
-    err = json.loads(body, object_hook=lambda d: resource.__dict__.update(d))
-    return resource, err
+    resource.FromJson(body)
+    return resource
 
 
 def object_kind(response: bytes) -> str:
@@ -42,9 +42,12 @@ def object_kind(response: bytes) -> str:
     return obj.Metadata['kind']
 
 
-def pp(obj: store.Object) -> str:
-    jsn = json.dumps(obj, indent=4, default=lambda x: x.to_dict())
-    return jsn
+def pps(string: str) -> str:
+    return pp(json.loads(string))
+
+
+def pp(obj) -> str:
+    return json.dumps(obj, indent=4)
 
 
 def timestamp() -> str:

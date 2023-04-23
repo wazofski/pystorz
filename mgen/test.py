@@ -1,4 +1,4 @@
-import json
+from store import utils
 
 def test_mgen():
     from generated.model import WorldFactory, WorldKind, Schema, NestedWorldFactory
@@ -42,12 +42,12 @@ def test_mgen():
     world.Internal().Map()["a"].SetL1([False, False, True])
 
     data = world.ToJson()
-    print(data)
+    print(utils.pps(data))
     
     newWorld = WorldFactory()
     newWorld.FromJson(data)
     
-    print(newWorld.ToJson())
+    # print(utils.pps(newWorld.ToJson()))
 
     assert newWorld.External().Nested().Alive() is True
     assert newWorld.External().Nested().Counter() == 10
