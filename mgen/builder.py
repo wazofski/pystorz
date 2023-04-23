@@ -107,7 +107,7 @@ def compileStructs(structs: List[Struct]) -> str:
 
 
 def compileStruct(s: Struct) -> str:
-    log.info(f"Compiling struct {s.name}...")
+    log.debug(f"Compiling struct {s.name}...")
 
     b = StringIO()
     methods = []

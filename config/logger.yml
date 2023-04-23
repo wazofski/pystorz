@@ -10,11 +10,11 @@ handlers:
     stream: ext://sys.stdout
 loggers:
   mgen.loader:
-    level: DEBUG
+    level: INFO
     handlers: [console]
     propagate: no
   mgen.builder:
-    level: DEBUG
+    level: INFO
     handlers: [console]
     propagate: no
 root:

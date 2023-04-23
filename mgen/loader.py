@@ -114,6 +114,7 @@ def load_model(path: str):
 
 def read_model(path: str):
     log.debug(f"reading model from {path}")
+    
     with open(path, "r") as f:
         data = yaml.safe_load(f)
     return data
