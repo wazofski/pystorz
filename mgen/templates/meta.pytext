@@ -6,10 +6,10 @@
 		return str(entity.Pkey)
 
 	def NameIdentity(pkey):
-		return store.ObjectIdentity(f"{ {{ .IdentityPrefix }} }/{ pkey }")
+		return store.ObjectIdentity(f"{ {{ data.IdentityPrefix() }} }/{ pkey }")
 
 	def NameKindIdentity():
-		return store.ObjectIdentity(f"{ {{ .IdentityPrefix }} }/")
+		return store.ObjectIdentity(f"{ {{ data.IdentityPrefix() }} }/")
 
 	def NameKind():
-		return "{{ .Name }}"
+		return "{{ data.Name }}"

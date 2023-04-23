@@ -1,8 +1,7 @@
-{% raw %}
-def ExternalInternalSet(entity, val):
-	converted = val
-	entity.External_ = converted
+	
+	def ExternalInternalSet(self, val):
+		self.External_ = val
 
-def ExternalInternal(entity):
-	return entity.External()
-{% endraw %}
+	def ExternalInternal(entity):
+		return entity.External_
+	

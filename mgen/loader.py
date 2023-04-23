@@ -21,18 +21,42 @@ class Model:
 
 
 class Prop:
-    def __init__(self, name, prop_type, json_str, default=None):
+    def __init__(self, name, prop_type, json_str, default=""):
         self.name = name
         self.type = prop_type
         self.json = json_str
         self.default = default
 
+    def IsMap(self):
+        if len(self.type) < 3:
+            return False
+
+        return self.type[:3] == "map"
+
+    def IsArray(self):
+        if len(self.type) < 2:
+            return False
+
+        return self.type[:2] == "[]"
+
+    def StrippedType(self):
+        if self.IsMap():
+            return "dict"
+        if self.IsArray():
+            return "list"
+        if self.type == "string":
+            return "str"
+        return self.type
+
+    def StrippedDefault(self):
+        return typeDefault(self.StrippedType())
+
 
 class Struct:
-    def __init__(self, name, implements=None, properties=None):
+    def __init__(self, name, implements="", properties=[]):
         self.name = name
-        self.implements = implements or []
-        self.properties = properties or []
+        self.implements = implements
+        self.properties = properties
 
 
 class Resource:
@@ -43,7 +67,7 @@ class Resource:
         self.primary_key = primary_key
 
     def IdentityPrefix(self):
-        return self.Name.lower()
+        return self.name.lower()
 
 
 def load_model(path: str):
@@ -60,6 +84,7 @@ def load_model(path: str):
             if m["kind"] == "Struct":
                 structs.append(Struct(
                     m["name"],
+                    "",
                     capitalize_props(m["properties"])
                 ))
                 continue
@@ -99,8 +124,8 @@ def capitalize_props(l: list):
     for p in l:
         res.append(Prop(
             capitalize(p['name']),
-            decapitalize(p['name']),
             p['type'],
+            decapitalize(p['name']),
             # p.default
         ))
     return res
@@ -113,3 +138,23 @@ def make_prop_caller_string(pkey: str):
         cap.append("{}".format(capitalize(t)))
 
     return ".".join(cap)
+
+
+def typeDefault(tp: str) -> str:
+    if tp.startswith("list") or tp.startswith("[]"):
+        return "list()"
+        # return f"{tp} {{}}"
+    if tp.startswith("dict") or tp.startswith("map"):
+        return "dict()"
+        # return f"make({tp})"
+
+    if tp == "str" or tp == "string":
+        return '""'
+    if tp == "bool":
+        return "False"
+    if tp == "int":
+        return "0"
+    if tp == "float":
+        return "0.0"
+    
+    return f"{tp}Factory()"

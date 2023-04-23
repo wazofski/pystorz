@@ -1,28 +1,31 @@
+ 
 
 class _Schema:
-    def __init__(self, objects):
-        self.objects = objects
-    
-    def object_for_kind(self, kind):
-        {% for r in data["resources"] %}
+	def __init__(self, objects):
+		self.objects = objects
+	
+	def object_for_kind(self, kind):
+		{% for r in data["resources"] %}
 		
-        if kind == "{{r.Name}}":
-            return {{r.Name}}Factory()
-        else if kind == "{{r.IdentityPrefix()}}":
-            return {{r.Name}}Factory()
+		if kind == "{{r.name}}":
+			return {{r.name}}Factory()
+		elif kind == "{{r.IdentityPrefix()}}":
+			return {{r.name}}Factory()
 
 		{% endfor %}
-        
+		
 		return None
-    
-    def types(self):
-        return self.objects
+	
+	def types(self):
+		return self.objects
 
 def schema():
-    objects = [
-        {% for r in data["resources"] %}
-        "{{r.Name}}",
-        {% endfor %}
-    ]
+	objects = [
+		{% for r in data["resources"] %}
+		"{{r.name}}",
+		{% endfor %}
+	]
 
-    return _Schema(objects)
+	return _Schema(objects)
+
+ 

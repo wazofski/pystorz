@@ -1,50 +1,50 @@
-{% raw %}
-def UnmarshalJSON(entity, data):
-	rawMap = {}
-	err = json.loads(data, rawMap)
-	if err:
-	return err
+	{% raw %}
+	def UnmarshalJSON(entity, data):
+		rawMap = {}
+		err = json.loads(data, rawMap)
+		if err:
+		return err
 
-	for key, rawValue in rawMap.items():
-		if rawValue is None:
-			continue
-		{% for prop in props %}
-		if key == "{{prop.Json}}":
-			{% if prop.IsArray %}
-			res = {{ prop.Default }}
-			rawList = []
-			err = json.loads(rawValue, rawList)
-			if err:
-				return err
-
-			for rw in rawList:
-				ud = {{prop.StrippedDefault}}
-				err = json.loads(rw, ud)
+		for key, rawValue in rawMap.items():
+			if rawValue is None:
+				continue
+			{% for prop in props %}
+			if key == "{{prop.Json}}":
+				{% if prop.IsArray %}
+				res = {{ prop.Default }}
+				rawList = []
+				err = json.loads(rawValue, rawList)
 				if err:
 					return err
-				res.append(ud)
 
-			entity.{{prop.Name}}_ = res
-			{% elif prop.IsMap %}
-			res = {{ prop.Default }}
-			rawSubmap = {}
-			err = json.loads(rawValue, rawSubmap)
-			if err:
-				return err
+				for rw in rawList:
+					ud = {{prop.StrippedDefault}}
+					err = json.loads(rw, ud)
+					if err:
+						return err
+					res.append(ud)
 
-			for k, rw in rawSubmap.items():
-				ud = {{prop.StrippedDefault}}
-				err = json.loads(rw, ud)
+				entity.{{prop.Name}}_ = res
+				{% elif prop.IsMap %}
+				res = {{ prop.Default }}
+				rawSubmap = {}
+				err = json.loads(rawValue, rawSubmap)
 				if err:
 					return err
-				res[k] = ud
 
-			entity.{{prop.Name}}_ = res
-			{% else %}
-			err = json.loads(rawValue, entity.{{prop.Name}}_)
-			if err:
-				return err
-			{% endif %}
-		{% endfor %}
-	return None
-{% endraw %}
+				for k, rw in rawSubmap.items():
+					ud = {{prop.StrippedDefault}}
+					err = json.loads(rw, ud)
+					if err:
+						return err
+					res[k] = ud
+
+				entity.{{prop.Name}}_ = res
+				{% else %}
+				err = json.loads(rawValue, entity.{{prop.Name}}_)
+				if err:
+					return err
+				{% endif %}
+			{% endfor %}
+		return None
+	{% endraw %}

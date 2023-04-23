@@ -1,2 +1,0 @@
-    def clone(self):
-        return utils.clone_object(self, Schema())

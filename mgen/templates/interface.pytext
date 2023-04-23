@@ -1,8 +1,8 @@
 
-class {{ data["name"] }}:
+class {{ data["name"] }}({{ data["implements"] }}):
 
 {% for method in data["methods"] %}
-	def {{ method }}(self):
+	def {{ method }}:
 		pass
 
 {% endfor %}

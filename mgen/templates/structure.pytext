@@ -1,34 +1,37 @@
-{{% set name =  %}}
-class {{ name }}:
-    {% for embed in data.Embeds %}
-    {{ embed }}
-    {% endfor %}
+ 
 
-    {% for prop in data.Props %}
-    {{ prop.Name }} = None
-    {% endfor %}
+def {{ data.name }}Factory():
+	{% for prop in data.properties %}
+	{{ prop.name }}_ = {{ prop.default }}
+	{% endfor %}
 
-    {% for prop in data.Props %}
-    {% if prop.Name != "External" %}
+	return _{{ data.name }}(
+		{% for prop in data.properties %}
+		{{ prop.name }}_={{ prop.name }}_,
+		{% endfor %}
+	)
 
-    def Set{{ prop.Name }}(self, val):
-        self.{{ prop.Name }}_ = val
+ 
+class _{{ data.name }}({{data.implements}}):
 
-    @property
-    def {{ prop.Name }}(self):
-        return self.{{ prop.Name }}_
+	def __init__(self):
+		{% for prop in data.properties %}
+		{{ prop.name }}_ = None
+		{% endfor %}
 
-    {% endif %}
-    {% endfor %}
+	{% for prop in data.properties %}
+	{% if prop.name != "External" %}
 
-    def {{ name }}Factory():
-        {% for prop in data.Props %}{{ prop.Name }}_ = {{ prop.Default }}
-        {% endfor %}
+	def Set{{ prop.name }}(self, val):
+		self.{{ prop.name }}_ = val
 
-        return _{{ name }}(
-            {% for prop in data.Props %}{{ prop.Name }}_={{ prop.Name }}_,
-            {% endfor %}
-        )
+	@property
+	def {{ prop.name }}(self):
+		return self.{{ prop.name }}_
 
-    def clone(entity):
-        return utils.clone_object(entity, schema())
+	{% endif %}
+	{% endfor %}
+
+	def clone(entity):
+		return utils.clone_object(entity, schema())
+

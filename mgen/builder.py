@@ -7,48 +7,11 @@ from io import StringIO
 
 from jinja2 import Template
 
-from mgen.loader import load_model, Resource
-from utils import utils
+from mgen.loader import load_model, Resource, Struct, Prop, typeDefault
+from store import utils
 
 log = logging.getLogger(__name__)
 log.debug('loading builder.py...')
-
-
-class _Prop:
-    def __init__(self, name: str, json: str, type: str, default: str):
-        self.Name = name
-        self.Json = json
-        self.Type = type
-        self.Default = default
-
-    def IsMap(self):
-        if len(self.Type) < 3:
-            return False
-
-        return self.Type[:3] == "map"
-
-    def IsArray(self):
-        if len(self.Type) < 2:
-            return False
-
-        return self.Type[:2] == "[]"
-
-    def StrippedType(self):
-        if self.IsMap():
-            return self.Type[self.Type.rfind("]")+1:]
-        if self.IsArray():
-            return self.Type[2:]
-        return self.Type
-
-    def StrippedDefault(self):
-        return typeDefault(self.StrippedType())
-
-
-class _Struct:
-    def __init__(self, name: str, props: List[_Prop], implements: List[str]):
-        self.Name = name
-        self.Props = props
-        self.Implements = implements
 
 
 def Generate(model: str) -> None:
@@ -56,7 +19,10 @@ def Generate(model: str) -> None:
         structs, resources = load_model(model)
 
         imports = [
-            # "json",
+            "import json",
+            "from store import utils",
+            "from store import store",
+            "from store import meta",
         ]
 
         b = StringIO()
@@ -86,58 +52,52 @@ def Generate(model: str) -> None:
 
 # class _Interface:
 #     def __init__(self, Name: str, Methods: List[str], Implements: List[str]):
-#         self.Name = Name
+#         self.name = Name
 #         self.Methods = Methods
-#         self.Implements = Implements
+#         self.implements = Implements
 
 
 def compileResources(resources: List[Resource]) -> str:
     b = StringIO()
 
     for r in resources:
-        log.info(f"Compiling resource {r.Name}...")
+        log.info(f"Compiling resource {r.name}...")
 
         props = [
-            {
-                "Name": "Meta",
-                "Type": "store.Meta",
-                "Json": "metadata",
-                "Default": f'store.MetaFactory("{r.Name}")'
-            }
+            Prop(
+                "Meta",
+                "store.Meta",
+                "metadata",
+                f'meta.MetaFactory("{r.name}")')
         ]
 
-        if r.External:
-            props.append({
-                "Name": "External",
-                "Type": r.External,
-                "Json": "external"
-            })
+        if r.external:
+            props.append(Prop(
+                "External",
+                r.external,
+                "external"))
 
-        if r.Internal:
-            props.append({
-                "Name": "Internal",
-                "Type": r.Internal,
-                "Json": "internal"
-            })
+        if r.internal:
+            props.append(Prop(
+                "Internal",
+                r.internal,
+                "internal"))
 
-        s = _Struct(
-            Name=r.Name,
-            Props=props,
-            Implements=[
-                "store.Object"
-            ]
+        s = Struct(
+            r.name,
+            r.name,
+            props,
         )
 
         b.write(compileStruct(s))
-        b.write(render("mgen/templates/meta.pytext", {"resource": r}))
-        b.write(render("mgen/templates/clone.pytext", {"struct": s}))
+        b.write(render("mgen/templates/meta.pytext", r))
 
     b.write(render("mgen/templates/schema.pytext", {"resources": resources}))
 
     return b.getvalue()
 
 
-def compileStructs(structs: List[_Struct]) -> str:
+def compileStructs(structs: List[Struct]) -> str:
     b = StringIO()
 
     for s in structs:
@@ -146,36 +106,40 @@ def compileStructs(structs: List[_Struct]) -> str:
     return b.getvalue()
 
 
-def compileStruct(s: _Struct) -> str:
-    log.info(f"Compiling struct {s.Name}...")
+def compileStruct(s: Struct) -> str:
+    log.info(f"Compiling struct {s.name}...")
 
     b = StringIO()
     methods = []
 
-    s.Props = addDefaultPropValues(s.Props)
+    s.properties = addDefaultPropValues(s.properties)
 
-    for p in s.Props:
-        if p.Name != "Meta":
-            methods.append(f"{p.Name}() {p.Type}")
+    for p in s.properties:
+        if p.name != "Meta":
+            methods.append(f"{p.name}(self) -> {p.StrippedType()}")
 
-        if p.Name != "Meta" and p.Name != "External" and p.Name != "Internal":
-            methods.append(f"Set{p.Name}(v {p.Type})")
+        if p.name != "Meta" and p.name != "External" and p.name != "Internal":
+            methods.append(f"Set{p.name}(self, val: {p.StrippedType()})")
 
-        if p.Name == "External":
-            b.write(render("mgen/templates/specinternal.pytext",
-                    {'A': s.Name, 'B': p.Type}))
+        if p.name == "External":
+            b.write(render("mgen/templates/specinternal.pytext", None))
 
-    impl = s.Implements + ["json.Unmarshaler"]
+    # impl = s.implements + ["json.Unmarshaler"]
 
     b.write(render("mgen/templates/interface.pytext",
-            {'Name': s.Name, 'Methods': methods, 'Implements': impl}))
-    b.write(render("mgen/templates/structure.pytext", s.__dict__))
-    b.write(render("mgen/templates/unmarshall.pytext", s.__dict__))
+            {
+                'name': s.name,
+                'methods': methods,
+                'implements': "store.Object"
+            }))
+
+    b.write(render("mgen/templates/structure.pytext", s))
+    # b.write(render("mgen/templates/unmarshall.pytext", s))
 
     return b.getvalue()
 
 
-def render(rpath: str, data: dict) -> str:
+def render(rpath: str, data) -> str:
     path = os.path.join(utils.runtime_dir(), rpath)
 
     with open(path, 'r') as f:
@@ -185,36 +149,17 @@ def render(rpath: str, data: dict) -> str:
     return t.render(data=data)
 
 
-def addDefaultPropValues(props: List[_Prop]) -> List[_Prop]:
+def addDefaultPropValues(props: List[Prop]) -> List[Prop]:
     res = []
 
     for p in props:
-        if len(p.Default) > 0:
+        if len(p.default) > 0:
             res.append(p)
             continue
 
-        res.append(_Prop(p.Name, p.Json, p.Type, typeDefault(p.Type)))
+        res.append(Prop(p.name, p.type, p.json, typeDefault(p.type)))
 
     return res
-
-
-def typeDefault(tp: str) -> str:
-    if tp.startswith("[]"):
-        return "list()"
-        # return f"{tp} {{}}"
-    if tp.startswith("map"):
-        return "dict()"
-        # return f"make({tp})"
-
-    if tp == "string":
-        return '""'
-    if tp == "bool":
-        return "False"
-    if tp == "int":
-        return "0"
-    if tp == "float":
-        return "0.0"
-    return f"{tp}Factory()"
 
 
 def reformat_python_code(code_str):
