@@ -1,23 +1,19 @@
 import json
 import logging
+import sqlite3
 from internal import constants
 from store import store, options, utils
-
-
-import sqlite3
 
 
 log = logging.getLogger(__name__)
 
 
 def SqliteConnection(path):
-
     def __call__():
         return sqlite3.connect(path)
 
 
 # def MySqlConnection(path):
-
 #     def __call__():
 #         log.Printf("mysql connection %s", path)
 #         return mysql.connect(path)
@@ -25,10 +21,10 @@ def SqliteConnection(path):
 
 class SqliteStore:
 
-    def __init__(self, Schema, DB, MakeConnection):
+    def __init__(self, Schema, MakeConnection):
         self.Schema = Schema
-        self.DB = DB
         self.MakeConnection = MakeConnection
+        self.DB = None
 
     def TestConnection(self):
         if self.DB is not None:
@@ -44,7 +40,7 @@ class SqliteStore:
         if err is not None:
             return err
 
-        return self.prepareTables()
+        return self._prepareTables()
 
     def Create(self, obj, opt=[]):
         if obj is None:
@@ -68,14 +64,15 @@ class SqliteStore:
         if err is not None:
             return None, err
 
-        err = self.setIdentity(
+        err = self._setIdentity(
             obj.Metadata().Identity().Path(),
             obj.PrimaryKey(),
             obj.Metadata().Kind())
+
         if err is not None:
             return None, err
 
-        err = self.setObject(obj.PrimaryKey(), obj.Metadata().Kind(), obj)
+        err = self._setObject(obj.PrimaryKey(), obj.Metadata().Kind(), obj)
         if err is not None:
             return None, err
 
@@ -101,22 +98,22 @@ class SqliteStore:
         if err is not None:
             return None, err
 
-        err = self.removeIdentity(existing.Metadata().Identity().Path())
+        err = self._removeIdentity(existing.Metadata().Identity().Path())
         if err is not None:
             log.Printf("%s", err)
 
-        err = self.setIdentity(obj.Metadata().Identity().Path(),
-                               obj.PrimaryKey(), obj.Metadata().Kind())
+        err = self._setIdentity(obj.Metadata().Identity().Path(),
+                                obj.PrimaryKey(), obj.Metadata().Kind())
 
         if err is not None:
             return None, err
 
-        err = self.removeObject(existing.PrimaryKey(),
-                                existing.Metadata().Kind())
+        err = self._removeObject(existing.PrimaryKey(),
+                                 existing.Metadata().Kind())
         if err is not None:
             return None, err
 
-        err = self.setObject(obj.PrimaryKey(), obj.Metadata().Kind(), obj)
+        err = self._setObject(obj.PrimaryKey(), obj.Metadata().Kind(), obj)
         if err is not None:
             return None, err
 
@@ -139,11 +136,11 @@ class SqliteStore:
         if err is not None:
             return err
 
-        err = self.removeIdentity(existing.Metadata().Identity().Path())
+        err = self._removeIdentity(existing.Metadata().Identity().Path())
         if err is not None:
             return err
 
-        return self.removeObject(existing.PrimaryKey(), existing.Metadata().Kind())
+        return self._removeObject(existing.PrimaryKey(), existing.Metadata().Kind())
 
     def Get(self, identity, *opt):
         log.Printf("get %s", identity.Path())
@@ -161,11 +158,11 @@ class SqliteStore:
 
         pkey, typ, err = self.getIdentity(identity.Path())
         if err == None:
-            return self.getObject(pkey, typ)
+            return self._getObject(pkey, typ)
 
         tokens = identity.Path().split("/")
         if len(tokens) == 2:
-            return self.getObject(tokens[1], tokens[0])
+            return self._getObject(tokens[1], tokens[0])
 
         return None, constants.ErrNoSuchObject
 
@@ -291,13 +288,13 @@ class SqliteStore:
 
         if result is not None:
             data = result[0]
-            return self.parseObjectRow(data, typ)
+            return self._parseObjectRow(data, typ)
         else:
             return None, Exception("Object not found")
 
     def _setObject(self, pkey, typ, obj):
         query = ""
-        existing_obj, _ = self.getObject(pkey, typ)
+        existing_obj, _ = self._getObject(pkey, typ)
 
         if existing_obj is not None:
             query = "UPDATE Objects SET Object=? WHERE Pkey = ? AND Type = ?"
