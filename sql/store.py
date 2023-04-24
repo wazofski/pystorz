@@ -48,7 +48,11 @@ class SqliteStore:
 
         lk = obj.Metadata().Kind().lower()
         path = "{}/{}".format(lk, obj.PrimaryKey())
-        existing = self.Get(store.ObjectIdentity(path))
+        existing = None
+        try:
+            existing = self.Get(store.ObjectIdentity(path))
+        except Exception as e:
+            pass
         if existing is not None:
             raise Exception(constants.ErrObjectExists)
 
@@ -160,7 +164,7 @@ class SqliteStore:
             query = query + " AND json_extract(Object, '$.{}') = '{}'".format(
                 copt.prop_filter.Key, copt.prop_filter.Value)
 
-        if len(copt.order_by) > 0:
+        if copt.order_by is not None and len(copt.order_by) > 0:
             query = "SELECT Object FROM Objects WHERE Type = '{}' ORDER BY json_extract(Object, '$.{}')".format(
                 identity.Type(), copt.order_by)
             if copt.order_incremental:
@@ -168,10 +172,10 @@ class SqliteStore:
             else:
                 query = query + " DESC"
 
-        if copt.page_size > 0:
+        if copt.page_size is not None and copt.page_size > 0:
             query = query + " LIMIT {}".format(copt.page_size)
 
-        if copt.page_offset > 0:
+        if copt.page_offset is not None and copt.page_offset > 0:
             query = query + " OFFSET {}".format(copt.page_offset)
 
         cursor = self._do_query(query)
@@ -212,9 +216,14 @@ class SqliteStore:
             raise Exception(constants.ErrNoSuchObject)
 
     def _setIdentity(self, path, pkey, typ):
-        query = ""
-        existing_pkey, existing_typ, _ = self.getIdentity(path)
+        existing_pkey, existing_typ = None, None
 
+        try:
+            existing_pkey, existing_typ = self._getIdentity(path)
+        except Exception as e:
+            log.debug("identity get failed: {}".format(e))
+        
+        query = ""
         if existing_pkey is not None and existing_typ is not None:
             query = "UPDATE IdIndex SET Pkey='{}', Type='{}' WHERE Path='{}'".format(
                 pkey, typ, path)
@@ -223,12 +232,12 @@ class SqliteStore:
                 pkey, typ, path)
 
         cursor = self._do_query(query)
-        cursor.commit()
+        # cursor.commit()
 
     def _removeIdentity(self, path):
         query = "DELETE FROM IdIndex WHERE Path = '{}'".format(path)
         cursor = self._do_query(query)
-        cursor.commit()
+        # cursor.commit()
 
     def _getObject(self, pkey, typ):
         query = "SELECT Object FROM Objects WHERE Pkey='{}' AND Type='{}'".format(
@@ -244,7 +253,12 @@ class SqliteStore:
 
     def _setObject(self, pkey, typ, obj):
         query = ""
-        existing_obj, _ = self._getObject(pkey, typ)
+        existing_obj = None
+
+        try:
+            existing_obj = self._getObject(pkey, typ)
+        except Exception as e:
+            log.debug("object get failed: {}".format(e))
 
         data = obj.ToJson()
 
@@ -256,14 +270,14 @@ class SqliteStore:
                 data, pkey, typ.lower())
 
         cursor = self._do_query(query)
-        cursor.commit()
+        # cursor.commit()
 
     def _removeObject(self, pkey, typ):
         query = "DELETE FROM Objects WHERE Pkey = '{}' AND Type = '{}'".format(
             pkey, typ.lower())
 
         cursor = self._do_query(query)
-        cursor.commit()
+        # cursor.commit()
 
     def _parseObjectRow(self, data, typ):
         return utils.unmarshal_object(data, self.Schema, typ)

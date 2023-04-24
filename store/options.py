@@ -51,10 +51,10 @@ class CommonOptionHolder:
     def __init__(self):
         self.prop_filter = None
         self.key_filter = None
-        self.order_by = ""
-        self.order_incremental = True
-        self.page_size = 0
-        self.page_offset = 0
+        self.order_by = None
+        self.order_incremental = None
+        self.page_size = None
+        self.page_offset = None
 
     def common_options(self) -> 'CommonOptionHolder':
         return self
@@ -97,7 +97,7 @@ def KeyFilter(*keys: str) -> ListOption:
 def PageSize(ps: int) -> ListOption:
     def option_function(options: OptionHolder) -> Optional[Exception]:
         common_options = options.common_options()
-        if common_options.page_size > 0:
+        if common_options.page_size is not None and common_options.page_size > 0:
             raise Exception("page size option has already been set")
 
         common_options.page_size = ps
@@ -109,9 +109,9 @@ def PageSize(ps: int) -> ListOption:
 def PageOffset(po: int) -> ListOption:
     def option_function(options: OptionHolder) -> Optional[Exception]:
         common_options = options.common_options()
-        if common_options.page_offset > 0:
+        if common_options.page_offset is not None and common_options.page_offset > 0:
             raise Exception("page offset option has already been set")
-        if common_options.page_offset < 0:
+        if common_options.page_offset is not None and common_options.page_offset < 0:
             raise Exception("page offset cannot be negative")
 
         common_options.page_offset = po
@@ -127,14 +127,15 @@ class _ListOption(ListOption):
     def get_list_option(self):
         return self
 
-    def apply_function(self):
+    def ApplyFunction(self):
         return self.function
 
 
 def OrderBy(field):
     def f(options):
-        if not options.common_options.order_by:
-            setattr(options.common_options, 'order_by', field)
+        common_options = options.common_options()
+        if common_options.order_by is None:
+            common_options.order_by = field
         else:
             raise Exception('order by option has already been set')
 
@@ -143,8 +144,9 @@ def OrderBy(field):
 
 def OrderDescending():
     def f(options):
-        if options.common_options.order_incremental:
-            setattr(options.common_options, 'order_incremental', False)
+        common_options = options.common_options()
+        if common_options.order_incremental is None:
+            common_options.order_incremental = False
         else:
             raise Exception('order incremental option has already been set')
     

@@ -44,7 +44,7 @@ def common_test_suite(clt):
         ret = clt.Create(w)
 
         assert ret is not None
-        assert len(ret.Metadata().Identity()) != 0
+        assert len(str(ret.Metadata().Identity())) != 0
 
     def test_list_single_object():
         ret = clt.List(model.WorldKindIdentity)
@@ -60,7 +60,7 @@ def common_test_suite(clt):
         ret = clt.Create(w)
 
         assert ret != None
-        assert len(ret.Metadata().Identity()) != 0
+        assert len(str(ret.Metadata().Identity())) != 0
         ret = clt.Get(ret.Metadata().Identity())
 
         assert ret != None
@@ -76,7 +76,7 @@ def common_test_suite(clt):
         ret = clt.Get(model.WorldIdentity("abc"))
 
         assert ret != None
-        assert len(ret.Metadata().Identity()) != 0
+        assert len(str(ret.Metadata().Identity())) != 0
         world = ret
         assert world != None
 
@@ -86,6 +86,7 @@ def common_test_suite(clt):
         w.External().SetName("abc")
 
         err = None
+        ret = None
         try:
             ret = clt.Create(w)
         except Exception as e:
@@ -146,11 +147,11 @@ def common_test_suite(clt):
         assert world is not None
         world.External().SetDescription("zxc")
 
-        log.info(utils.pp(world))
+        log.info(utils.pps(world.ToJson()))
 
         ret = clt.Update(world.Metadata().Identity(), world)
 
-        log.info(utils.pp(ret))
+        log.info(utils.pps(ret.ToJson()))
 
         assert ret is not None
 
@@ -374,7 +375,7 @@ def common_test_suite(clt):
         ret = clt.List(model.WorldKindIdentity)
 
         for r in ret:
-            clt.delete(r.Metadata().Identity())
+            clt.Delete(r.Metadata().Identity())
 
         world = model.WorldFactory()
         world.External().SetName(worldName)
