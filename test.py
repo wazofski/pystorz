@@ -3,6 +3,7 @@ from mgen.test import test_mgen
 
 import logging, logging.config
 
+import os
 import yaml
 with open('config/logger.yml', 'r') as f:
     logging.config.dictConfig(yaml.safe_load(f.read()))
@@ -23,7 +24,11 @@ test_mgen()
 from sql.store import SqliteStore, SqliteConnection
 from generated.model import Schema
 
-clt = SqliteStore(Schema(), SqliteConnection("test.db"))
+db_file = "test.db"
+if os.path.exists(db_file):
+    os.remove(db_file)
+
+clt = SqliteStore(Schema(), SqliteConnection(db_file))
 from testing.store import common_test_suite
 
 common_test_suite(clt)

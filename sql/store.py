@@ -86,9 +86,9 @@ class SqliteStore:
 
         self._removeObject(existing.PrimaryKey(),
                            existing.Metadata().Kind())
-        
+
         self._setObject(obj.PrimaryKey(), obj.Metadata().Kind(), obj)
-        
+
         return obj.Clone()
 
     def Delete(self, identity, *opt):
@@ -97,14 +97,14 @@ class SqliteStore:
 
         for o in opt:
             o.ApplyFunction()(copt)
-        
+
         existing = self.Get(identity)
         if existing is None:
             raise Exception(constants.ErrNoSuchObject)
 
         self.TestConnection()
-        
-        self._removeIdentity(existing.Metadata().Identity().Path())        
+
+        self._removeIdentity(existing.Metadata().Identity().Path())
         self._removeObject(existing.PrimaryKey(), existing.Metadata().Kind())
 
     def Get(self, identity, *opt):
@@ -113,18 +113,20 @@ class SqliteStore:
         copt = options.CommonOptionHolderFactory()
         for o in opt:
             o.ApplyFunction()(copt)
-        
+
         self.TestConnection()
-        
-        pkey, typ, err = self._getIdentity(identity.Path())
-        if err == None:
+
+        try:
+            pkey, typ = self._getIdentity(identity.Path())
             return self._getObject(pkey, typ)
+        except Exception as e:
+            log.debug("path get failed: {}".format(e))
 
         tokens = identity.Path().split("/")
         if len(tokens) == 2:
             return self._getObject(tokens[1], tokens[0])
 
-        return None, constants.ErrNoSuchObject
+        raise Exception(constants.ErrNoSuchObject)
 
     def List(self, identity, *opt):
         log.info("list {}".format(identity))
@@ -172,10 +174,7 @@ class SqliteStore:
         if copt.page_offset > 0:
             query = query + " OFFSET {}".format(copt.page_offset)
 
-        print(query)
-        cursor = self.DB.cursor()
-
-        cursor.execute(query)
+        cursor = self._do_query(query)
         rows = cursor.fetchall()
 
         return self._parseObjectRows(rows, identity.Type())
@@ -188,9 +187,7 @@ class SqliteStore:
             Type VARCHAR(25) NOT NULL);
         '''
 
-        cursor = self.DB.cursor()
-
-        cursor.execute(create)
+        cursor = self._do_query(create)
 
         create = '''
         CREATE TABLE IF NOT EXISTS Objects (
@@ -201,11 +198,11 @@ class SqliteStore:
         '''
 
         cursor.execute(create)
+        cursor.close()
 
     def _getIdentity(self, path):
-        cursor = self.DB.cursor()
-        cursor.execute(
-            "SELECT Pkey, Type FROM IdIndex WHERE Path='{}'".format(path))
+        query = "SELECT Pkey, Type FROM IdIndex WHERE Path='{}'".format(path)
+        cursor = self._do_query(query)
         result = cursor.fetchone()
 
         if result is not None:
@@ -219,22 +216,24 @@ class SqliteStore:
         existing_pkey, existing_typ, _ = self.getIdentity(path)
 
         if existing_pkey is not None and existing_typ is not None:
-            query = "UPDATE IdIndex SET Pkey='{}', Type='{}' WHERE Path='{}'".format(pkey, typ, path)
+            query = "UPDATE IdIndex SET Pkey='{}', Type='{}' WHERE Path='{}'".format(
+                pkey, typ, path)
         else:
-            query = "INSERT INTO IdIndex (Pkey, Type, Path) VALUES ('{}', '{}', '{}')".format(pkey, typ, path)
+            query = "INSERT INTO IdIndex (Pkey, Type, Path) VALUES ('{}', '{}', '{}')".format(
+                pkey, typ, path)
 
-        cur = self.DB.cursor()
-        cur.execute(query)
+        cursor = self._do_query(query)
+        cursor.commit()
 
     def _removeIdentity(self, path):
         query = "DELETE FROM IdIndex WHERE Path = '{}'".format(path)
-
-        self.DB.execute(query)
+        cursor = self._do_query(query)
+        cursor.commit()
 
     def _getObject(self, pkey, typ):
-        cursor = self.DB.cursor()
-        cursor.execute(
-            "SELECT Object FROM Objects WHERE Pkey='{}' AND Type='{}'".format(pkey, typ.lower()))
+        query = "SELECT Object FROM Objects WHERE Pkey='{}' AND Type='{}'".format(
+            pkey, typ.lower())
+        cursor = self._do_query(query)
         result = cursor.fetchone()
 
         if result is not None:
@@ -247,20 +246,24 @@ class SqliteStore:
         query = ""
         existing_obj, _ = self._getObject(pkey, typ)
 
-        if existing_obj is not None:
-            query = "UPDATE Objects SET Object=? WHERE Pkey = ? AND Type = ?"
-        else:
-            query = "INSERT INTO Objects (Object, Pkey, Type) VALUES (?, ?, ?)"
-
         data = obj.ToJson()
 
-        cursor = self.DB.cursor()
-        cursor.execute(query, data, pkey, typ.lower())
+        if existing_obj is not None:
+            query = "UPDATE Objects SET Object='{}' WHERE Pkey = '{}' AND Type = '{}'".format(
+                data, pkey, typ.lower())
+        else:
+            query = "INSERT INTO Objects (Object, Pkey, Type) VALUES ('{}', '{}', '{}')".format(
+                data, pkey, typ.lower())
+
+        cursor = self._do_query(query)
+        cursor.commit()
 
     def _removeObject(self, pkey, typ):
-        query = "DELETE FROM Objects WHERE Pkey = ? AND Type = ?"
-        cursor = self.DB.cursor()
-        cursor.execute(query, pkey, typ.lower())
+        query = "DELETE FROM Objects WHERE Pkey = '{}' AND Type = '{}'".format(
+            pkey, typ.lower())
+
+        cursor = self._do_query(query)
+        cursor.commit()
 
     def _parseObjectRow(self, data, typ):
         return utils.unmarshal_object(data, self.Schema, typ)
@@ -270,3 +273,11 @@ class SqliteStore:
         for row in rows:
             res.append(self._parseObjectRow(row[0], typ))
         return res
+
+    def _do_query(self, query):
+        cursor = self.DB.cursor()
+
+        log.info("running query: {}".format(query))
+
+        cursor.execute(query)
+        return cursor
