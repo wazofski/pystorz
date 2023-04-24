@@ -21,14 +21,17 @@ log.debug("starting test_mgen_can_generate")
 test_mgen_can_generate()
 test_mgen()
 
-from sql.store import SqliteStore, SqliteConnection
-from generated.model import Schema
+def test_sqlite_store():
+    from sql.store import SqliteStore, SqliteConnection
+    from generated.model import Schema
 
-db_file = "test.db"
-if os.path.exists(db_file):
-    os.remove(db_file)
+    db_file = "test.db"
+    if os.path.exists(db_file):
+        os.remove(db_file)
 
-clt = SqliteStore(Schema(), SqliteConnection(db_file))
-from testing.store import common_test_suite
+    clt = SqliteStore(Schema(), SqliteConnection(db_file))
+    from testing.store import common_test_suite
 
-common_test_suite(clt)
+    common_test_suite(clt)
+
+test_sqlite_store()

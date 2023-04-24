@@ -136,7 +136,7 @@ class SqliteStore:
         log.info("list {}".format(identity))
 
         if len(identity.Key()) > 0:
-            return None, constants.ErrInvalidPath
+            raise Exception(constants.ErrInvalidPath)
 
         copt = options.CommonOptionHolderFactory()
         for o in opt:
