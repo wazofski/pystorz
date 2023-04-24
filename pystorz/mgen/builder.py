@@ -27,7 +27,7 @@ def Generate(model: str) -> None:
 
         b = StringIO()
 
-        b.write(render("mgen/templates/imports.pytext", {"imports": imports}))
+        b.write(render("mgen/templates/imports.py", {"imports": imports}))
         b.write(compileResources(resources))
         b.write(compileStructs(structs))
 
@@ -90,9 +90,9 @@ def compileResources(resources: List[Resource]) -> str:
         )
 
         b.write(compileStruct(s))
-        b.write(render("mgen/templates/meta.pytext", r))
+        b.write(render("mgen/templates/meta.py", r))
 
-    b.write(render("mgen/templates/schema.pytext", {"resources": resources}))
+    b.write(render("mgen/templates/schema.py", {"resources": resources}))
 
     return b.getvalue()
 
@@ -123,7 +123,7 @@ def compileStruct(s: Struct) -> str:
             # methods.append(f"Set{p.name}(self, val: {p.StrippedType()})")
             methods.append(f"Set{p.name}(self, val)")
 
-    b.write(render("mgen/templates/interface.pytext",
+    b.write(render("mgen/templates/interface.py",
             {
                 'name': s.name,
                 'methods': methods,
@@ -132,10 +132,10 @@ def compileStruct(s: Struct) -> str:
 
     for p in s.properties:
         if p.name == "External":
-            b.write(render("mgen/templates/specinternal.pytext", None))
+            b.write(render("mgen/templates/specinternal.py", None))
 
-    b.write(render("mgen/templates/structure.pytext", s))
-    b.write(render("mgen/templates/unmarshall.pytext", s))
+    b.write(render("mgen/templates/structure.py", s))
+    b.write(render("mgen/templates/unmarshall.py", s))
 
     return b.getvalue()
 
