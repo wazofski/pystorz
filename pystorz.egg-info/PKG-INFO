@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: pystorz
-Version: 0.1
+Version: 0.0.1
 Summary: Python package for the Storz object store framework.
 Home-page: https://github.com/wazofski/pystorz
 Author: wazofski

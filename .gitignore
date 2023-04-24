@@ -3,3 +3,5 @@ sample/Teacher.py
 **/__pycache__/
 **/generated
 test.db
+dist
+pystorz.egg-info/**
