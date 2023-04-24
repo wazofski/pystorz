@@ -212,6 +212,7 @@ class SqliteStore:
 
         cursor.execute(create)
         cursor.close()
+        self.DB.commit()
 
     def _getIdentity(self, path):
         query = """SELECT Pkey, Type FROM IdIndex 
@@ -241,14 +242,16 @@ class SqliteStore:
             query = """INSERT INTO IdIndex (Pkey, Type, Path)
             VALUES ('{}', '{}', '{}')""".format(pkey, typ.lower(), path)
 
-        self._do_query(query)
-        # cursor.commit()
+        cursor = self._do_query(query)
+        cursor.close()
+        self.DB.commit()
 
     def _removeIdentity(self, path):
         query = """DELETE FROM IdIndex
         WHERE Path = '{}'""".format(path)
-        self._do_query(query)
-        # cursor.commit()
+        cursor = self._do_query(query)
+        cursor.close()
+        self.DB.commit()
 
     def _getObject(self, pkey, typ):
         query = """SELECT Object FROM Objects
@@ -281,15 +284,18 @@ class SqliteStore:
             query = """INSERT INTO Objects (Object, Pkey, Type)
             VALUES ('{}', '{}', '{}')""".format(data, pkey, typ.lower())
 
-        self._do_query(query)
-        # cursor.commit()
+        cursor = self._do_query(query)
+        cursor.close()
+        self.DB.commit()
+        self.DB.commit()
 
     def _removeObject(self, pkey, typ):
         query = """DELETE FROM Objects
         WHERE Pkey = '{}' AND Type = '{}'""".format(pkey, typ.lower())
 
-        self._do_query(query)
-        # cursor.commit()
+        cursor = self._do_query(query)
+        cursor.close()
+        self.DB.commit()
 
     def _parseObjectRow(self, data, typ):
         return utils.unmarshal_object(data, self.Schema, typ)

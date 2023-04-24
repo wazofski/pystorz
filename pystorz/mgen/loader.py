@@ -100,9 +100,8 @@ def load_model(path: str):
                 resource_cache.add(m["name"])
 
                 pkey = "metadata.identity"
-                mpkey = m["primarykey"]
-                if len(mpkey) > 0:
-                    pkey = mpkey
+                if "primarykey" in m:
+                    pkey = m["primarykey"]
                 pkey = make_prop_caller_string(pkey)
 
                 ext = None

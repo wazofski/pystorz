@@ -1,3 +1,5 @@
+- cursor must be closed?? (high) @done
 - fix dependency issue in generated model (high) @done
+- add primary key init to metadata.identity by default in loader @done
+- add invalid struct detection in builder (high)
 - add metadata revision number
-- add default primary key init to metadata.identity in loader
