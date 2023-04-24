@@ -1,7 +1,4 @@
 import os
-import sys
-
-sys.path.append("src")
 
 from pystorz.mgen.builder import Generate
 from pystorz.mgen.test import test_mgen
