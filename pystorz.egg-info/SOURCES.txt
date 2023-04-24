@@ -1,6 +1,0 @@
-setup.py
-pystorz.egg-info/PKG-INFO
-pystorz.egg-info/SOURCES.txt
-pystorz.egg-info/dependency_links.txt
-pystorz.egg-info/requires.txt
-pystorz.egg-info/top_level.txt
