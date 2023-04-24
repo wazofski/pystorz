@@ -1,5 +1,5 @@
-from mgen.builder import Generate
-from mgen.test import test_mgen
+from src.pystorz.mgen.builder import Generate
+from src.pystorz.mgen.test import test_mgen
 
 import logging, logging.config
 
@@ -12,7 +12,7 @@ log = logging.getLogger(__name__)
 
 
 def test_mgen_can_generate():
-    err = Generate("testing/model")
+    err = Generate("tests/model")
     
     assert err is None
 
@@ -22,7 +22,7 @@ test_mgen_can_generate()
 test_mgen()
 
 def test_sqlite_store():
-    from sql.store import SqliteStore, SqliteConnection
+    from src.pystorz.sql.store import SqliteStore, SqliteConnection
     from generated.model import Schema
 
     db_file = "test.db"
@@ -30,7 +30,7 @@ def test_sqlite_store():
         os.remove(db_file)
 
     clt = SqliteStore(Schema(), SqliteConnection(db_file))
-    from testing.store import common_test_suite
+    from tests.store import common_test_suite
 
     common_test_suite(clt)
 
