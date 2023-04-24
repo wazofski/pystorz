@@ -13,11 +13,11 @@ from pystorz.internal import constants
 from pystorz.store import store
 
 
-class _MetaHolder:
-    def __init__(self):
-        self.Metadata = None
-        # self.External = None
-        # self.Internal = None
+# class _MetaHolder:
+#     def __init__(self):
+#         self.Metadata = None
+#         self.External = None
+#         self.Internal = None
 
 
 def clone_object(obj: store.Object, schema: store.SchemaHolder) -> store.Object:
@@ -33,14 +33,14 @@ def unmarshal_object(body: bytes, schema: store.SchemaHolder, kind: str) -> stor
     return resource
 
 
-def object_kind(response: bytes) -> str:
-    obj = _MetaHolder()
-    err = json.loads(response, object_hook=lambda d: obj.__dict__.update(d))
-    if err:
-        return ""
-    if obj.Metadata is None:
-        return ""
-    return obj.Metadata['kind']
+# def object_kind(response: bytes) -> str:
+#     obj = _MetaHolder()
+#     err = json.loads(response, object_hook=lambda d: obj.__dict__.update(d))
+#     if err:
+#         return ""
+#     if obj.Metadata is None:
+#         return ""
+#     return obj.Metadata['kind']
 
 
 def pps(string: str) -> str:

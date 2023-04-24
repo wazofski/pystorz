@@ -74,6 +74,8 @@ def load_model(path: str):
     yamls = yaml_files(path)
     structs = []
     resources = []
+    struct_cache = set()
+    resource_cache = set()
 
     for y in yamls:
         model = read_model(y)
@@ -82,6 +84,10 @@ def load_model(path: str):
 
         for m in model["types"]:
             if m["kind"] == "Struct":
+                if m["name"] in struct_cache:
+                    raise Exception("duplicate struct: {}".format(m["name"]))
+                struct_cache.add(m["name"])
+                
                 structs.append(Struct(
                     m["name"],
                     "",
@@ -89,6 +95,10 @@ def load_model(path: str):
                 ))
                 continue
             if m["kind"] == "Object":
+                if m["name"] in resource_cache:
+                    raise Exception("duplicate object: {}".format(m["name"]))
+                resource_cache.add(m["name"])
+
                 pkey = "metadata.identity"
                 mpkey = m["primarykey"]
                 if len(mpkey) > 0:

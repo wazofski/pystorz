@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name='pystorz',
-    version='0.0.3',
+    version='0.0.4',
     author='wazofski',
     description='Python package for the Storz object store framework.',
     long_description=long_description,
@@ -30,9 +30,7 @@ setup(
         # "pysqlite3",
     ],
     classifiers=[
-        "Development Status :: Beta",
         "Intended Audience :: Developers",
-        "License :: MIT License",
         "Programming Language :: Python :: 3.7",
     ],
     python_requires=">=3.6",

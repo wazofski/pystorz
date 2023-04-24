@@ -15,46 +15,33 @@ log.debug('loading builder.py...')
 
 
 def Generate(model: str) -> None:
-    try:
-        structs, resources = load_model(model)
+    structs, resources = load_model(model)
 
-        imports = [
-            "import json",
-            "from pystorz.store import utils",
-            "from pystorz.store import store",
-            "from pystorz.store import meta",
-        ]
+    imports = [
+        "import json",
+        "from pystorz.store import utils",
+        "from pystorz.store import store",
+        "from pystorz.store import meta",
+    ]
 
-        b = StringIO()
+    b = StringIO()
 
-        b.write(render("mgen/templates/imports.py", {"imports": imports}))
-        b.write(compileResources(resources))
-        b.write(compileStructs(structs))
+    b.write(render("mgen/templates/imports.py", {"imports": imports}))
+    b.write(compileResources(resources))
+    b.write(compileStructs(structs))
 
-        res = b.getvalue().replace("&#34;", "\"")
+    res = b.getvalue().replace("&#34;", "\"")
 
-        # refactor and format python code
-        res = reformat_python_code(res)
+    # refactor and format python code
+    res = reformat_python_code(res)
 
-        targetDir = "generated"
+    targetDir = "generated"
 
-        if os.path.exists(targetDir):
-            # delete the directory with contents
-            shutil.rmtree(targetDir)
+    if os.path.exists(targetDir):
+        # delete the directory with contents
+        shutil.rmtree(targetDir)
 
-        utils.export_file(targetDir, "model.py", res)
-
-        return None
-    except Exception as e:
-        raise e
-        # return e
-
-
-# class _Interface:
-#     def __init__(self, Name: str, Methods: List[str], Implements: List[str]):
-#         self.name = Name
-#         self.Methods = Methods
-#         self.implements = Implements
+    utils.export_file(targetDir, "model.py", res)
 
 
 def compileResources(resources: List[Resource]) -> str:
@@ -165,9 +152,6 @@ def addDefaultPropValues(props: List[Prop]) -> List[Prop]:
 
 def reformat_python_code(code_str):
     try:
-        # Parse the code string with Black's mode to get the abstract syntax tree (AST).
-        # parsed_code = black.parse_string(code_str, mode=black.FileMode())
-
         # Reformat the code string using the parsed AST.
         formatted_code = black.format_str(code_str, mode=black.FileMode())
 

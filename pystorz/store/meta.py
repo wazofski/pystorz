@@ -39,9 +39,9 @@ class MetaSetter:
         pass
 
 
-class MetaHolder:
-    def metadata(self) -> Meta:
-        pass
+# class MetaHolder:
+#     def metadata(self) -> Meta:
+#         pass
 
 
 class metaWrapper(Meta, MetaSetter):

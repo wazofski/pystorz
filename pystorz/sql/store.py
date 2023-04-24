@@ -2,7 +2,7 @@ import logging
 import sqlite3
 from pystorz.internal import constants
 from pystorz.store import store, options, utils
-
+from datetime import datetime
 
 log = logging.getLogger(__name__)
 
@@ -57,6 +57,9 @@ class SqliteStore:
 
         self.TestConnection()
 
+        obj.Metadata().SetCreated(datetime.now().strftime(constants.DATETIME_FORMAT))
+        obj.Metadata().SetUpdated(obj.Metadata().Created())
+
         self._setIdentity(
             obj.Metadata().Identity().Path(),
             obj.PrimaryKey(),
@@ -84,11 +87,17 @@ class SqliteStore:
         self.TestConnection()
 
         self._removeIdentity(existing.Metadata().Identity().Path())
+        
+        obj.Metadata().SetIdentity(existing.Metadata().Identity())
+
         self._setIdentity(obj.Metadata().Identity().Path(),
                           obj.PrimaryKey(), obj.Metadata().Kind())
 
         self._removeObject(existing.PrimaryKey(),
                            existing.Metadata().Kind())
+
+        obj.Metadata().SetCreated(existing.Metadata().Created())
+        obj.Metadata().SetUpdated(datetime.now().strftime(constants.DATETIME_FORMAT))
 
         self._setObject(obj.PrimaryKey(), obj.Metadata().Kind(), obj)
 
@@ -143,13 +152,14 @@ class SqliteStore:
 
         self.TestConnection()
 
-        query = "SELECT Object FROM Objects WHERE Type = '{}'".format(
+        query = """SELECT Object FROM Objects 
+        WHERE Type = '{}'""".format(
             identity.Type())
 
         # pkey filter
         if copt.key_filter is not None:
-            query = query + \
-                " AND Pkey IN ('{}')".format("', '".join(copt.key_filter))
+            query = query + """
+            AND Pkey IN ('{}')""".format("', '".join(copt.key_filter))
 
         # prop filter
         if copt.prop_filter is not None:
@@ -162,7 +172,9 @@ class SqliteStore:
                 copt.prop_filter.key, copt.prop_filter.value)
 
         if copt.order_by is not None and len(copt.order_by) > 0:
-            query = "SELECT Object FROM Objects WHERE Type = '{}' ORDER BY json_extract(Object, '$.{}')".format(
+            query = """SELECT Object FROM Objects 
+            WHERE Type = '{}'
+            ORDER BY json_extract(Object, '$.{}')""".format(
                 identity.Type(), copt.order_by)
             if copt.order_incremental is None or copt.order_incremental:
                 query = query + " ASC"
@@ -202,7 +214,8 @@ class SqliteStore:
         cursor.close()
 
     def _getIdentity(self, path):
-        query = "SELECT Pkey, Type FROM IdIndex WHERE Path='{}'".format(path)
+        query = """SELECT Pkey, Type FROM IdIndex 
+        WHERE Path='{}'""".format(path)
         cursor = self._do_query(query)
         result = cursor.fetchone()
 
@@ -222,22 +235,24 @@ class SqliteStore:
 
         query = ""
         if existing_pkey is not None and existing_typ is not None:
-            query = "UPDATE IdIndex SET Pkey='{}', Type='{}' WHERE Path='{}'".format(
-                pkey, typ, path)
+            query = """UPDATE IdIndex SET Pkey='{}', Type='{}'
+            WHERE Path='{}'""".format(pkey, typ.lower(), path)
         else:
-            query = "INSERT INTO IdIndex (Pkey, Type, Path) VALUES ('{}', '{}', '{}')".format(
-                pkey, typ, path)
+            query = """INSERT INTO IdIndex (Pkey, Type, Path)
+            VALUES ('{}', '{}', '{}')""".format(pkey, typ.lower(), path)
 
         self._do_query(query)
         # cursor.commit()
 
     def _removeIdentity(self, path):
-        query = "DELETE FROM IdIndex WHERE Path = '{}'".format(path)
+        query = """DELETE FROM IdIndex
+        WHERE Path = '{}'""".format(path)
         self._do_query(query)
         # cursor.commit()
 
     def _getObject(self, pkey, typ):
-        query = "SELECT Object FROM Objects WHERE Pkey='{}' AND Type='{}'".format(
+        query = """SELECT Object FROM Objects
+        WHERE Pkey='{}' AND Type='{}'""".format(
             pkey, typ.lower())
         cursor = self._do_query(query)
         result = cursor.fetchone()
@@ -260,18 +275,18 @@ class SqliteStore:
         data = obj.ToJson()
 
         if existing_obj is not None:
-            query = "UPDATE Objects SET Object='{}' WHERE Pkey = '{}' AND Type = '{}'".format(
-                data, pkey, typ.lower())
+            query = """UPDATE Objects SET Object='{}'
+            WHERE Pkey = '{}' AND Type = '{}'""".format(data, pkey, typ.lower())
         else:
-            query = "INSERT INTO Objects (Object, Pkey, Type) VALUES ('{}', '{}', '{}')".format(
-                data, pkey, typ.lower())
+            query = """INSERT INTO Objects (Object, Pkey, Type)
+            VALUES ('{}', '{}', '{}')""".format(data, pkey, typ.lower())
 
         self._do_query(query)
         # cursor.commit()
 
     def _removeObject(self, pkey, typ):
-        query = "DELETE FROM Objects WHERE Pkey = '{}' AND Type = '{}'".format(
-            pkey, typ.lower())
+        query = """DELETE FROM Objects
+        WHERE Pkey = '{}' AND Type = '{}'""".format(pkey, typ.lower())
 
         self._do_query(query)
         # cursor.commit()

@@ -42,7 +42,7 @@ def test_mgen():
     world.Internal().Map()["a"].SetL1([False, False, True])
 
     data = world.ToJson()
-    print(utils.pps(data))
+    # print(utils.pps(data))
     
     newWorld = WorldFactory()
     newWorld.FromJson(data)

@@ -2,6 +2,9 @@ import ast
 import sys
 import logging
 import inspect
+
+from pystorz.internal import constants
+from datetime import datetime
 from pystorz.store import options, store, utils
 from generated import model
 
@@ -13,12 +16,62 @@ def test(fn):
     def wrapper(*args, **kwargs):
         try:
             fn(*args, **kwargs)
-            log.info("test: {} -> pass".format(fn.__name__))
+            print("********************* {} -> PASS".format(fn.__name__))
         except Exception as ex:
-            log.error("test {} -> fail: {}".format(fn.__name__, str(ex)))
+            print("********************* {} -> FAIL: {}".format(fn.__name__, str(ex)))
             raise ex
 
     return wrapper
+
+
+def get_function_order():
+    # Use ast to parse the source file and extract the function definitions
+    source = open(__file__, "rt").read()
+    module = ast.parse(source)
+
+    functions = []
+    for node in module.body:
+        if isinstance(node, ast.FunctionDef):
+            functions.append(node)
+
+    # Sort the function definitions by their line numbers
+    functions.sort(key=lambda f: f.lineno)
+
+    # Print the functions in the order they appear in the source file
+    res = []
+    for function in functions:
+        res.append(function.name)
+    return res
+
+
+def common_test_suite(store_to_use):
+    global clt
+    clt = store_to_use
+
+    log.info("Running common test suite using %s", clt)
+
+    to_run = dict()
+
+    # find all functions inside this function with test decorator and run them
+    for name, func in inspect.getmembers(sys.modules[__name__]):
+        if not inspect.isfunction(func):
+            continue
+
+        # check if the function has the test decorator
+        if name.startswith("test_"):
+            to_run[name] = func
+        # decorator_list = [d for d in reversed(inspect.getattr_static(func, "__decorators__", [])) if isinstance(d, test)]
+
+        # decorator_list = inspect.getmembers(func.__class__, lambda x: isinstance(x, test))
+        # if len(decorator_list) > 0:
+        #     func()
+        # if any(isinstance(d, test) for d in reversed(inspect.getattr_static(func, "__decorators__", []))):
+        #     func()
+
+    # run the functions in the order they appear in the source file
+    for name in get_function_order():
+        if name in to_run:
+            to_run[name]()
 
 
 clt = None
@@ -679,51 +732,129 @@ def test_list_and_filter_by_nonexistent_id():
     assert len(ret) == 0
 
 
-def get_function_order():
-    # Use ast to parse the source file and extract the function definitions
-    source = open(__file__, "rt").read()
-    module = ast.parse(source)
+@test
+def test_metadata_updates():
+    # create a new world
+    name = "test_metadata_updates"
+    world = model.WorldFactory()
+    world.External().SetName(name)
+    
+    log.debug(">> creating world: {}".format(name))
 
-    functions = []
-    for node in module.body:
-        if isinstance(node, ast.FunctionDef):
-            functions.append(node)
+    ret = clt.Create(world)
+    assert ret is not None
 
-    # Sort the function definitions by their line numbers
-    functions.sort(key=lambda f: f.lineno)
+    # check the created time
+    meta_id = ret.Metadata().Identity()
+    log.debug("meta_id: {}".format(meta_id))
 
-    # Print the functions in the order they appear in the source file
-    res = []
-    for function in functions:
-        res.append(function.name)
-    return res
+    assert meta_id is not None
+    assert len(str(meta_id)) > 0
 
+    created = ret.Metadata().Created()
+    assert created is not None
+    assert len(created) > 0
 
-def common_test_suite(store_to_use):
-    global clt
-    clt = store_to_use
+    ct = datetime.strptime(created, constants.DATETIME_FORMAT)
+    assert ct is not None
 
-    log.info("Running common test suite using %s", clt)
+    world.External().SetDescription("test_metadata_updates")
 
-    to_run = dict()
+    log.debug(">> updating world: {}".format(name))
+    ret = clt.Update(
+        model.WorldIdentity(name),
+        world)
+    
+    assert ret is not None
 
-    # find all functions inside this function with test decorator and run them
-    for name, func in inspect.getmembers(sys.modules[__name__]):
-        if not inspect.isfunction(func):
-            continue
+    # meta id must be the same  
+    meta_id2 = ret.Metadata().Identity()
+    log.debug("meta_id2: {}".format(meta_id2))
+    assert meta_id2 is not None
+    assert len(str(meta_id2)) > 0
+    assert meta_id == meta_id2
 
-        # check if the function has the test decorator
-        if name.startswith("test_"):
-            to_run[name] = func
-        # decorator_list = [d for d in reversed(inspect.getattr_static(func, "__decorators__", [])) if isinstance(d, test)]
+    # check the updated time
+    updated = ret.Metadata().Updated()
+    assert updated is not None
+    assert len(updated) > 0
 
-        # decorator_list = inspect.getmembers(func.__class__, lambda x: isinstance(x, test))
-        # if len(decorator_list) > 0:
-        #     func()
-        # if any(isinstance(d, test) for d in reversed(inspect.getattr_static(func, "__decorators__", []))):
-        #     func()
+    ut = datetime.strptime(updated, constants.DATETIME_FORMAT)
+    assert ut is not None
+    assert ut > ct
 
-    # run the functions in the order they appear in the source file
-    for name in get_function_order():
-        if name in to_run:
-            to_run[name]()
+     # check the created time must be the same
+    created = ret.Metadata().Created()
+    assert created is not None
+    assert len(created) > 0
+
+    ct2 = datetime.strptime(created, constants.DATETIME_FORMAT)
+    assert ct2 is not None
+    assert ct2 == ct
+
+    # do a get and check the times
+    log.debug(">> getting world: {}".format(name))
+    ret = clt.Get(model.WorldIdentity(name))
+    assert ret is not None
+    
+    # check the created time must be the same
+    created = ret.Metadata().Created()
+    assert created is not None
+    assert len(created) > 0
+
+    ct3 = datetime.strptime(created, constants.DATETIME_FORMAT)
+    assert ct3 is not None
+    assert ct3 == ct
+
+    # meta id must be the same  
+    meta_id2 = ret.Metadata().Identity()
+    assert meta_id2 is not None
+    assert len(meta_id2) > 0
+    assert meta_id == meta_id2
+
+    # check the updated time must be the same
+    # check the updated time
+    updated = ret.Metadata().Updated()
+    assert updated is not None
+    assert len(updated) > 0
+
+    ut2 = datetime.strptime(updated, constants.DATETIME_FORMAT)
+    assert ut2 is not None
+    # log.info("ut: {}".format(dt2))
+    # log.info("dt4: {}".format(dt4))
+    assert ut2 == ut
+    assert ut2 > ct
+
+    world = model.WorldFactory()
+    newName = "test_metadata_updates22"
+    world.External().SetName(newName)
+    world.External().SetDescription("test_metadata_updates2222")
+    ret = clt.Update(
+        model.WorldIdentity(name),
+        world)
+    
+    # check the created time must be the same
+    created = ret.Metadata().Created()
+    assert created is not None
+    assert len(created) > 0
+
+    ct3 = datetime.strptime(created, constants.DATETIME_FORMAT)
+    assert ct3 is not None
+    assert ct3 == ct
+
+    # meta id must be the same  
+    meta_id2 = ret.Metadata().Identity()
+    assert meta_id2 is not None
+    assert len(meta_id2) > 0
+    assert meta_id == meta_id2
+
+    # check the updated time
+    updated = ret.Metadata().Updated()
+    assert updated is not None
+    assert len(updated) > 0
+
+    ut3 = datetime.strptime(updated, constants.DATETIME_FORMAT)
+    assert ut3 is not None
+    assert ut3 > ut2
+    assert ut3 > ct
+

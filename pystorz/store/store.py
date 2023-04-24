@@ -8,8 +8,8 @@ class Object:
     def __init__(self):
         raise Exception("Object is an interface")
 
-    def MetaHolder(self):
-        pass
+    # def MetaHolder(self):
+    #     pass
 
     def Clone(self):
         pass
@@ -69,6 +69,21 @@ class ObjectIdentity:
             return tokens[1]
         else:
             return ""
+
+    def __eq__(self, other):
+        if isinstance(other, ObjectIdentity):
+            return self.id_ == other.id_
+        elif isinstance(other, str):
+            return self.id_ == other
+        
+        return False
+
+    def __hash__(self):
+        return hash(self.id_)
+    
+
+    def __len__(self):
+        return len(self.id_)
 
 
 def ObjectIdentityFactory() -> ObjectIdentity:

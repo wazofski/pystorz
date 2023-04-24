@@ -5,3 +5,4 @@ sample/Teacher.py
 test.db
 dist/**
 pystorz.egg-info/**
+.vscode
