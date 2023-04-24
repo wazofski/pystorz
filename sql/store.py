@@ -143,7 +143,7 @@ class SqliteStore:
             o.ApplyFunction()(copt)
 
         self.TestConnection()
-        
+
         query = "SELECT Object FROM Objects WHERE Type = '{}'".format(
             identity.Type())
 
@@ -220,7 +220,7 @@ class SqliteStore:
             existing_pkey, existing_typ = self._getIdentity(path)
         except Exception as e:
             log.debug("identity get failed: {}".format(e))
-        
+
         query = ""
         if existing_pkey is not None and existing_typ is not None:
             query = "UPDATE IdIndex SET Pkey='{}', Type='{}' WHERE Path='{}'".format(
@@ -229,12 +229,12 @@ class SqliteStore:
             query = "INSERT INTO IdIndex (Pkey, Type, Path) VALUES ('{}', '{}', '{}')".format(
                 pkey, typ, path)
 
-        cursor = self._do_query(query)
+        self._do_query(query)
         # cursor.commit()
 
     def _removeIdentity(self, path):
         query = "DELETE FROM IdIndex WHERE Path = '{}'".format(path)
-        cursor = self._do_query(query)
+        self._do_query(query)
         # cursor.commit()
 
     def _getObject(self, pkey, typ):
@@ -267,14 +267,14 @@ class SqliteStore:
             query = "INSERT INTO Objects (Object, Pkey, Type) VALUES ('{}', '{}', '{}')".format(
                 data, pkey, typ.lower())
 
-        cursor = self._do_query(query)
+        self._do_query(query)
         # cursor.commit()
 
     def _removeObject(self, pkey, typ):
         query = "DELETE FROM Objects WHERE Pkey = '{}' AND Type = '{}'".format(
             pkey, typ.lower())
 
-        cursor = self._do_query(query)
+        self._do_query(query)
         # cursor.commit()
 
     def _parseObjectRow(self, data, typ):
