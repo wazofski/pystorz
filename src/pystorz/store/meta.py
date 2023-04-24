@@ -1,5 +1,5 @@
 import json
-from store import store
+from pystorz.store import store
 
 
 class Meta:

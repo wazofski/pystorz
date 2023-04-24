@@ -2,7 +2,7 @@ import ast
 import sys
 import logging
 import inspect
-from store import options, store, utils
+from pystorz.store import options, store, utils
 from generated import model
 
 log = logging.getLogger(__name__)

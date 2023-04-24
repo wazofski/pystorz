@@ -1,9 +1,13 @@
-from src.pystorz.mgen.builder import Generate
-from src.pystorz.mgen.test import test_mgen
+import os
+import sys
+
+sys.path.append("src")
+
+from pystorz.mgen.builder import Generate
+from pystorz.mgen.test import test_mgen
 
 import logging, logging.config
 
-import os
 import yaml
 with open('config/logger.yml', 'r') as f:
     logging.config.dictConfig(yaml.safe_load(f.read()))
@@ -22,7 +26,7 @@ test_mgen_can_generate()
 test_mgen()
 
 def test_sqlite_store():
-    from src.pystorz.sql.store import SqliteStore, SqliteConnection
+    from pystorz.sql.store import SqliteStore, SqliteConnection
     from generated.model import Schema
 
     db_file = "test.db"

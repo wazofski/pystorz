@@ -9,8 +9,8 @@ log = logging.getLogger(__name__)
 
 # import gabs
 
-from internal import constants
-from store import store
+from pystorz.internal import constants
+from pystorz.store import store
 
 
 class _MetaHolder:

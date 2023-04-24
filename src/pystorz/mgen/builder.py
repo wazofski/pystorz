@@ -7,8 +7,8 @@ from io import StringIO
 
 from jinja2 import Template
 
-from mgen.loader import load_model, Resource, Struct, Prop, typeDefault
-from store import utils
+from pystorz.mgen.loader import load_model, Resource, Struct, Prop, typeDefault
+from pystorz.store import utils
 
 log = logging.getLogger(__name__)
 log.debug('loading builder.py...')
@@ -20,9 +20,9 @@ def Generate(model: str) -> None:
 
         imports = [
             "import json",
-            "from store import utils",
-            "from store import store",
-            "from store import meta",
+            "from pystorz.store import utils",
+            "from pystorz.store import store",
+            "from pystorz.store import meta",
         ]
 
         b = StringIO()

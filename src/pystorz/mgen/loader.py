@@ -2,7 +2,7 @@ import json
 import yaml
 import logging
 
-from mgen.utils import capitalize, decapitalize, yaml_files
+from pystorz.mgen.utils import capitalize, decapitalize, yaml_files
 
 log = logging.getLogger(__name__)
 log.debug('loading loader.py...')

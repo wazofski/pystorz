@@ -1,4 +1,4 @@
-from store import utils
+from pystorz.store import utils
 
 def test_mgen():
     from generated.model import WorldFactory, WorldKind, Schema, NestedWorldFactory

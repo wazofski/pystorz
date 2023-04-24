@@ -1,8 +1,7 @@
-import json
 import logging
 import sqlite3
-from internal import constants
-from store import store, options, utils
+from pystorz.internal import constants
+from pystorz.store import store, options, utils
 
 
 log = logging.getLogger(__name__)
