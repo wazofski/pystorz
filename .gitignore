@@ -1,7 +1,5 @@
 sample/Student.py
 sample/Teacher.py
 **/__pycache__/
-generated/**
 **/generated
-generated
 test.db
