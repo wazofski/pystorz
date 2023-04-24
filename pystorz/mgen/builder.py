@@ -27,8 +27,8 @@ def Generate(model: str) -> None:
     b = StringIO()
 
     b.write(render("mgen/templates/imports.py", {"imports": imports}))
-    b.write(compileResources(resources))
     b.write(compileStructs(structs))
+    b.write(compileResources(resources))
 
     res = b.getvalue().replace("&#34;", "\"")
 

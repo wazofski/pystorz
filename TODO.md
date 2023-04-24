@@ -1,1 +1,3 @@
+- fix dependency issue in generated model (high) @done
 - add metadata revision number
+- add default primary key init to metadata.identity in loader
