@@ -11,7 +11,7 @@ setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     url='https://github.com/wazofski/pystorz',
-    packages=find_packages(include=["pystorz/*"]),
+    packages=["pystorz"],
     # package_dir={'': 'src'},
     # include_package_data=True,
     install_requires=[
