@@ -12,7 +12,7 @@ class _{{ data.name }}({{data.implements}}):
 
 	def __init__(self):
 		{% for prop in data.properties %}
-		self.{{ prop.name }}_ = None{% endfor %}
+		self.{{ prop.name }}_ = {{prop.default}}{% endfor %}
 
 	{% for prop in data.properties %}
 	{% if prop.name != "External" %}

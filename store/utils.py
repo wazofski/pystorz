@@ -1,10 +1,11 @@
-import json
-import io
 import os
+import json
 import time
-# import logging
+import logging
 import pathlib
-import string
+from jsonpath import JSONPath
+
+log = logging.getLogger(__name__)
 
 # import gabs
 
@@ -61,14 +62,14 @@ def serialize(mo: store.Object) -> bytes:
 
 
 def object_path(obj: store.Object, path: str) -> str:
-    data = obj.ToJson()
-    jsn = json.loads(data)
-    if not jsn.path(path):
+    # print("object_path: {} {}".format(obj, path))
+    data = obj.ToDict()
+    # print(pp(data))
+    ret = JSONPath("$.{}".format(path)).parse(data)
+    if not ret or len(ret) == 0:
+        # print("object_path: no result for {} in {}".format(path, data))
         return None
-    ret = jsn.path(path).value
-    if isinstance(ret, str):
-        ret = ret.translate(str.maketrans('', '', string.punctuation))
-    return ret
+    return ret[0]
 
 
 def export_file(target_dir: str, name: str, content: str) -> None:

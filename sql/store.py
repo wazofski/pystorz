@@ -142,10 +142,8 @@ class SqliteStore:
         for o in opt:
             o.ApplyFunction()(copt)
 
-        err = self.TestConnection()
-        if err is not None:
-            return None, err
-
+        self.TestConnection()
+        
         query = "SELECT Object FROM Objects WHERE Type = '{}'".format(
             identity.Type())
 
@@ -158,16 +156,16 @@ class SqliteStore:
         if copt.prop_filter is not None:
             obj = self.Schema.ObjectForKind(identity.Type())
             if obj is None:
-                return None, constants.ErrNoSuchObject
-            if utils.ObjectPath(obj, copt.prop_filter.Key) is None:
-                return None, constants.ErrInvalidFilter
+                raise Exception(constants.ErrNoSuchObject)
+            if utils.object_path(obj, copt.prop_filter.key) is None:
+                raise Exception(constants.ErrInvalidFilter)
             query = query + " AND json_extract(Object, '$.{}') = '{}'".format(
-                copt.prop_filter.Key, copt.prop_filter.Value)
+                copt.prop_filter.key, copt.prop_filter.value)
 
         if copt.order_by is not None and len(copt.order_by) > 0:
             query = "SELECT Object FROM Objects WHERE Type = '{}' ORDER BY json_extract(Object, '$.{}')".format(
                 identity.Type(), copt.order_by)
-            if copt.order_incremental:
+            if copt.order_incremental is None or copt.order_incremental:
                 query = query + " ASC"
             else:
                 query = query + " DESC"
@@ -291,7 +289,7 @@ class SqliteStore:
     def _do_query(self, query):
         cursor = self.DB.cursor()
 
-        log.info("running query: {}".format(query))
+        log.debug("running query: {}".format(query))
 
         cursor.execute(query)
         return cursor

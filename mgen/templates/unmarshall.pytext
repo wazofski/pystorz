@@ -30,12 +30,12 @@
 
 		data["{{prop.json}}"] = rawSubmap
 		{% else %}
-		if self.{{prop.name}}_:
-			if hasattr(self.{{prop.name}}_, "ToDict"):
-				data["{{prop.json}}"] = self.{{prop.name}}_.ToDict()
-			else:
-				data["{{prop.json}}"] = self.{{prop.name}}_
-		
+	
+		if self.{{prop.name}}_ is not None and hasattr(self.{{prop.name}}_, "ToDict"):
+			data["{{prop.json}}"] = self.{{prop.name}}_.ToDict()
+		else:
+			data["{{prop.json}}"] = self.{{prop.name}}_
+	
 		{% endif %}
 		{% endfor %}
 		return data

@@ -93,7 +93,7 @@ def common_test_suite(clt):
             err = e
 
         assert err is not None
-        log.info("expected err: {}".format(err))
+        log.info("expected error: {}".format(str(err)))
         assert ret is None
 
     def test_can_put_objects():
@@ -133,7 +133,7 @@ def common_test_suite(clt):
             err = e
 
         assert err is not None
-        log.info("expected err: {}".format(err))
+        log.info("expected error: {}".format(str(err)))
 
         assert ret is None
 
@@ -172,7 +172,7 @@ def common_test_suite(clt):
             err = e
 
         assert err is not None
-        log.info("expected err: {}".format(err))
+        log.info("expected error: {}".format(str(err)))
         assert ret is None
 
     def test_cannot_put_nonexistent_objects_by_id():
@@ -187,7 +187,7 @@ def common_test_suite(clt):
             err = e
 
         assert err is not None
-        log.info("expected err: {}".format(err))
+        log.info("expected error: {}".format(str(err)))
 
         assert ret is None
 
@@ -203,7 +203,7 @@ def common_test_suite(clt):
             err = e
 
         assert err is not None
-        log.info("expected err: {}".format(err))
+        log.info("expected error: {}".format(str(err)))
 
         assert ret is None
 
@@ -239,7 +239,7 @@ def common_test_suite(clt):
             err = e
 
         assert err is not None
-        log.info("expected err: {}".format(err))
+        log.info("expected error: {}".format(str(err)))
 
         assert ret is None
 
@@ -252,7 +252,7 @@ def common_test_suite(clt):
             err = e
 
         assert err is not None
-        log.info("expected err: {}".format(err))
+        log.info("expected error: {}".format(str(err)))
 
         assert ret is None
 
@@ -274,7 +274,7 @@ def common_test_suite(clt):
             err = e
 
         assert err is not None
-        log.info("expected err: {}".format(err))
+        log.info("expected error: {}".format(str(err)))
 
         assert ret is None
 
@@ -297,7 +297,7 @@ def common_test_suite(clt):
             err = e
 
         assert err is not None
-        log.info("expected err: {}".format(err))
+        log.info("expected error: {}".format(str(err)))
 
         assert ret is None
 
@@ -309,7 +309,7 @@ def common_test_suite(clt):
             err = e
 
         assert err is not None
-        log.info("expected err: {}".format(err))
+        log.info("expected error: {}".format(str(err)))
 
     def test_delete_nonexistent_objects_by_id():
         err = None
@@ -319,7 +319,7 @@ def common_test_suite(clt):
             err = e
 
         assert err is not None
-        log.info("expected err: {}".format(err))
+        log.info("expected error: {}".format(str(err)))
 
     def test_get_nil_identity():
         err = None
@@ -329,7 +329,7 @@ def common_test_suite(clt):
             err = e
 
         assert err is not None
-        log.info("expected err: {}".format(err))
+        log.info("expected error: {}".format(str(err)))
 
     def test_create_nil_object():
         err = None
@@ -339,7 +339,7 @@ def common_test_suite(clt):
             err = e
 
         assert err is not None
-        log.info("expected err: {}".format(err))
+        log.info("expected error: {}".format(str(err)))
 
     def test_put_nil_identity():
         err = None
@@ -349,7 +349,7 @@ def common_test_suite(clt):
             err = e
 
         assert err is not None
-        log.info("expected err: {}".format(err))
+        log.info("expected error: {}".format(str(err)))
 
     def test_put_nil_object():
         err = None
@@ -359,7 +359,7 @@ def common_test_suite(clt):
             err = e
 
         assert err is not None
-        log.info("expected err: {}".format(err))
+        log.info("expected error: {}".format(str(err)))
 
     def test_delete_nil_identity():
         err = None
@@ -369,7 +369,7 @@ def common_test_suite(clt):
             err = e
 
         assert err is not None
-        log.info("expected err: {}".format(err))
+        log.info("expected error: {}".format(str(err)))
 
     def test_create_multiple_objects():
         ret = clt.List(model.WorldKindIdentity)
@@ -509,27 +509,37 @@ def common_test_suite(clt):
             assert ret[0].PrimaryKey() == k
 
     def test_list_and_filter_by_nonexistent_props():
-        ret = clt.List(
-            model.WorldKindIdentity,
-            options.PropFilter("metadata.askdjhasd", "asdsadas"))
-
-        assert ret is None
+        try:
+            clt.List(
+                model.WorldKindIdentity,
+                options.PropFilter("metadata.askdjhasd", "asdsadas"))
+            assert False
+        except Exception as e:
+            log.info("expected error: {}".format(str(e)))
 
     def test_cannot_list_specific_object():
-        ret = clt.List(
-            model.WorldIdentity(worldName))
-
-        assert ret is None
+        try:
+            clt.List(
+                model.WorldIdentity(worldName))
+            assert False
+        except Exception as e:
+            log.info("expected error: {}".format(str(e)))
 
     def test_cannot_list_specific_nonexistent_object():
-        ret = clt.List(
-            model.WorldIdentity("akjhdsjkhdaskjhdaskj"))
-
-        assert ret is None
+        try:
+            clt.List(
+                model.WorldIdentity("akjhdsjkhdaskjhdaskj"))
+            assert False
+        except Exception as e:
+            log.info("expected error: {}".format(str(e)))
 
     world_id = ""
 
     def test_list_and_filter():
+        # ret = clt.List(model.WorldKindIdentity)
+        # for r in ret:
+        #     log.info("object {}".format(utils.pps(r.ToJson())))
+
         ret = clt.List(
             model.WorldKindIdentity,
             options.PropFilter("external.name", worldName)
@@ -546,6 +556,8 @@ def common_test_suite(clt):
         world_id = world.Metadata().Identity()
 
     def test_list_and_filter_by_id():
+        global world_id
+
         ret = clt.List(
             model.WorldKindIdentity,
             options.PropFilter("metadata.identity", str(world_id))
