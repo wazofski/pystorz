@@ -7,7 +7,7 @@ setup(
     author='wazofski',
     author_email='wazo@duck.com',
     url='https://github.com/wazofski/pystorz',
-    packages=find_packages(),
+    packages=find_packages(["pystorz"]),
     install_requires=[
         "PyYAML",
         "jinja2",
