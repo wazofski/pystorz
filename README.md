@@ -22,7 +22,7 @@ pip install pystorz
 ## Model example
 
 You can find a saomple model in the tests folder.
-[https://github.com/wazofski/pystorz/tree/master/pystorz/tests/model/sample.yml](https://github.com/wazofski/pystorz/tree/master/pystorz/tests/model/sample.yml)
+[https://github.com/wazofski/pystorz/blob/master/tests/model/sample.yml](https://github.com/wazofski/pystorz/blob/master/tests/model/sample.yml)
 
 You can define simple structures and reference them as fields in other structures.
 
