@@ -3,7 +3,6 @@ import sys
 import logging
 import inspect
 
-from pystorz.internal import constants
 from datetime import datetime
 from pystorz.store import options, store, utils
 from generated import model
@@ -739,28 +738,24 @@ def test_metadata_updates():
     world = model.WorldFactory()
     world.External().SetName(name)
     
-    log.debug(">> creating world: {}".format(name))
+    # log.debug(">> creating world: {}".format(name))
 
     ret = clt.Create(world)
     assert ret is not None
 
     # check the created time
     meta_id = ret.Metadata().Identity()
-    log.debug("meta_id: {}".format(meta_id))
+    # log.debug("meta_id: {}".format(meta_id))
 
     assert meta_id is not None
     assert len(str(meta_id)) > 0
 
-    created = ret.Metadata().Created()
-    assert created is not None
-    assert len(created) > 0
-
-    ct = datetime.strptime(created, constants.DATETIME_FORMAT)
+    ct = ret.Metadata().Created()
     assert ct is not None
 
     world.External().SetDescription("test_metadata_updates")
 
-    log.debug(">> updating world: {}".format(name))
+    # log.debug(">> updating world: {}".format(name))
     ret = clt.Update(
         model.WorldIdentity(name),
         world)
@@ -769,40 +764,28 @@ def test_metadata_updates():
 
     # meta id must be the same  
     meta_id2 = ret.Metadata().Identity()
-    log.debug("meta_id2: {}".format(meta_id2))
+    # log.debug("meta_id2: {}".format(meta_id2))
     assert meta_id2 is not None
     assert len(str(meta_id2)) > 0
     assert meta_id == meta_id2
 
     # check the updated time
-    updated = ret.Metadata().Updated()
-    assert updated is not None
-    assert len(updated) > 0
-
-    ut = datetime.strptime(updated, constants.DATETIME_FORMAT)
+    ut = ret.Metadata().Updated()
     assert ut is not None
     assert ut > ct
 
      # check the created time must be the same
-    created = ret.Metadata().Created()
-    assert created is not None
-    assert len(created) > 0
-
-    ct2 = datetime.strptime(created, constants.DATETIME_FORMAT)
+    ct2 = ret.Metadata().Created()
     assert ct2 is not None
     assert ct2 == ct
 
     # do a get and check the times
-    log.debug(">> getting world: {}".format(name))
+    # log.debug(">> getting world: {}".format(name))
     ret = clt.Get(model.WorldIdentity(name))
     assert ret is not None
     
     # check the created time must be the same
-    created = ret.Metadata().Created()
-    assert created is not None
-    assert len(created) > 0
-
-    ct3 = datetime.strptime(created, constants.DATETIME_FORMAT)
+    ct3 = ret.Metadata().Created()
     assert ct3 is not None
     assert ct3 == ct
 
@@ -814,14 +797,8 @@ def test_metadata_updates():
 
     # check the updated time must be the same
     # check the updated time
-    updated = ret.Metadata().Updated()
-    assert updated is not None
-    assert len(updated) > 0
-
-    ut2 = datetime.strptime(updated, constants.DATETIME_FORMAT)
+    ut2 = ret.Metadata().Updated()
     assert ut2 is not None
-    # log.info("ut: {}".format(dt2))
-    # log.info("dt4: {}".format(dt4))
     assert ut2 == ut
     assert ut2 > ct
 
@@ -834,11 +811,7 @@ def test_metadata_updates():
         world)
     
     # check the created time must be the same
-    created = ret.Metadata().Created()
-    assert created is not None
-    assert len(created) > 0
-
-    ct3 = datetime.strptime(created, constants.DATETIME_FORMAT)
+    ct3 = ret.Metadata().Created()
     assert ct3 is not None
     assert ct3 == ct
 
@@ -849,12 +822,43 @@ def test_metadata_updates():
     assert meta_id == meta_id2
 
     # check the updated time
-    updated = ret.Metadata().Updated()
-    assert updated is not None
-    assert len(updated) > 0
-
-    ut3 = datetime.strptime(updated, constants.DATETIME_FORMAT)
-    assert ut3 is not None
+    ut3 = ret.Metadata().Updated()
+    ct3 = ret.Metadata().Created()
     assert ut3 > ut2
-    assert ut3 > ct
+    assert ct3 == ct
 
+@test
+def test_datetime_property_type():
+    name = "test_datetime_property_type"
+    world = model.WorldFactory()
+    world.External().SetName(name)
+    dt = datetime.now()
+    world.External().SetDate(dt)
+
+    assert world.External().Date() == dt
+    
+    ret = clt.Create(world)
+    assert ret is not None
+
+    ndt = datetime.now()
+    world.External().SetDate(ndt)
+    ret = clt.Update(
+        world.Metadata().Identity(),
+        world)
+    
+    assert ret is not None
+
+    # check the updated time
+    rdt = ret.External().Date()
+    assert rdt is not None
+    assert rdt > dt
+
+    # do a get and check the times
+    ret = clt.Get(model.WorldIdentity(name))
+    assert ret is not None
+    
+    # check the updated time
+    rdt2 = ret.External().Date()
+    assert rdt2 is not None
+    assert rdt2 > dt
+    assert rdt2 == ndt

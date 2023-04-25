@@ -4,6 +4,7 @@ import time
 import logging
 import pathlib
 from jsonpath import JSONPath
+from datetime import datetime
 
 log = logging.getLogger(__name__)
 
@@ -27,7 +28,9 @@ def clone_object(obj: store.Object, schema: store.SchemaHolder) -> store.Object:
     return ret
 
 
-def unmarshal_object(body: bytes, schema: store.SchemaHolder, kind: str) -> store.Object:
+def unmarshal_object(
+    body: bytes, schema: store.SchemaHolder, kind: str
+) -> store.Object:
     resource = schema.ObjectForKind(kind)
     resource.FromJson(body)
     return resource
@@ -52,7 +55,7 @@ def pp(obj) -> str:
 
 
 def timestamp() -> str:
-    return time.strftime('%Y-%m-%dT%H:%M:%S.%fZ', time.gmtime())
+    return time.strftime("%Y-%m-%dT%H:%M:%S.%fZ", time.gmtime())
 
 
 def serialize(mo: store.Object) -> bytes:
@@ -75,10 +78,22 @@ def object_path(obj: store.Object, path: str) -> str:
 def export_file(target_dir: str, name: str, content: str) -> None:
     pathlib.Path(target_dir).mkdir(parents=True, exist_ok=True)
     target_file = os.path.join(target_dir, name)
-    with open(target_file, 'w') as f:
+    with open(target_file, "w") as f:
         f.write(content)
 
 
 def runtime_dir() -> str:
     rd = pathlib.Path(__file__).parent.parent.absolute()
     return rd
+
+
+def datetime_current() -> str:
+    return datetime_string(datetime.now())
+
+
+def datetime_parse(dtstr) -> str:
+    return datetime.strptime(dtstr, constants.DATETIME_FORMAT)
+
+
+def datetime_string(dt) -> str:
+    return dt.strftime(constants.DATETIME_FORMAT)

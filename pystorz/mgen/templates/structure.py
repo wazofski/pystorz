@@ -18,10 +18,18 @@ class _{{ data.name }}({{data.implements}}):
 	{% if prop.name != "External" %}
 
 	def Set{{ prop.name }}(self, val):
+		{% if prop.type == "datetime" %}
+		self.{{ prop.name }}_ = utils.datetime_string(val)
+		{% else %}
 		self.{{ prop.name }}_ = val
+		{% endif %}
 
 	def {{ prop.name }}(self):
+		{% if prop.type == "datetime" %}
+		return utils.datetime_parse(self.{{ prop.name }}_)
+		{% else %}
 		return self.{{ prop.name }}_
+		{% endif %}
 
 	{% endif %}
 	{% endfor %}

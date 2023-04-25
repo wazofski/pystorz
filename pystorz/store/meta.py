@@ -1,5 +1,6 @@
 import json
-from pystorz.store import store
+from datetime import datetime
+from pystorz.store import store, utils
 
 
 class Meta:
@@ -9,10 +10,10 @@ class Meta:
     def Identity(self) -> store.ObjectIdentity:
         pass
 
-    def Created(self) -> str:
+    def Created(self) -> datetime:
         pass
 
-    def Updated(self) -> str:
+    def Updated(self) -> datetime:
         pass
 
     def ToJson(self) -> str:
@@ -45,20 +46,20 @@ class MetaSetter:
 
 
 class metaWrapper(Meta, MetaSetter):
-    def __init__(self):
-        self.kind_ = None
-        self.identity_ = None
-        self.created_ = None
-        self.updated_ = None
+    def __init__(self, kind):
+        self.kind_ = kind
+        self.identity_ = store.ObjectIdentityFactory()
+        self.created_ = ""
+        self.updated_ = ""
 
     def Kind(self) -> str:
         return self.kind_
 
-    def Created(self) -> str:
-        return self.created_
+    def Created(self) -> datetime:
+        return utils.datetime_parse(self.created_)
 
-    def Updated(self) -> str:
-        return self.updated_
+    def Updated(self) -> datetime:
+        return utils.datetime_parse(self.updated_)
 
     def Identity(self) -> store.ObjectIdentity:
         return self.identity_
@@ -69,11 +70,11 @@ class metaWrapper(Meta, MetaSetter):
     def SetIdentity(self, identity: store.ObjectIdentity) -> None:
         self.identity_ = identity
 
-    def SetCreated(self, created: str) -> None:
-        self.created_ = created
+    def SetCreated(self, created: datetime) -> None:
+        self.created_ = utils.datetime_string(created)
 
-    def SetUpdated(self, updated: str) -> None:
-        self.updated_ = updated
+    def SetUpdated(self, updated: datetime) -> None:
+        self.updated_ = utils.datetime_string(updated)
 
     def ToJson(self) -> str:
         return json.dumps(self.ToDict())
@@ -82,25 +83,18 @@ class metaWrapper(Meta, MetaSetter):
         return {
             "kind": self.Kind(),
             "identity": str(self.Identity()),
-            "created": self.Created(),
-            "updated": self.Updated(),
+            "created": self.created_,
+            "updated": self.updated_,
         }
 
     def FromDict(self, d: dict) -> None:
         self.SetKind(d["kind"])
         self.SetIdentity(store.ObjectIdentityFactory())
         self.Identity().FromString(d["identity"])
-        self.SetCreated(d["created"])
-        self.SetUpdated(d["updated"])
+        self.created_ = d["created"]
+        self.updated_ = d["updated"]
 
 
 def MetaFactory(kind: str) -> Meta:
-    emptyIdentity = store.ObjectIdentityFactory()
-
-    mw = metaWrapper()
-    mw.SetKind(kind)
-    mw.SetIdentity(emptyIdentity)
-    mw.SetCreated("")
-    mw.SetUpdated("")
-
-    return mw
+    return metaWrapper(kind)
+    

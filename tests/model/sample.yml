@@ -19,6 +19,8 @@ types:
         type: string
       - name: description
         type: string
+      - name: date
+        type: datetime
       - name: nested
         type: NestedWorld
   - kind: Struct

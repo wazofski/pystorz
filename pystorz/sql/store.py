@@ -57,7 +57,7 @@ class SqliteStore:
 
         self.TestConnection()
 
-        obj.Metadata().SetCreated(datetime.now().strftime(constants.DATETIME_FORMAT))
+        obj.Metadata().SetCreated(datetime.now())
         obj.Metadata().SetUpdated(obj.Metadata().Created())
 
         self._setIdentity(
@@ -97,7 +97,7 @@ class SqliteStore:
                            existing.Metadata().Kind())
 
         obj.Metadata().SetCreated(existing.Metadata().Created())
-        obj.Metadata().SetUpdated(datetime.now().strftime(constants.DATETIME_FORMAT))
+        obj.Metadata().SetUpdated(datetime.now())
 
         self._setObject(obj.PrimaryKey(), obj.Metadata().Kind(), obj)
 

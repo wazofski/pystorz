@@ -5,13 +5,15 @@ import logging
 from pystorz.mgen.utils import capitalize, decapitalize, yaml_files
 
 log = logging.getLogger(__name__)
-log.debug('loading loader.py...')
+log.debug("loading loader.py...")
 
 
 def jopp(obj):
     # json pretty print
-    jstring = '''JSON pretty print
-''' + json.dumps(obj, indent=4, sort_keys=True)
+    jstring = """JSON pretty print
+""" + json.dumps(
+        obj, indent=4, sort_keys=True
+    )
     return jstring
 
 
@@ -87,12 +89,8 @@ def load_model(path: str):
                 if m["name"] in struct_cache:
                     raise Exception("duplicate struct: {}".format(m["name"]))
                 struct_cache.add(m["name"])
-                
-                structs.append(Struct(
-                    m["name"],
-                    "",
-                    capitalize_props(m["properties"])
-                ))
+
+                structs.append(Struct(m["name"], "", capitalize_props(m["properties"])))
                 continue
             if m["kind"] == "Object":
                 if m["name"] in resource_cache:
@@ -111,11 +109,7 @@ def load_model(path: str):
                 if "internal" in m:
                     intr = m["internal"]
 
-                resources.append(Resource(
-                    m["name"],
-                    ext,
-                    intr,
-                    pkey))
+                resources.append(Resource(m["name"], ext, intr, pkey))
                 continue
 
     return structs, resources
@@ -123,7 +117,7 @@ def load_model(path: str):
 
 def read_model(path: str):
     log.debug(f"reading model from {path}")
-    
+
     with open(path, "r") as f:
         data = yaml.safe_load(f)
     return data
@@ -132,12 +126,14 @@ def read_model(path: str):
 def capitalize_props(l: list):
     res = []
     for p in l:
-        res.append(Prop(
-            capitalize(p['name']),
-            p['type'],
-            decapitalize(p['name']),
-            # p.default
-        ))
+        res.append(
+            Prop(
+                capitalize(p["name"]),
+                p["type"],
+                decapitalize(p["name"]),
+                # p.default
+            )
+        )
     return res
 
 
@@ -166,5 +162,7 @@ def typeDefault(tp: str) -> str:
         return "0"
     if tp == "float":
         return "0.0"
-    
+    if tp == "datetime":
+        return '"0001-01-01T00:00:00Z"'
+
     return f"{tp}Factory()"
