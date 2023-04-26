@@ -59,6 +59,7 @@ class SqliteStore:
 
         obj.Metadata().SetCreated(datetime.now())
         obj.Metadata().SetUpdated(obj.Metadata().Created())
+        obj.Metadata().SetRevision(1)
 
         self._setIdentity(
             obj.Metadata().Identity().Path(),
@@ -98,6 +99,7 @@ class SqliteStore:
 
         obj.Metadata().SetCreated(existing.Metadata().Created())
         obj.Metadata().SetUpdated(datetime.now())
+        obj.Metadata().SetRevision(existing.Metadata().Revision() + 1)
 
         self._setObject(obj.PrimaryKey(), obj.Metadata().Kind(), obj)
 
@@ -169,7 +171,8 @@ class SqliteStore:
             if utils.object_path(obj, copt.prop_filter.key) is None:
                 raise Exception(constants.ErrInvalidFilter)
             query = query + " AND json_extract(Object, '$.{}') = '{}'".format(
-                copt.prop_filter.key, copt.prop_filter.value)
+                copt.prop_filter.key, 
+                utils.encode_string(copt.prop_filter.value))
 
         if copt.order_by is not None and len(copt.order_by) > 0:
             query = """SELECT Object FROM Objects 
@@ -262,6 +265,7 @@ class SqliteStore:
 
         if result is not None:
             data = result[0]
+            data = utils.decode_string(data)
             return self._parseObjectRow(data, typ)
         else:
             raise Exception(constants.ErrNoSuchObject)
@@ -276,6 +280,8 @@ class SqliteStore:
             log.debug("object get failed: {}".format(e))
 
         data = obj.ToJson()
+        # encode the data so it doesn't contain any SQL unfriendly characters
+        data = utils.encode_string(data)
 
         if existing_obj is not None:
             query = """UPDATE Objects SET Object='{}'
@@ -303,7 +309,8 @@ class SqliteStore:
     def _parseObjectRows(self, rows, typ):
         res = []
         for row in rows:
-            res.append(self._parseObjectRow(row[0], typ))
+            data = utils.decode_string(row[0])
+            res.append(self._parseObjectRow(data, typ))
         return res
 
     def _do_query(self, query):

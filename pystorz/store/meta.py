@@ -16,6 +16,9 @@ class Meta:
     def Updated(self) -> datetime:
         pass
 
+    def Revision(self) -> int:
+        pass
+
     def ToJson(self) -> str:
         pass
 
@@ -33,10 +36,13 @@ class MetaSetter:
     def SetIdentity(self, identity: store.ObjectIdentity) -> None:
         pass
 
-    def SetCreated(self, created: str) -> None:
+    def SetCreated(self, created: datetime) -> None:
         pass
 
-    def SetUpdated(self, updated: str) -> None:
+    def SetUpdated(self, updated: datetime) -> None:
+        pass
+
+    def SetRevision(self, revision: int) -> None:
         pass
 
 
@@ -47,6 +53,7 @@ class MetaSetter:
 
 class metaWrapper(Meta, MetaSetter):
     def __init__(self, kind):
+        self.revision_ = 0
         self.kind_ = kind
         self.identity_ = store.ObjectIdentityFactory()
         self.created_ = ""
@@ -64,6 +71,9 @@ class metaWrapper(Meta, MetaSetter):
     def Identity(self) -> store.ObjectIdentity:
         return self.identity_
 
+    def Revision(self) -> int:
+        return self.revision_
+
     def SetKind(self, kind: str) -> None:
         self.kind_ = kind
 
@@ -76,6 +86,9 @@ class metaWrapper(Meta, MetaSetter):
     def SetUpdated(self, updated: datetime) -> None:
         self.updated_ = utils.datetime_string(updated)
 
+    def SetRevision(self, revision: int) -> None:
+        self.revision_ = revision
+
     def ToJson(self) -> str:
         return json.dumps(self.ToDict())
 
@@ -85,6 +98,7 @@ class metaWrapper(Meta, MetaSetter):
             "identity": str(self.Identity()),
             "created": self.created_,
             "updated": self.updated_,
+            "revision": self.revision_,
         }
 
     def FromDict(self, d: dict) -> None:
@@ -93,6 +107,7 @@ class metaWrapper(Meta, MetaSetter):
         self.Identity().FromString(d["identity"])
         self.created_ = d["created"]
         self.updated_ = d["updated"]
+        self.revision_ = d["revision"]
 
 
 def MetaFactory(kind: str) -> Meta:

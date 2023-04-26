@@ -85,14 +85,14 @@ def load_model(path: str):
         # log.debug("model: {}".format(jopp(model)))
 
         for m in model["types"]:
-            if m["kind"] == "Struct":
+            if m["kind"].lower() == "struct":
                 if m["name"] in struct_cache:
                     raise Exception("duplicate struct: {}".format(m["name"]))
                 struct_cache.add(m["name"])
 
                 structs.append(Struct(m["name"], "", capitalize_props(m["properties"])))
                 continue
-            if m["kind"] == "Object":
+            if m["kind"].lower() == "object":
                 if m["name"] in resource_cache:
                     raise Exception("duplicate object: {}".format(m["name"]))
                 resource_cache.add(m["name"])
@@ -111,6 +111,8 @@ def load_model(path: str):
 
                 resources.append(Resource(m["name"], ext, intr, pkey))
                 continue
+
+            raise Exception("unknown kind: {}".format(m["kind"]))
 
     return structs, resources
 

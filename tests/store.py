@@ -742,6 +742,8 @@ def test_metadata_updates():
 
     ret = clt.Create(world)
     assert ret is not None
+    r = ret.Metadata().Revision()
+    assert r == 1
 
     # check the created time
     meta_id = ret.Metadata().Identity()
@@ -761,6 +763,7 @@ def test_metadata_updates():
         world)
     
     assert ret is not None
+    assert ret.Metadata().Revision() == 2
 
     # meta id must be the same  
     meta_id2 = ret.Metadata().Identity()
@@ -783,6 +786,7 @@ def test_metadata_updates():
     # log.debug(">> getting world: {}".format(name))
     ret = clt.Get(model.WorldIdentity(name))
     assert ret is not None
+    assert ret.Metadata().Revision() == 2
     
     # check the created time must be the same
     ct3 = ret.Metadata().Created()
@@ -814,6 +818,7 @@ def test_metadata_updates():
     ct3 = ret.Metadata().Created()
     assert ct3 is not None
     assert ct3 == ct
+    assert ret.Metadata().Revision() == 3
 
     # meta id must be the same  
     meta_id2 = ret.Metadata().Identity()
@@ -862,3 +867,33 @@ def test_datetime_property_type():
     assert rdt2 is not None
     assert rdt2 > dt
     assert rdt2 == ndt
+
+
+@test
+def test_weird_characters():
+    world = model.WorldFactory()
+    world.External().SetName("test_weird_characters")
+    desc = "a's gone to $ with a # then did a ` WHERE an IN''SERT INTO'"
+    world.External().SetDescription(desc)
+    ret = clt.Create(world)
+    assert ret is not None
+
+    ret = clt.Get(model.WorldIdentity("test_weird_characters"))
+    assert ret is not None
+    assert ret.External().Description() == desc
+
+    # list and filter
+    ret = clt.List(
+        model.WorldKindIdentity,
+        options.PropFilter("external.description", desc)
+    )
+
+    assert ret is not None
+    assert len(ret) == 1
+
+    world = ret[0]
+    assert isinstance(world, model.World)
+    assert world.External().Name() == "test_weird_characters"
+    assert world.External().Description() == desc
+
+    

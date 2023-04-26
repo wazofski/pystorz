@@ -1,8 +1,10 @@
 import os
 import json
 import time
+import base64
 import logging
 import pathlib
+
 from jsonpath import JSONPath
 from datetime import datetime
 
@@ -97,3 +99,15 @@ def datetime_parse(dtstr) -> str:
 
 def datetime_string(dt) -> str:
     return dt.strftime(constants.DATETIME_FORMAT)
+
+
+def encode_string(string):
+    return string.replace("'", "$%#")
+    # encoded_message = base64.b64encode(string.encode('utf-8'))  # Encode the message as base64 bytes
+    # return str(encoded_message, 'utf-8')  # Convert the bytes to a string
+
+
+def decode_string(soup):
+    return soup.replace("$%#", "'")
+    # encoded_message = bytes(soup, 'utf-8')  # Convert the soup to bytes
+    # return base64.b64decode(encoded_message).decode('utf-8')  # Decode the base64 bytes and convert to string
