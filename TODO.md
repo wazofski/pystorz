@@ -4,4 +4,7 @@
 - add datetime type support (high) @done
 - add string encoding to sql content queries (high) @done
 - add metadata revision number @done
-- add invalid struct detection in builder (high)
+- do not remove object on update if not necessary (high) @done
+    - make a transaction during update and commit once @done
+- fix prop filter value decoding to only encode strings (bug) (high) @done
+- add invalid struct detection in builder (med)

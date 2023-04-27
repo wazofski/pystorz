@@ -187,9 +187,7 @@ def test_can_put_objects():
     w.External().SetName("abc")
     w.External().SetDescription("def")
 
-    ret = clt.Update(
-        model.WorldIdentity("abc"),
-        w)
+    ret = clt.Update(model.WorldIdentity("abc"), w)
 
     assert ret is not None
 
@@ -204,8 +202,7 @@ def test_can_put_change_naming_props():
 
     w.External().SetName("def")
 
-    ret = clt.Update(
-        model.WorldIdentity("abc"), w)
+    ret = clt.Update(model.WorldIdentity("abc"), w)
 
     assert ret is not None
 
@@ -227,8 +224,7 @@ def test_can_put_change_naming_props():
 
 @test
 def test_can_put_objects_by_id():
-    ret = clt.Get(
-        model.WorldIdentity("def"))
+    ret = clt.Get(model.WorldIdentity("def"))
 
     assert ret is not None
 
@@ -533,8 +529,7 @@ def test_create_multiple_objects():
 
 @test
 def test_can_list_multiple_objects():
-    ret = clt.List(
-        model.WorldKindIdentity)
+    ret = clt.List(model.WorldKindIdentity)
 
     assert ret is not None
     assert len(ret) == 2
@@ -552,9 +547,7 @@ def test_can_list_multiple_objects():
 
 @test
 def test_can_list_and_sort_multiple_objects():
-    ret = clt.List(
-        model.WorldKindIdentity,
-        options.OrderBy("external.name"))
+    ret = clt.List(model.WorldKindIdentity, options.OrderBy("external.name"))
 
     assert ret is not None
     assert len(ret) == 2
@@ -570,7 +563,8 @@ def test_can_list_and_sort_multiple_objects():
     ret = clt.List(
         model.WorldKindIdentity,
         options.OrderBy("external.name"),
-        options.OrderDescending())
+        options.OrderDescending(),
+    )
 
     assert ret is not None
     assert len(ret) == 2
@@ -584,10 +578,7 @@ def test_can_list_and_sort_multiple_objects():
 @test
 def test_list_and_paginate_multiple_objects():
     ret = clt.List(
-
-        model.WorldKindIdentity,
-        options.OrderBy("external.name"),
-        options.PageSize(1)
+        model.WorldKindIdentity, options.OrderBy("external.name"), options.PageSize(1)
     )
 
     assert ret is not None
@@ -598,11 +589,10 @@ def test_list_and_paginate_multiple_objects():
     assert world.External().Description() == worldDescription
 
     ret = clt.List(
-
         model.WorldKindIdentity,
         options.OrderBy("external.name"),
         options.PageSize(1),
-        options.PageOffset(1)
+        options.PageOffset(1),
     )
 
     assert ret is not None
@@ -612,11 +602,10 @@ def test_list_and_paginate_multiple_objects():
     assert world.External().Name() == anotherWorldName
 
     ret = clt.List(
-
         model.WorldKindIdentity,
         options.OrderBy("external.name"),
         options.PageOffset(1),
-        options.PageSize(1000)
+        options.PageSize(1000),
     )
 
     assert ret is not None
@@ -628,8 +617,7 @@ def test_list_and_paginate_multiple_objects():
 
 @test
 def test_list_and_filter_by_primary_key():
-    ret = clt.List(
-        model.WorldKindIdentity)
+    ret = clt.List(model.WorldKindIdentity)
 
     keys = []
     for o in ret:
@@ -637,16 +625,12 @@ def test_list_and_filter_by_primary_key():
 
     assert len(keys) == 2
 
-    ret = clt.List(
-        model.WorldKindIdentity,
-        options.KeyFilter(keys[0], keys[1]))
+    ret = clt.List(model.WorldKindIdentity, options.KeyFilter(keys[0], keys[1]))
 
     assert len(ret) == 2
 
     for k in keys:
-        ret = clt.List(
-            model.WorldKindIdentity,
-            options.KeyFilter(k))
+        ret = clt.List(model.WorldKindIdentity, options.KeyFilter(k))
 
         assert len(ret) == 1
         assert ret[0].PrimaryKey() == k
@@ -657,7 +641,8 @@ def test_list_and_filter_by_nonexistent_props():
     try:
         clt.List(
             model.WorldKindIdentity,
-            options.PropFilter("metadata.askdjhasd", "asdsadas"))
+            options.PropFilter("metadata.askdjhasd", "asdsadas"),
+        )
         assert False
     except Exception as e:
         log.info("expected error: {}".format(str(e)))
@@ -666,8 +651,7 @@ def test_list_and_filter_by_nonexistent_props():
 @test
 def test_cannot_list_specific_object():
     try:
-        clt.List(
-            model.WorldIdentity(worldName))
+        clt.List(model.WorldIdentity(worldName))
         assert False
     except Exception as e:
         log.info("expected error: {}".format(str(e)))
@@ -676,8 +660,7 @@ def test_cannot_list_specific_object():
 @test
 def test_cannot_list_specific_nonexistent_object():
     try:
-        clt.List(
-            model.WorldIdentity("akjhdsjkhdaskjhdaskj"))
+        clt.List(model.WorldIdentity("akjhdsjkhdaskjhdaskj"))
         assert False
     except Exception as e:
         log.info("expected error: {}".format(str(e)))
@@ -690,8 +673,7 @@ def test_list_and_filter():
     #     log.info("object {}".format(utils.pps(r.ToJson())))
 
     ret = clt.List(
-        model.WorldKindIdentity,
-        options.PropFilter("external.name", worldName)
+        model.WorldKindIdentity, options.PropFilter("external.name", worldName)
     )
 
     assert ret is not None
@@ -708,8 +690,7 @@ def test_list_and_filter():
 @test
 def test_list_and_filter_by_id():
     ret = clt.List(
-        model.WorldKindIdentity,
-        options.PropFilter("metadata.identity", str(world_id))
+        model.WorldKindIdentity, options.PropFilter("metadata.identity", str(world_id))
     )
 
     assert ret is not None
@@ -724,8 +705,8 @@ def test_list_and_filter_by_id():
 @test
 def test_list_and_filter_by_nonexistent_id():
     ret = clt.List(
-        model.WorldKindIdentity,
-        options.PropFilter("metadata.identity", "asdasdasd"))
+        model.WorldKindIdentity, options.PropFilter("metadata.identity", "asdasdasd")
+    )
 
     assert ret is not None
     assert len(ret) == 0
@@ -737,7 +718,7 @@ def test_metadata_updates():
     name = "test_metadata_updates"
     world = model.WorldFactory()
     world.External().SetName(name)
-    
+
     # log.debug(">> creating world: {}".format(name))
 
     ret = clt.Create(world)
@@ -758,14 +739,12 @@ def test_metadata_updates():
     world.External().SetDescription("test_metadata_updates")
 
     # log.debug(">> updating world: {}".format(name))
-    ret = clt.Update(
-        model.WorldIdentity(name),
-        world)
-    
+    ret = clt.Update(model.WorldIdentity(name), world)
+
     assert ret is not None
     assert ret.Metadata().Revision() == 2
 
-    # meta id must be the same  
+    # meta id must be the same
     meta_id2 = ret.Metadata().Identity()
     # log.debug("meta_id2: {}".format(meta_id2))
     assert meta_id2 is not None
@@ -777,7 +756,7 @@ def test_metadata_updates():
     assert ut is not None
     assert ut > ct
 
-     # check the created time must be the same
+    # check the created time must be the same
     ct2 = ret.Metadata().Created()
     assert ct2 is not None
     assert ct2 == ct
@@ -787,13 +766,13 @@ def test_metadata_updates():
     ret = clt.Get(model.WorldIdentity(name))
     assert ret is not None
     assert ret.Metadata().Revision() == 2
-    
+
     # check the created time must be the same
     ct3 = ret.Metadata().Created()
     assert ct3 is not None
     assert ct3 == ct
 
-    # meta id must be the same  
+    # meta id must be the same
     meta_id2 = ret.Metadata().Identity()
     assert meta_id2 is not None
     assert len(meta_id2) > 0
@@ -810,17 +789,15 @@ def test_metadata_updates():
     newName = "test_metadata_updates22"
     world.External().SetName(newName)
     world.External().SetDescription("test_metadata_updates2222")
-    ret = clt.Update(
-        model.WorldIdentity(name),
-        world)
-    
+    ret = clt.Update(model.WorldIdentity(name), world)
+
     # check the created time must be the same
     ct3 = ret.Metadata().Created()
     assert ct3 is not None
     assert ct3 == ct
     assert ret.Metadata().Revision() == 3
 
-    # meta id must be the same  
+    # meta id must be the same
     meta_id2 = ret.Metadata().Identity()
     assert meta_id2 is not None
     assert len(meta_id2) > 0
@@ -832,6 +809,7 @@ def test_metadata_updates():
     assert ut3 > ut2
     assert ct3 == ct
 
+
 @test
 def test_datetime_property_type():
     name = "test_datetime_property_type"
@@ -841,16 +819,14 @@ def test_datetime_property_type():
     world.External().SetDate(dt)
 
     assert world.External().Date() == dt
-    
+
     ret = clt.Create(world)
     assert ret is not None
 
     ndt = datetime.now()
     world.External().SetDate(ndt)
-    ret = clt.Update(
-        world.Metadata().Identity(),
-        world)
-    
+    ret = clt.Update(world.Metadata().Identity(), world)
+
     assert ret is not None
 
     # check the updated time
@@ -861,7 +837,7 @@ def test_datetime_property_type():
     # do a get and check the times
     ret = clt.Get(model.WorldIdentity(name))
     assert ret is not None
-    
+
     # check the updated time
     rdt2 = ret.External().Date()
     assert rdt2 is not None
@@ -873,6 +849,8 @@ def test_datetime_property_type():
 def test_weird_characters():
     world = model.WorldFactory()
     world.External().SetName("test_weird_characters")
+    world.External().SetAlive(True)
+    world.External().SetCounter(123)
     desc = "a's gone to $ with a # then did a ` WHERE an IN''SERT INTO'"
     world.External().SetDescription(desc)
     ret = clt.Create(world)
@@ -884,8 +862,7 @@ def test_weird_characters():
 
     # list and filter
     ret = clt.List(
-        model.WorldKindIdentity,
-        options.PropFilter("external.description", desc)
+        model.WorldKindIdentity, options.PropFilter("external.description", desc)
     )
 
     assert ret is not None
@@ -896,4 +873,17 @@ def test_weird_characters():
     assert world.External().Name() == "test_weird_characters"
     assert world.External().Description() == desc
 
-    
+
+@test
+def test_list_and_filter_by_types():
+    ret = clt.List(model.WorldKindIdentity,
+                   options.PropFilter("external.counter", 123))
+
+    assert ret is not None
+    assert len(ret) == 1
+
+    ret = clt.List(model.WorldKindIdentity,
+                   options.PropFilter("external.alive", True))
+
+    assert ret is not None
+    assert len(ret) == 1

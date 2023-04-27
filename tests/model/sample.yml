@@ -19,6 +19,10 @@ types:
         type: string
       - name: description
         type: string
+      - name: counter
+        type: int
+      - name: alive
+        type: bool
       - name: date
         type: datetime
       - name: nested

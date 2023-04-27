@@ -10,6 +10,7 @@ log = logging.getLogger(__name__)
 def SqliteConnection(path):
     def func():
         return sqlite3.connect(path)
+
     return func
 
 
@@ -20,7 +21,6 @@ def SqliteConnection(path):
 
 
 class SqliteStore:
-
     def __init__(self, Schema, MakeConnection):
         self.Schema = Schema
         self.MakeConnection = MakeConnection
@@ -33,7 +33,7 @@ class SqliteStore:
         self.DB = self.MakeConnection()
         self._prepareTables()
 
-        # TODO check connection
+        return self.DB.cursor()
 
     def Create(self, obj, opt=[]):
         if obj is None:
@@ -61,14 +61,26 @@ class SqliteStore:
         obj.Metadata().SetUpdated(obj.Metadata().Created())
         obj.Metadata().SetRevision(1)
 
-        self._setIdentity(
-            obj.Metadata().Identity().Path(),
-            obj.PrimaryKey(),
-            obj.Metadata().Kind())
+        try:
+            # Start a transaction
+            self.DB.execute("BEGIN")
+            cursor = self.DB.cursor()
 
-        self._setObject(obj.PrimaryKey(), obj.Metadata().Kind(), obj)
+            self._setIdentity(
+                cursor,
+                obj.Metadata().Identity().Path(),
+                obj.PrimaryKey(),
+                obj.Metadata().Kind(),
+            )
 
-        return obj.Clone()
+            self._setObject(cursor, obj.PrimaryKey(), obj.Metadata().Kind(), obj)
+
+            # Commit the transaction
+            self.DB.commit()
+            return obj.Clone()
+        except Exception as e:
+            self.DB.rollback()
+            raise e
 
     def Update(self, identity, obj, *opt):
         log.info("update {}".format(identity.Path()))
@@ -87,23 +99,37 @@ class SqliteStore:
 
         self.TestConnection()
 
-        self._removeIdentity(existing.Metadata().Identity().Path())
-        
-        obj.Metadata().SetIdentity(existing.Metadata().Identity())
+        try:
+            # Start a transaction
+            self.DB.execute("BEGIN")
+            cursor = self.DB.cursor()
 
-        self._setIdentity(obj.Metadata().Identity().Path(),
-                          obj.PrimaryKey(), obj.Metadata().Kind())
+            self._removeIdentity(cursor, existing.Metadata().Identity().Path())
 
-        self._removeObject(existing.PrimaryKey(),
-                           existing.Metadata().Kind())
+            obj.Metadata().SetIdentity(existing.Metadata().Identity())
 
-        obj.Metadata().SetCreated(existing.Metadata().Created())
-        obj.Metadata().SetUpdated(datetime.now())
-        obj.Metadata().SetRevision(existing.Metadata().Revision() + 1)
+            self._setIdentity(
+                cursor,
+                obj.Metadata().Identity().Path(),
+                obj.PrimaryKey(),
+                obj.Metadata().Kind(),
+            )
 
-        self._setObject(obj.PrimaryKey(), obj.Metadata().Kind(), obj)
+            self._removeObject(
+                cursor, existing.PrimaryKey(), existing.Metadata().Kind()
+            )
 
-        return obj.Clone()
+            obj.Metadata().SetCreated(existing.Metadata().Created())
+            obj.Metadata().SetUpdated(datetime.now())
+            obj.Metadata().SetRevision(existing.Metadata().Revision() + 1)
+
+            self._setObject(cursor, obj.PrimaryKey(), obj.Metadata().Kind(), obj)
+
+            self.DB.commit()
+            return obj.Clone()
+        except Exception as e:
+            self.DB.rollback()
+            raise e
 
     def Delete(self, identity, *opt):
         log.info("delete {}".format(identity.Path()))
@@ -118,8 +144,20 @@ class SqliteStore:
 
         self.TestConnection()
 
-        self._removeIdentity(existing.Metadata().Identity().Path())
-        self._removeObject(existing.PrimaryKey(), existing.Metadata().Kind())
+        try:
+            # Start a transaction
+            self.DB.execute("BEGIN")
+            cursor = self.DB.cursor()
+
+            self._removeIdentity(cursor, existing.Metadata().Identity().Path())
+            self._removeObject(
+                cursor, existing.PrimaryKey(), existing.Metadata().Kind()
+            )
+
+            self.DB.commit()
+        except Exception as e:
+            self.DB.rollback()
+            raise e
 
     def Get(self, identity, *opt):
         log.info("get {}".format(identity.Path()))
@@ -130,15 +168,17 @@ class SqliteStore:
 
         self.TestConnection()
 
+        cursor = self.DB.cursor()
+
         try:
-            pkey, typ = self._getIdentity(identity.Path())
-            return self._getObject(pkey, typ)
+            pkey, typ = self._getIdentity(cursor, identity.Path())
+            return self._getObject(cursor, pkey, typ)
         except Exception as e:
             log.debug("path get failed: {}".format(e))
 
         tokens = identity.Path().split("/")
         if len(tokens) == 2:
-            return self._getObject(tokens[1], tokens[0])
+            return self._getObject(cursor, tokens[1], tokens[0])
 
         raise Exception(constants.ErrNoSuchObject)
 
@@ -154,14 +194,19 @@ class SqliteStore:
 
         self.TestConnection()
 
+        cursor = self.DB.cursor()
+
         query = """SELECT Object FROM Objects 
         WHERE Type = '{}'""".format(
-            identity.Type())
+            identity.Type()
+        )
 
         # pkey filter
         if copt.key_filter is not None:
-            query = query + """
-            AND Pkey IN ('{}')""".format("', '".join(copt.key_filter))
+            query += """
+            AND Pkey IN ('{}')""".format(
+                "', '".join(copt.key_filter)
+            )
 
         # prop filter
         if copt.prop_filter is not None:
@@ -170,15 +215,17 @@ class SqliteStore:
                 raise Exception(constants.ErrNoSuchObject)
             if utils.object_path(obj, copt.prop_filter.key) is None:
                 raise Exception(constants.ErrInvalidFilter)
-            query = query + " AND json_extract(Object, '$.{}') = '{}'".format(
-                copt.prop_filter.key, 
-                utils.encode_string(copt.prop_filter.value))
+            query = query + " AND json_extract(Object, '$.{}') = {}".format(
+                copt.prop_filter.key,
+                copt.prop_filter.value
+            )
 
         if copt.order_by is not None and len(copt.order_by) > 0:
             query = """SELECT Object FROM Objects 
             WHERE Type = '{}'
             ORDER BY json_extract(Object, '$.{}')""".format(
-                identity.Type(), copt.order_by)
+                identity.Type(), copt.order_by
+            )
             if copt.order_incremental is None or copt.order_incremental:
                 query = query + " ASC"
             else:
@@ -190,37 +237,42 @@ class SqliteStore:
         if copt.page_offset is not None and copt.page_offset > 0:
             query = query + " OFFSET {}".format(copt.page_offset)
 
-        cursor = self._do_query(query)
+        cursor = self.DB.cursor()
+        self._do_query(cursor, query)
         rows = cursor.fetchall()
 
         return self._parseObjectRows(rows, identity.Type())
 
     def _prepareTables(self):
-        create = '''
+        create = """
         CREATE TABLE IF NOT EXISTS IdIndex (
             Path VARCHAR(25) NOT NULL PRIMARY KEY,
             Pkey NVARCHAR(50) NOT NULL,
             Type VARCHAR(25) NOT NULL);
-        '''
+        """
 
-        cursor = self._do_query(create)
+        cursor = self.DB.cursor()
+        self._do_query(cursor, create)
 
-        create = '''
+        create = """
         CREATE TABLE IF NOT EXISTS Objects (
             Pkey NVARCHAR(50) NOT NULL,
             Type VARCHAR(25) NOT NULL,
             Object JSON,
             PRIMARY KEY (Pkey,Type));
-        '''
+        """
 
         cursor.execute(create)
         cursor.close()
         self.DB.commit()
 
-    def _getIdentity(self, path):
+    def _getIdentity(self, cursor, path):
         query = """SELECT Pkey, Type FROM IdIndex 
-        WHERE Path='{}'""".format(path)
-        cursor = self._do_query(query)
+        WHERE Path='{}'""".format(
+            path
+        )
+
+        self._do_query(cursor, query)
         result = cursor.fetchone()
 
         if result is not None:
@@ -229,38 +281,43 @@ class SqliteStore:
         else:
             raise Exception(constants.ErrNoSuchObject)
 
-    def _setIdentity(self, path, pkey, typ):
+    def _setIdentity(self, cursor, path, pkey, typ):
         existing_pkey, existing_typ = None, None
 
         try:
-            existing_pkey, existing_typ = self._getIdentity(path)
+            existing_pkey, existing_typ = self._getIdentity(cursor, path)
         except Exception as e:
             log.debug("identity get failed: {}".format(e))
 
         query = ""
         if existing_pkey is not None and existing_typ is not None:
             query = """UPDATE IdIndex SET Pkey='{}', Type='{}'
-            WHERE Path='{}'""".format(pkey, typ.lower(), path)
+            WHERE Path='{}'""".format(
+                pkey, typ.lower(), path
+            )
         else:
             query = """INSERT INTO IdIndex (Pkey, Type, Path)
-            VALUES ('{}', '{}', '{}')""".format(pkey, typ.lower(), path)
+            VALUES ('{}', '{}', '{}')""".format(
+                pkey, typ.lower(), path
+            )
 
-        cursor = self._do_query(query)
-        cursor.close()
-        self.DB.commit()
+        self._do_query(cursor, query)
 
-    def _removeIdentity(self, path):
+    def _removeIdentity(self, cursor, path):
         query = """DELETE FROM IdIndex
-        WHERE Path = '{}'""".format(path)
-        cursor = self._do_query(query)
-        cursor.close()
-        self.DB.commit()
+        WHERE Path = '{}'""".format(
+            path
+        )
 
-    def _getObject(self, pkey, typ):
+        self._do_query(cursor, query)
+
+    def _getObject(self, cursor, pkey, typ):
         query = """SELECT Object FROM Objects
         WHERE Pkey='{}' AND Type='{}'""".format(
-            pkey, typ.lower())
-        cursor = self._do_query(query)
+            pkey, typ.lower()
+        )
+
+        self._do_query(cursor, query)
         result = cursor.fetchone()
 
         if result is not None:
@@ -270,12 +327,12 @@ class SqliteStore:
         else:
             raise Exception(constants.ErrNoSuchObject)
 
-    def _setObject(self, pkey, typ, obj):
+    def _setObject(self, cursor, pkey, typ, obj):
         query = ""
         existing_obj = None
 
         try:
-            existing_obj = self._getObject(pkey, typ)
+            existing_obj = self._getObject(cursor, pkey, typ)
         except Exception as e:
             log.debug("object get failed: {}".format(e))
 
@@ -285,23 +342,24 @@ class SqliteStore:
 
         if existing_obj is not None:
             query = """UPDATE Objects SET Object='{}'
-            WHERE Pkey = '{}' AND Type = '{}'""".format(data, pkey, typ.lower())
+            WHERE Pkey = '{}' AND Type = '{}'""".format(
+                data, pkey, typ.lower()
+            )
         else:
             query = """INSERT INTO Objects (Object, Pkey, Type)
-            VALUES ('{}', '{}', '{}')""".format(data, pkey, typ.lower())
+            VALUES ('{}', '{}', '{}')""".format(
+                data, pkey, typ.lower()
+            )
 
-        cursor = self._do_query(query)
-        cursor.close()
-        self.DB.commit()
-        self.DB.commit()
+        self._do_query(cursor, query)
 
-    def _removeObject(self, pkey, typ):
+    def _removeObject(self, cursor, pkey, typ):
         query = """DELETE FROM Objects
-        WHERE Pkey = '{}' AND Type = '{}'""".format(pkey, typ.lower())
+        WHERE Pkey = '{}' AND Type = '{}'""".format(
+            pkey, typ.lower()
+        )
 
-        cursor = self._do_query(query)
-        cursor.close()
-        self.DB.commit()
+        self._do_query(cursor, query)
 
     def _parseObjectRow(self, data, typ):
         return utils.unmarshal_object(data, self.Schema, typ)
@@ -313,10 +371,7 @@ class SqliteStore:
             res.append(self._parseObjectRow(data, typ))
         return res
 
-    def _do_query(self, query):
-        cursor = self.DB.cursor()
-
+    def _do_query(self, cursor, query):
         log.debug("running query: {}".format(query))
 
         cursor.execute(query)
-        return cursor

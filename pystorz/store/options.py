@@ -1,5 +1,6 @@
 from typing import List, Optional
 import logging
+from pystorz.store import utils
 
 
 class Option:
@@ -41,6 +42,8 @@ class PropFilterSetting:
     def __init__(self, key: str, value: str):
         self.key = key
         self.value = value
+        if isinstance(self.value, str):
+            self.value = "'{}'".format(utils.encode_string(self.value))
 
 
 class KeyFilterSetting(List[str]):
@@ -56,7 +59,7 @@ class CommonOptionHolder:
         self.page_size = None
         self.page_offset = None
 
-    def common_options(self) -> 'CommonOptionHolder':
+    def common_options(self) -> "CommonOptionHolder":
         return self
 
 
@@ -137,7 +140,7 @@ def OrderBy(field):
         if common_options.order_by is None:
             common_options.order_by = field
         else:
-            raise Exception('order by option has already been set')
+            raise Exception("order by option has already been set")
 
     return _ListOption(f)
 
@@ -148,6 +151,6 @@ def OrderDescending():
         if common_options.order_incremental is None:
             common_options.order_incremental = False
         else:
-            raise Exception('order incremental option has already been set')
-    
+            raise Exception("order incremental option has already been set")
+
     return _ListOption(f)

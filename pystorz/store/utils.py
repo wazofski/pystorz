@@ -102,7 +102,7 @@ def datetime_string(dt) -> str:
 
 
 def encode_string(string):
-    return string.replace("'", "$%#")
+    return str(string).replace("'", "$%#")
     # encoded_message = base64.b64encode(string.encode('utf-8'))  # Encode the message as base64 bytes
     # return str(encoded_message, 'utf-8')  # Convert the bytes to a string
 
