@@ -5,6 +5,7 @@ import inspect
 
 from datetime import datetime
 from pystorz.store import options, store, utils
+from pystorz.internal import constants
 from generated import model
 
 log = logging.getLogger(__name__)
@@ -198,17 +199,27 @@ def test_can_put_objects():
 
 @test
 def test_can_put_change_naming_props():
-    w = model.WorldFactory()
+    # object name abc exists
 
-    w.External().SetName("def")
+    original = clt.Get(model.WorldIdentity("abc"))
 
-    ret = clt.Update(model.WorldIdentity("abc"), w)
+    original.External().SetName("def")
+    original.External().SetDescription("originally abc")
+    ret = clt.Update(original.Metadata().Identity(), original)
 
     assert ret is not None
 
-    world = ret
-    assert world is not None
-    assert world.External().Name() == "def"
+    obj_def = clt.Get(ret.Metadata().Identity())
+    assert obj_def is not None
+    assert obj_def.External().Name() == "def"
+    assert obj_def.External().Description() == "originally abc"
+
+    obj_def_by_name = clt.Get(model.WorldIdentity("def"))
+    assert obj_def_by_name is not None
+    assert obj_def_by_name.External().Name() == "def"
+    assert obj_def_by_name.External().Description() == "originally abc"
+
+    # object name abc should not exist
 
     try:
         ret = None
@@ -216,10 +227,56 @@ def test_can_put_change_naming_props():
     except Exception as e:
         err = e
 
+    assert ret is None
     assert err is not None
     log.info("expected error: {}".format(str(err)))
+    assert str(err) == constants.ErrNoSuchObject
 
+    # good now we create object with name abc
+    object_new_abc = model.WorldFactory()
+    object_new_abc.External().SetName("abc")
+    object_new_abc.External().SetDescription("new abc object")
+     
+    object_new_abc = clt.Create(object_new_abc)
+    assert object_new_abc is not None
+
+    ret = clt.Get(model.WorldIdentity("abc"))
+    assert ret is not None
+    assert ret.External().Name() == "abc"
+    assert ret.External().Description() == object_new_abc.External().Description()
+
+    # now we try to change name of new object abc to def
+
+    object_new_abc = ret
+    object_new_abc.External().SetName("def")
+
+    # now what if there is another object with the new name?
+
+    err = None
+    try:
+        ret = None
+        ret = clt.Update(object_new_abc.Metadata().Identity(), object_new_abc)
+    except Exception as e:
+        err = e
+
+    assert err is not None
+    log.info("expected error: {}".format(str(err)))
+    assert str(err) == constants.ErrObjectExists
     assert ret is None
+
+    # confirm nothing changed in abc and def objects
+    obj = clt.Get(model.WorldIdentity("abc"))
+    assert obj is not None
+    assert obj.External().Name() == "abc"
+    assert obj.External().Description() == object_new_abc.External().Description()
+
+    obj = clt.Get(model.WorldIdentity("def"))
+    assert obj is not None
+    assert obj.External().Name() == "def"
+    assert obj.External().Description() == "originally abc"
+
+    # clean up
+    clt.Delete(model.WorldIdentity("abc"))
 
 
 @test
@@ -789,7 +846,22 @@ def test_metadata_updates():
     newName = "test_metadata_updates22"
     world.External().SetName(newName)
     world.External().SetDescription("test_metadata_updates2222")
-    ret = clt.Update(model.WorldIdentity(name), world)
+    
+    err = None
+    ret33 = None
+    try:
+        ret33 = clt.Update(model.WorldIdentity(name), world)
+    except Exception as e:
+        err = e
+        log.info("expected error: {}".format(str(e)))
+    assert err is not None
+    assert ret33 is None
+    assert str(err) == constants.ErrObjectIdentityMismatch
+
+    newName = "test_metadata_updates22"
+    ret.External().SetName(newName)
+    ret.External().SetDescription("test_metadata_updates2222")
+    ret = clt.Update(meta_id2, ret)
 
     # check the created time must be the same
     ct3 = ret.Metadata().Created()

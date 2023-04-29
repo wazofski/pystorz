@@ -60,6 +60,9 @@ class ObjectIdentity:
         else:
             return f"id/{self}"
 
+    def IsId(self) -> bool:
+        return '/' not in self.id_
+
     def Type(self) -> str:
         return self.Path().split('/')[0]
 
@@ -89,8 +92,7 @@ class ObjectIdentity:
 def ObjectIdentityFactory() -> ObjectIdentity:
     id = str(uuid.uuid1())
     id = id.replace("-", "")
-    id = id[5:25]
-
+    
     return ObjectIdentity(id)
 
 

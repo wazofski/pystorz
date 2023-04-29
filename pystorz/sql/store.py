@@ -97,6 +97,28 @@ class SqliteStore:
         if existing is None:
             raise Exception(constants.ErrNoSuchObject)
 
+        if existing.PrimaryKey() != obj.PrimaryKey():
+            log.info("primary key changed from {} to {}".format(
+                existing.PrimaryKey(), obj.PrimaryKey())
+            )
+
+            if existing.Metadata().Identity().Path() != obj.Metadata().Identity().Path():
+                raise Exception(constants.ErrObjectIdentityMismatch)
+            
+            # see if there is an object with the new primary key value
+            target_identity = store.ObjectIdentity(
+                "{}/{}".format(
+                    existing.Metadata().Kind().lower(), obj.PrimaryKey())
+            )
+            target = None
+            try:
+                target = self.Get(target_identity)
+            except Exception as e:
+                pass
+
+            if target is not None:
+                raise Exception(constants.ErrObjectExists)
+
         self.TestConnection()
 
         try:
@@ -170,17 +192,11 @@ class SqliteStore:
 
         cursor = self.DB.cursor()
 
-        try:
+        if identity.IsId():
             pkey, typ = self._getIdentity(cursor, identity.Path())
             return self._getObject(cursor, pkey, typ)
-        except Exception as e:
-            log.debug("path get failed: {}".format(e))
-
-        tokens = identity.Path().split("/")
-        if len(tokens) == 2:
-            return self._getObject(cursor, tokens[1], tokens[0])
-
-        raise Exception(constants.ErrNoSuchObject)
+        
+        return self._getObject(cursor, identity.Key(), identity.Type())
 
     def List(self, identity, *opt):
         log.info("list {}".format(identity))
