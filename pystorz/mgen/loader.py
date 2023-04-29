@@ -165,6 +165,6 @@ def typeDefault(tp: str) -> str:
     if tp == "float":
         return "0.0"
     if tp == "datetime":
-        return '"0001-01-01T00:00:00Z"'
+        return '"0001-01-01T00:00:00.000000Z"'
 
     return f"{tp}Factory()"

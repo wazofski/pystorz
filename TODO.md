@@ -7,4 +7,5 @@
 - do not remove object on update if not necessary (high) @done
     - make a transaction during update and commit once @done
 - fix prop filter value decoding to only encode strings (bug) (high) @done
+- default datetime value bug (high) @done
 - add invalid struct detection in builder (med)
