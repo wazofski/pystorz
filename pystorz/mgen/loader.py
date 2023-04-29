@@ -114,8 +114,69 @@ def load_model(path: str):
 
             raise Exception("unknown kind: {}".format(m["kind"]))
 
+    errors = validate_model(structs, resources)
+    if len(errors) > 0:
+        raise Exception('''model validation failed:
+    {}'''.format('''
+    '''.join(errors)))
+
     return structs, resources
 
+
+def validate_model(structs, resources):
+    errors = []
+    known_types = [
+        "string",
+        "int",
+        "float",
+        "bool",
+        "datetime"
+    ]
+
+    for s in structs:
+        known_types.append(s.name)
+
+    for s in structs:
+        for p in s.properties:
+            if p.IsArray():
+                elem_type = p.type[2:]
+                if elem_type not in known_types:
+                    errors.append("struct {} property {}: unknown type: {}".format(
+                        s.name, p.name, elem_type))
+                continue
+
+            if p.IsMap():
+                # map[int]string
+                key_type = p.type[4:].split("]")[0]
+                val_type = p.type[4:].split("]")[1]
+                if key_type not in known_types:
+                    errors.append("struct {} property {}: unknown type: {}".format(
+                        s.name, p.name, elem_type))
+                if val_type not in known_types:
+                    errors.append("struct {} property {}: unknown type: {}".format(
+                        s.name, p.name, elem_type))
+                continue
+            
+            if p.type not in known_types:
+                errors.append("struct {} property {}: unknown type: {}".format(
+                    s.name, p.name, p.type))
+
+    for r in resources:
+        if r.external is None and r.internal is None:
+            errors.append("resource {} has no internal and external".format(r.name))
+            continue
+
+        if r.external is not None:
+            if r.external not in known_types:
+                errors.append("resource {} external: unknown type: {}".format(
+                    r.name, r.external))
+
+        if r.internal is not None:
+            if r.internal not in known_types:
+                errors.append("resource {} internal: unknown type: {}".format(
+                    r.name, r.internal))
+
+    return errors
 
 def read_model(path: str):
     log.debug(f"reading model from {path}")

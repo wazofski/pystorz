@@ -8,4 +8,8 @@
     - make a transaction during update and commit once @done
 - fix prop filter value decoding to only encode strings (bug) (high) @done
 - default datetime value bug (high) @done
-- add invalid struct detection in builder (med)
+- add invalid struct detection in builder (med) @done
+- add complex filtering support (high)
+    - and/or etc
+    - multi prop
+    - expressions
