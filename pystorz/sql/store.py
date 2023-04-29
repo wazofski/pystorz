@@ -98,9 +98,9 @@ class SqliteStore:
             raise Exception(constants.ErrNoSuchObject)
 
         if existing.PrimaryKey() != obj.PrimaryKey():
-            log.info("primary key changed from {} to {}".format(
-                existing.PrimaryKey(), obj.PrimaryKey())
-            )
+            # log.info("primary key changed from {} to {}".format(
+            #     existing.PrimaryKey(), obj.PrimaryKey())
+            # )
 
             if existing.Metadata().Identity().Path() != obj.Metadata().Identity().Path():
                 raise Exception(constants.ErrObjectIdentityMismatch)
@@ -110,6 +110,7 @@ class SqliteStore:
                 "{}/{}".format(
                     existing.Metadata().Kind().lower(), obj.PrimaryKey())
             )
+            
             target = None
             try:
                 target = self.Get(target_identity)
