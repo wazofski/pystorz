@@ -959,3 +959,43 @@ def test_list_and_filter_by_types():
 
     assert ret is not None
     assert len(ret) == 1
+
+
+@test
+def test_list_and_filter_and_sort():
+    ret = clt.List(model.WorldKindIdentity)
+    total_length = len(ret)
+    for r in ret:
+        r.External().SetAlive(True)
+        clt.Update(r.Metadata().Identity(), r)
+    
+    ret[0].External().SetAlive(False)
+    clt.Update(ret[0].Metadata().Identity(), ret[0])
+
+    ret = clt.List(
+        model.WorldKindIdentity,
+        options.PropFilter("external.alive", True),
+        options.OrderBy("external.name"),
+    )
+
+    assert ret is not None
+    assert len(ret) == total_length-1
+
+    world = ret[0]
+    # abc is not alive so the next one is anotherWorldName
+    assert world.External().Name() == anotherWorldName
+
+    ret = clt.List(
+        model.WorldKindIdentity,
+        options.PropFilter("external.alive", True),
+        options.OrderBy("external.name"),
+        options.OrderDescending(),
+    )
+
+    assert ret is not None
+    assert len(ret) == total_length-1
+
+    world = ret[0]
+    # abc is not alive so the next one is anotherWorldName
+    assert world.External().Name() != anotherWorldName
+    

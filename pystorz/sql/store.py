@@ -238,10 +238,9 @@ class SqliteStore:
             )
 
         if copt.order_by is not None and len(copt.order_by) > 0:
-            query = """SELECT Object FROM Objects 
-            WHERE Type = '{}'
+            query += """
             ORDER BY json_extract(Object, '$.{}')""".format(
-                identity.Type(), copt.order_by
+                copt.order_by
             )
             if copt.order_incremental is None or copt.order_incremental:
                 query = query + " ASC"

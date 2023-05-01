@@ -11,10 +11,13 @@
 - add invalid struct detection in builder (med) @done
 - add model prop casting (high) @done
 
+- prop filtering does not work with ordering (bug) (high) @done
+
+- add pkey value check for empty (high) (easy and useful) @done
+
 - add complex filtering support (high)
     - and/or etc
     - multi prop
     - expressions
 
 - delete filtering (high)
-- add pkey value check for empty
