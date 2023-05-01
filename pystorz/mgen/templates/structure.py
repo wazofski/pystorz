@@ -20,6 +20,14 @@ class _{{ data.name }}({{data.implements}}):
 	def Set{{ prop.name }}(self, val):
 		{% if prop.type == "datetime" %}
 		self.{{ prop.name }}_ = utils.datetime_string(val)
+		{% elif prop.type == "string" %}
+		self.{{ prop.name }}_ = str(val)
+		{% elif prop.type == "int" %}
+		self.{{ prop.name }}_ = int(val)
+		{% elif prop.type == "float" %}
+		self.{{ prop.name }}_ = float(val)
+		{% elif prop.type == "bool" %}
+		self.{{ prop.name }}_ = bool(val)
 		{% else %}
 		self.{{ prop.name }}_ = val
 		{% endif %}
