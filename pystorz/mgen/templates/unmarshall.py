@@ -52,7 +52,7 @@
 				res = {{ prop.default }}
 
 				for rw in rawValue:
-					ud = {{prop.StrippedDefault()}}
+					ud = {{ prop.ComplexTypeValueDefault() }}
 					if hasattr(ud, "FromDict"):
 						ud.FromDict(rw)
 					else:
@@ -64,7 +64,7 @@
 				res = {{ prop.default }}
 				
 				for rk, rw in rawValue.items():
-					ud = {{prop.StrippedDefault()}}
+					ud = {{prop.ComplexTypeValueDefault()}}
 					if hasattr(ud, "FromDict"):
 						ud.FromDict(rw)
 					else:

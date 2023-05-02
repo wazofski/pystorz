@@ -998,4 +998,39 @@ def test_list_and_filter_and_sort():
     world = ret[0]
     # abc is not alive so the next one is anotherWorldName
     assert world.External().Name() != anotherWorldName
+
+
+@test
+def test_list_and_map_of_struct():
+    world = model.WorldFactory()
+    world.External().SetName("test_list_and_map_of_struct")
+
+    nested = model.NestedWorldFactory()
+    nested.SetCounter(123)
+    nested.SetAlive(True)
+
+    world.Internal().SetList([nested])
+    world.Internal().SetMap({"nested": nested})
+
+    d = world.Internal().Map()
+    assert d['nested'].Counter() == 123
+    l = world.Internal().List()
+    assert l[0].Counter() == 123
+
+    ret = clt.Create(world)
+    assert ret is not None
+    d = ret.Internal().Map()
+    assert d['nested'].Counter() == 123
+    l = ret.Internal().List()
+    assert l[0].Counter() == 123
+
+    ret = clt.Get(model.WorldIdentity("test_list_and_map_of_struct"))
+    assert ret is not None
     
+    d = ret.Internal().Map()
+    assert d['nested'].Counter() == 123
+    assert d['nested'].Alive()
+
+    l = ret.Internal().List()
+    assert l[0].Counter() == 123
+    assert l[0].Alive()

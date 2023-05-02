@@ -15,6 +15,8 @@
 
 - add pkey value check for empty (high) (easy and useful) @done
 
+- map and list of struct is not parsed properly (high) @done
+
 - add complex filtering support (high)
     - and/or etc
     - multi prop

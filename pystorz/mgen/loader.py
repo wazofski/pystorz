@@ -50,6 +50,9 @@ class Prop:
             return "str"
         return self.type
 
+    def ComplexTypeValueDefault(self):
+        return complexTypeValueDefault(self.type)
+
     def StrippedDefault(self):
         return typeDefault(self.StrippedType())
 
@@ -116,22 +119,22 @@ def load_model(path: str):
 
     errors = validate_model(structs, resources)
     if len(errors) > 0:
-        raise Exception('''model validation failed:
-    {}'''.format('''
-    '''.join(errors)))
+        raise Exception(
+            """model validation failed:
+    {}""".format(
+                """
+    """.join(
+                    errors
+                )
+            )
+        )
 
     return structs, resources
 
 
 def validate_model(structs, resources):
     errors = []
-    known_types = [
-        "string",
-        "int",
-        "float",
-        "bool",
-        "datetime"
-    ]
+    known_types = ["string", "int", "float", "bool", "datetime"]
 
     for s in structs:
         known_types.append(s.name)
@@ -141,8 +144,11 @@ def validate_model(structs, resources):
             if p.IsArray():
                 elem_type = p.type[2:]
                 if elem_type not in known_types:
-                    errors.append("struct {} property {}: unknown type: {}".format(
-                        s.name, p.name, elem_type))
+                    errors.append(
+                        "struct {} property {}: unknown type: {}".format(
+                            s.name, p.name, elem_type
+                        )
+                    )
                 continue
 
             if p.IsMap():
@@ -150,16 +156,25 @@ def validate_model(structs, resources):
                 key_type = p.type[4:].split("]")[0]
                 val_type = p.type[4:].split("]")[1]
                 if key_type not in known_types:
-                    errors.append("struct {} property {}: unknown type: {}".format(
-                        s.name, p.name, elem_type))
+                    errors.append(
+                        "struct {} property {}: unknown type: {}".format(
+                            s.name, p.name, elem_type
+                        )
+                    )
                 if val_type not in known_types:
-                    errors.append("struct {} property {}: unknown type: {}".format(
-                        s.name, p.name, elem_type))
+                    errors.append(
+                        "struct {} property {}: unknown type: {}".format(
+                            s.name, p.name, elem_type
+                        )
+                    )
                 continue
-            
+
             if p.type not in known_types:
-                errors.append("struct {} property {}: unknown type: {}".format(
-                    s.name, p.name, p.type))
+                errors.append(
+                    "struct {} property {}: unknown type: {}".format(
+                        s.name, p.name, p.type
+                    )
+                )
 
     for r in resources:
         if r.external is None and r.internal is None:
@@ -168,15 +183,18 @@ def validate_model(structs, resources):
 
         if r.external is not None:
             if r.external not in known_types:
-                errors.append("resource {} external: unknown type: {}".format(
-                    r.name, r.external))
+                errors.append(
+                    "resource {} external: unknown type: {}".format(r.name, r.external)
+                )
 
         if r.internal is not None:
             if r.internal not in known_types:
-                errors.append("resource {} internal: unknown type: {}".format(
-                    r.name, r.internal))
+                errors.append(
+                    "resource {} internal: unknown type: {}".format(r.name, r.internal)
+                )
 
     return errors
+
 
 def read_model(path: str):
     log.debug(f"reading model from {path}")
@@ -229,3 +247,19 @@ def typeDefault(tp: str) -> str:
         return '"0001-01-01T00:00:00.000000Z"'
 
     return f"{tp}Factory()"
+
+
+def complexTypeValueDefault(tp: str) -> str:
+    log.debug(f"typeValueDefault: {tp}")
+
+    if tp.startswith("[]"):
+        return typeDefault(tp[2:])
+
+    if tp.startswith("map"):
+        closing_bracket_index = tp.find("]")
+        if closing_bracket_index == -1:
+            raise Exception("invalid map type: {}".format(tp))
+
+        return typeDefault(tp[closing_bracket_index + 1 :])
+
+    raise Exception("unknown type: {}".format(tp))
