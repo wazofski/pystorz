@@ -604,7 +604,9 @@ def test_can_list_multiple_objects():
 
 @test
 def test_can_list_and_sort_multiple_objects():
-    ret = clt.List(model.WorldKindIdentity, options.OrderBy("external.name"))
+    ret = clt.List(
+        model.WorldKindIdentity,
+        options.Order("external.name"))
 
     assert ret is not None
     assert len(ret) == 2
@@ -619,8 +621,7 @@ def test_can_list_and_sort_multiple_objects():
 
     ret = clt.List(
         model.WorldKindIdentity,
-        options.OrderBy("external.name"),
-        options.OrderDescending(),
+        options.Order("external.name", False),
     )
 
     assert ret is not None
@@ -635,7 +636,7 @@ def test_can_list_and_sort_multiple_objects():
 @test
 def test_list_and_paginate_multiple_objects():
     ret = clt.List(
-        model.WorldKindIdentity, options.OrderBy("external.name"), options.PageSize(1)
+        model.WorldKindIdentity, options.Order("external.name"), options.PageSize(1)
     )
 
     assert ret is not None
@@ -647,7 +648,7 @@ def test_list_and_paginate_multiple_objects():
 
     ret = clt.List(
         model.WorldKindIdentity,
-        options.OrderBy("external.name"),
+        options.Order("external.name"),
         options.PageSize(1),
         options.PageOffset(1),
     )
@@ -660,7 +661,7 @@ def test_list_and_paginate_multiple_objects():
 
     ret = clt.List(
         model.WorldKindIdentity,
-        options.OrderBy("external.name"),
+        options.Order("external.name"),
         options.PageOffset(1),
         options.PageSize(1000),
     )
@@ -975,7 +976,7 @@ def test_list_and_filter_and_sort():
     ret = clt.List(
         model.WorldKindIdentity,
         options.Eq("external.alive", True),
-        options.OrderBy("external.name"),
+        options.Order("external.name"),
     )
 
     assert ret is not None
@@ -988,8 +989,7 @@ def test_list_and_filter_and_sort():
     ret = clt.List(
         model.WorldKindIdentity,
         options.Eq("external.alive", True),
-        options.OrderBy("external.name"),
-        options.OrderDescending(),
+        options.Order("external.name", False),
     )
 
     assert ret is not None

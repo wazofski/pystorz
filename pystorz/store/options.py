@@ -13,11 +13,6 @@ class CreateOption(Option):
         raise NotImplementedError
 
 
-class DeleteOption(Option):
-    def get_delete_option(self) -> Option:
-        raise NotImplementedError
-
-
 class GetOption(Option):
     def get_get_option(self) -> Option:
         raise NotImplementedError
@@ -33,12 +28,26 @@ class ListOption(Option):
         raise NotImplementedError
 
 
+class DeleteOption(Option):
+    def get_delete_option(self) -> Option:
+        raise NotImplementedError
+
+
 class OptionHolder:
     def common_options(self):
         raise NotImplementedError
 
 
-class EqSetting:
+class KeyFilterSetting(List[str]):
+    pass
+
+
+class ExpSetting:
+    def __init__(self):
+        raise NotImplementedError
+
+
+class EqSetting(ExpSetting):
     def __init__(self, key: str, value: str):
         self.key = key
         self.value = value
@@ -46,13 +55,56 @@ class EqSetting:
             self.value = "'{}'".format(utils.encode_string(self.value))
 
 
-class KeyFilterSetting(List[str]):
-    pass
+class LtSetting(ExpSetting):
+    def __init__(self, key: str, value: str):
+        self.key = key
+        self.value = value
+        if isinstance(self.value, str):
+            self.value = "'{}'".format(utils.encode_string(self.value))
+
+
+class LteSetting(ExpSetting):
+    def __init__(self, key: str, value: str):
+        self.key = key
+        self.value = value
+        if isinstance(self.value, str):
+            self.value = "'{}'".format(utils.encode_string(self.value))
+
+
+class GtSetting(ExpSetting):
+    def __init__(self, key: str, value: str):
+        self.key = key
+        self.value = value
+        if isinstance(self.value, str):
+            self.value = "'{}'".format(utils.encode_string(self.value))
+
+
+class GteSetting(ExpSetting):
+    def __init__(self, key: str, value: str):
+        self.key = key
+        self.value = value
+        if isinstance(self.value, str):
+            self.value = "'{}'".format(utils.encode_string(self.value))
+
+
+class AndSetting(ExpSetting):
+    def __init__(self, *filters: List[ExpSetting]):
+        self.filters = filters
+
+
+class OrSetting(ExpSetting):
+    def __init__(self, *filters: List[ExpSetting]):
+        self.filters = filters
+
+
+class NotSetting(ExpSetting):
+    def __init__(self, flt: ExpSetting):
+        self.filter = flt
 
 
 class CommonOptionHolder:
     def __init__(self):
-        self.prop_filter = None
+        self.filter = None
         self.key_filter = None
         self.order_by = None
         self.order_incremental = None
@@ -67,20 +119,95 @@ def CommonOptionHolderFactory() -> CommonOptionHolder:
     return CommonOptionHolder()
 
 
-def Eq(prop: str, val: str) -> ListOption:
+def And(*filters: List[ExpSetting]):
     def option_function(options: OptionHolder) -> Optional[Exception]:
         common_options = options.common_options()
-        if common_options.prop_filter is not None:
+        if common_options.filter is not None:
             raise Exception("prop filter option already set")
 
-        common_options.prop_filter = EqSetting(key=prop, value=val)
-        # opstr = json.dumps(common_options.prop_filter.__dict__)
-        # logging.info(f"filter option {opstr}")
+        common_options.filter = AndSetting(*filters)
 
-    return _ListOption(option_function)
+    return _ListDeleteOption(option_function)
 
 
-def KeyFilter(*keys: str) -> ListOption:
+def Or(*filters: List[ExpSetting]):
+    def option_function(options: OptionHolder) -> Optional[Exception]:
+        common_options = options.common_options()
+        if common_options.filter is not None:
+            raise Exception("prop filter option already set")
+
+        common_options.filter = OrSetting(*filters)
+
+    return _ListDeleteOption(option_function)
+
+
+def Not(filter: ExpSetting):
+    def option_function(options: OptionHolder) -> Optional[Exception]:
+        common_options = options.common_options()
+        if common_options.filter is not None:
+            raise Exception("prop filter option already set")
+
+        common_options.filter = NotSetting(filter)
+
+    return _ListDeleteOption(option_function)
+
+
+def Eq(prop: str, val):
+    def option_function(options: OptionHolder) -> Optional[Exception]:
+        common_options = options.common_options()
+        if common_options.filter is not None:
+            raise Exception("prop filter option already set")
+
+        common_options.filter = EqSetting(key=prop, value=val)
+
+    return _ListDeleteOption(option_function)
+
+
+def Lt(prop: str, val):
+    def option_function(options: OptionHolder) -> Optional[Exception]:
+        common_options = options.common_options()
+        if common_options.filter is not None:
+            raise Exception("prop filter option already set")
+
+        common_options.filter = LtSetting(key=prop, value=val)
+
+    return _ListDeleteOption(option_function)
+
+
+def Gt(prop: str, val):
+    def option_function(options: OptionHolder) -> Optional[Exception]:
+        common_options = options.common_options()
+        if common_options.filter is not None:
+            raise Exception("prop filter option already set")
+
+        common_options.filter = GtSetting(key=prop, value=val)
+
+    return _ListDeleteOption(option_function)
+
+
+def Lte(prop: str, val):
+    def option_function(options: OptionHolder) -> Optional[Exception]:
+        common_options = options.common_options()
+        if common_options.filter is not None:
+            raise Exception("prop filter option already set")
+
+        common_options.filter = LteSetting(key=prop, value=val)
+
+    return _ListDeleteOption(option_function)
+
+
+def Gte(prop: str, val):
+    def option_function(options: OptionHolder) -> Optional[Exception]:
+        common_options = options.common_options()
+        if common_options.filter is not None:
+            raise Exception("prop filter option already set")
+
+        common_options.filter = GteSetting(key=prop, value=val)
+
+    return _ListDeleteOption(option_function)
+
+
+def KeyFilter(*keys):
     def option_function(options: OptionHolder) -> Optional[Exception]:
         if not keys:
             logging.info("ignoring empty key filter")
@@ -91,10 +218,8 @@ def KeyFilter(*keys: str) -> ListOption:
             raise Exception("key filter option already set")
 
         common_options.key_filter = KeyFilterSetting(keys)
-        # opstr = json.dumps(common_options.key_filter.__dict__)
-        # logging.info(f"filter option {opstr}")
 
-    return _ListOption(option_function)
+    return _ListDeleteOption(option_function)
 
 
 def PageSize(ps: int) -> ListOption:
@@ -123,6 +248,20 @@ def PageOffset(po: int) -> ListOption:
     return _ListOption(option_function)
 
 
+class _ListDeleteOption(ListOption, DeleteOption):
+    def __init__(self, function):
+        self.function = function
+
+    def get_delete_option(self):
+        return self
+
+    def get_list_option(self):
+        return self
+
+    def ApplyFunction(self):
+        return self.function
+
+
 class _ListOption(ListOption):
     def __init__(self, function):
         self.function = function
@@ -134,23 +273,13 @@ class _ListOption(ListOption):
         return self.function
 
 
-def OrderBy(field):
+def Order(field, ascending=True):
     def f(options):
         common_options = options.common_options()
         if common_options.order_by is None:
             common_options.order_by = field
+            common_options.order_incremental = ascending
         else:
             raise Exception("order by option has already been set")
-
-    return _ListOption(f)
-
-
-def OrderDescending():
-    def f(options):
-        common_options = options.common_options()
-        if common_options.order_incremental is None:
-            common_options.order_incremental = False
-        else:
-            raise Exception("order incremental option has already been set")
 
     return _ListOption(f)

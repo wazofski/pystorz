@@ -102,15 +102,17 @@ class SqliteStore:
             #     existing.PrimaryKey(), obj.PrimaryKey())
             # )
 
-            if existing.Metadata().Identity().Path() != obj.Metadata().Identity().Path():
+            if (
+                existing.Metadata().Identity().Path()
+                != obj.Metadata().Identity().Path()
+            ):
                 raise Exception(constants.ErrObjectIdentityMismatch)
-            
+
             # see if there is an object with the new primary key value
             target_identity = store.ObjectIdentity(
-                "{}/{}".format(
-                    existing.Metadata().Kind().lower(), obj.PrimaryKey())
+                "{}/{}".format(existing.Metadata().Kind().lower(), obj.PrimaryKey())
             )
-            
+
             target = None
             try:
                 target = self.Get(target_identity)
@@ -196,7 +198,7 @@ class SqliteStore:
         if identity.IsId():
             pkey, typ = self._getIdentity(cursor, identity.Path())
             return self._getObject(cursor, pkey, typ)
-        
+
         return self._getObject(cursor, identity.Key(), identity.Type())
 
     def List(self, identity, *opt):
@@ -218,24 +220,7 @@ class SqliteStore:
             identity.Type()
         )
 
-        # pkey filter
-        if copt.key_filter is not None:
-            query += """
-            AND Pkey IN ('{}')""".format(
-                "', '".join(copt.key_filter)
-            )
-
-        # prop filter
-        if copt.prop_filter is not None:
-            obj = self.Schema.ObjectForKind(identity.Type())
-            if obj is None:
-                raise Exception(constants.ErrNoSuchObject)
-            if utils.object_path(obj, copt.prop_filter.key) is None:
-                raise Exception(constants.ErrInvalidFilter)
-            query = query + " AND json_extract(Object, '$.{}') = {}".format(
-                copt.prop_filter.key,
-                copt.prop_filter.value
-            )
+        query += self._buildFilterClause(copt, identity)
 
         if copt.order_by is not None and len(copt.order_by) > 0:
             query += """
@@ -391,3 +376,70 @@ class SqliteStore:
         log.debug("running query: {}".format(query))
 
         cursor.execute(query)
+
+    def _buildFilterClause(self, copt, identity):
+        query = ""
+
+        # pkey filter
+        if copt.key_filter is not None:
+            query += " AND Pkey IN ('{}')".format("', '".join(copt.key_filter))
+
+        # prop filter
+        if copt.filter is not None:
+            sample = self.Schema.ObjectForKind(identity.Type())
+            if sample is None:
+                raise Exception(constants.ErrNoSuchObject)
+
+            query += " AND ({})".format(self._convertFilter(copt.filter, sample))
+
+        if len(query) > 0:
+            query = f""" 
+                {query}
+                """
+
+        return query
+
+    def _convertFilter(self, filterSetting, sample):
+        if isinstance(filterSetting, options.AndSetting):
+            return "( {} )".format(
+                " AND ".join(
+                    [self._convertFilter(f, sample) for f in filterSetting.filters]
+                )
+            )
+
+        if isinstance(filterSetting, options.OrSetting):
+            return "( {} )".format(
+                " OR ".join(
+                    [self._convertFilter(f, sample) for f in filterSetting.filters]
+                )
+            )
+
+        if utils.object_path(sample, filterSetting.key) is None:
+            raise Exception(constants.ErrInvalidFilter)
+
+        if isinstance(filterSetting, options.EqSetting):
+            return " json_extract(Object, '$.{}') = {} ".format(
+                filterSetting.key, filterSetting.value
+            )
+
+        if isinstance(filterSetting, options.LtSetting):
+            return " json_extract(Object, '$.{}') < {} ".format(
+                filterSetting.key, filterSetting.value
+            )
+
+        if isinstance(filterSetting, options.GtSetting):
+            return " json_extract(Object, '$.{}') > {} ".format(
+                filterSetting.key, filterSetting.value
+            )
+
+        if isinstance(filterSetting, options.LteSetting):
+            return " json_extract(Object, '$.{}') <= {} ".format(
+                filterSetting.key, filterSetting.value
+            )
+
+        if isinstance(filterSetting, options.GteSetting):
+            return " json_extract(Object, '$.{}') >= {} ".format(
+                filterSetting.key, filterSetting.value
+            )
+
+        raise Exception(constants.ErrInvalidFilter)
