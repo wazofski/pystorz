@@ -18,6 +18,8 @@
     - Lt/Lte @done
     - Gt/Gte @done
     - And/Or/Not @done
+    - In @done
+- replace the KeyFilter with generic IN @done
 
 - delete filtering support (high)
 
