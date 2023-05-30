@@ -17,9 +17,22 @@
 
 - map and list of struct is not parsed properly (high) @done
 
-- add complex filtering support (high)
-    - and/or etc
-    - multi prop
-    - expressions
+- rename PropFilter to Eq
 
-- delete filtering (high)
+- add complex filtering support (high)
+    - Lt/Lte
+    - Gt/Gte
+    - And/Or/Not
+
+- delete filtering support (high)
+
+- add the rest of the storz
+    - metadata store
+    - cache store
+    - in memory store
+    - mongo store
+    - web server
+    - web client store
+    - router store
+    - behavior store
+    - 

@@ -698,7 +698,7 @@ def test_list_and_filter_by_nonexistent_props():
     try:
         clt.List(
             model.WorldKindIdentity,
-            options.PropFilter("metadata.askdjhasd", "asdsadas"),
+            options.Eq("metadata.askdjhasd", "asdsadas"),
         )
         assert False
     except Exception as e:
@@ -730,7 +730,7 @@ def test_list_and_filter():
     #     log.info("object {}".format(utils.pps(r.ToJson())))
 
     ret = clt.List(
-        model.WorldKindIdentity, options.PropFilter("external.name", worldName)
+        model.WorldKindIdentity, options.Eq("external.name", worldName)
     )
 
     assert ret is not None
@@ -747,7 +747,7 @@ def test_list_and_filter():
 @test
 def test_list_and_filter_by_id():
     ret = clt.List(
-        model.WorldKindIdentity, options.PropFilter("metadata.identity", str(world_id))
+        model.WorldKindIdentity, options.Eq("metadata.identity", str(world_id))
     )
 
     assert ret is not None
@@ -762,7 +762,7 @@ def test_list_and_filter_by_id():
 @test
 def test_list_and_filter_by_nonexistent_id():
     ret = clt.List(
-        model.WorldKindIdentity, options.PropFilter("metadata.identity", "asdasdasd")
+        model.WorldKindIdentity, options.Eq("metadata.identity", "asdasdasd")
     )
 
     assert ret is not None
@@ -934,7 +934,7 @@ def test_weird_characters():
 
     # list and filter
     ret = clt.List(
-        model.WorldKindIdentity, options.PropFilter("external.description", desc)
+        model.WorldKindIdentity, options.Eq("external.description", desc)
     )
 
     assert ret is not None
@@ -949,13 +949,13 @@ def test_weird_characters():
 @test
 def test_list_and_filter_by_types():
     ret = clt.List(model.WorldKindIdentity,
-                   options.PropFilter("external.counter", 123))
+                   options.Eq("external.counter", 123))
 
     assert ret is not None
     assert len(ret) == 1
 
     ret = clt.List(model.WorldKindIdentity,
-                   options.PropFilter("external.alive", True))
+                   options.Eq("external.alive", True))
 
     assert ret is not None
     assert len(ret) == 1
@@ -974,7 +974,7 @@ def test_list_and_filter_and_sort():
 
     ret = clt.List(
         model.WorldKindIdentity,
-        options.PropFilter("external.alive", True),
+        options.Eq("external.alive", True),
         options.OrderBy("external.name"),
     )
 
@@ -987,7 +987,7 @@ def test_list_and_filter_and_sort():
 
     ret = clt.List(
         model.WorldKindIdentity,
-        options.PropFilter("external.alive", True),
+        options.Eq("external.alive", True),
         options.OrderBy("external.name"),
         options.OrderDescending(),
     )

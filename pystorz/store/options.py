@@ -38,7 +38,7 @@ class OptionHolder:
         raise NotImplementedError
 
 
-class PropFilterSetting:
+class EqSetting:
     def __init__(self, key: str, value: str):
         self.key = key
         self.value = value
@@ -67,13 +67,13 @@ def CommonOptionHolderFactory() -> CommonOptionHolder:
     return CommonOptionHolder()
 
 
-def PropFilter(prop: str, val: str) -> ListOption:
+def Eq(prop: str, val: str) -> ListOption:
     def option_function(options: OptionHolder) -> Optional[Exception]:
         common_options = options.common_options()
         if common_options.prop_filter is not None:
             raise Exception("prop filter option already set")
 
-        common_options.prop_filter = PropFilterSetting(key=prop, value=val)
+        common_options.prop_filter = EqSetting(key=prop, value=val)
         # opstr = json.dumps(common_options.prop_filter.__dict__)
         # logging.info(f"filter option {opstr}")
 
