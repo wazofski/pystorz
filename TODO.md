@@ -10,24 +10,20 @@
 - default datetime value bug (high) @done
 - add invalid struct detection in builder (med) @done
 - add model prop casting (high) @done
-
 - prop filtering does not work with ordering (bug) (high) @done
-
 - add pkey value check for empty (high) (easy and useful) @done
-
 - map and list of struct is not parsed properly (high) @done
-
-- rename PropFilter to Eq
-
-- add complex filtering support (high)
-    - Lt/Lte
-    - Gt/Gte
-    - And/Or/Not
+- rename PropFilter to Eq @done
+- add complex filtering support (high) @done
+    - Lt/Lte @done
+    - Gt/Gte @done
+    - And/Or/Not @done
 
 - delete filtering support (high)
 
 - add the rest of the storz
     - metadata store
+        - remove the functionality from the sql store
     - cache store
     - in memory store
     - mongo store

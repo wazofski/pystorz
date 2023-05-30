@@ -378,28 +378,25 @@ class SqliteStore:
         cursor.execute(query)
 
     def _buildFilterClause(self, copt, identity):
-        query = ""
+        if copt.filter is None:
+            return ""
 
-        # pkey filter
-        if copt.key_filter is not None:
-            query += " AND Pkey IN ('{}')".format("', '".join(copt.key_filter))
+        sample = self.Schema.ObjectForKind(identity.Type())
+        if sample is None:
+            raise Exception(constants.ErrNoSuchObject)
 
-        # prop filter
-        if copt.filter is not None:
-            sample = self.Schema.ObjectForKind(identity.Type())
-            if sample is None:
-                raise Exception(constants.ErrNoSuchObject)
-
-            query += " AND ({})".format(self._convertFilter(copt.filter, sample))
-
-        if len(query) > 0:
-            query = f""" 
-                {query}
-                """
-
-        return query
+        return """
+            AND ({})
+            """.format(
+            self._convertFilter(copt.filter, sample)
+        )
 
     def _convertFilter(self, filterSetting, sample):
+        if isinstance(filterSetting, options._ListDeleteOption):            
+            copt = options.CommonOptionHolderFactory()
+            filterSetting.ApplyFunction()(copt)
+            filterSetting = copt.filter
+
         if isinstance(filterSetting, options.AndSetting):
             return "( {} )".format(
                 " AND ".join(
@@ -414,8 +411,26 @@ class SqliteStore:
                 )
             )
 
+        if isinstance(filterSetting, options.NotSetting):
+            return "( NOT {} )".format(
+                self._convertFilter(filterSetting.filter, sample)
+            )
+
         if utils.object_path(sample, filterSetting.key) is None:
             raise Exception(constants.ErrInvalidFilter)
+
+        if isinstance(filterSetting, options.InSetting):
+            def convert_value(v):
+                # return "'{}'".format(v)
+                if isinstance(v, str):
+                    return "'{}'".format(v)
+                else:
+                    return str(v)
+            
+            values = ", ".join([convert_value(v) for v in filterSetting.values])
+
+            return " json_extract(Object, '$.{}') IN ({})".format(
+                filterSetting.key, values)
 
         if isinstance(filterSetting, options.EqSetting):
             return " json_extract(Object, '$.{}') = {} ".format(
