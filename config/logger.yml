@@ -14,7 +14,7 @@ loggers:
     handlers: [console]
     propagate: no
   pystorz.sql:
-    level: INFO
+    level: ERROR
     handlers: [console]
     propagate: no
   test.store:

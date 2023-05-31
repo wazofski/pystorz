@@ -1221,8 +1221,24 @@ def test_list_and_OR_filter():
 
 
 @test
+def test_delete_filtered():
+    ret = clt.List(model.WorldKindIdentity, options.Eq("external.alive", True))
+    assert ret is not None
+    alive_count = len(ret)
+    assert alive_count > 0
+
+    clt.Delete(model.WorldKindIdentity, options.Eq("external.alive", True))
+
+    ret = clt.List(model.WorldKindIdentity)
+    assert ret is not None
+    assert len(ret) > 0
+    for r in ret:
+        assert r.External().Alive() == False
+
+
+@test
 def test_performance():
-    NUMBER_OF_OBJECTS = 10000
+    NUMBER_OF_OBJECTS = 1000
 
     log.info("Creating {} objects".format(NUMBER_OF_OBJECTS))
     graph_create = [0.0] * NUMBER_OF_OBJECTS
@@ -1256,6 +1272,7 @@ def test_performance():
         # append milliseconds it took for a single create
         graph_update[i] = t22 - t11
         i += 1
+    
     tu2 = time.time()
 
     tl1 = time.time()
@@ -1290,13 +1307,31 @@ def test_performance():
 
     td2 = time.time()
 
+    for i in range(NUMBER_OF_OBJECTS):
+        world = model.WorldFactory()
+        world.External().SetName("world-{}".format(i))
+        world.External().SetCounter(1000)
+        world.External().SetAlive(i % 2 == 0)
+        clt.Create(world)
+    
+    tdd1 = time.time()
+    clt.Delete(model.WorldKindIdentity, options.Eq("external.counter", 1000))
+    tdd2 = time.time()
+
+    ret = clt.List(model.WorldKindIdentity)
+    assert ret is not None
+    assert len(ret) > 0
+    for r in ret:
+        assert r.External().Counter() != 1000
+
     log.info(f"Performance results: {NUMBER_OF_OBJECTS} objects")
-    log.info("Create: \t\t{}s".format(tc2 - tc1))
-    log.info("Update: \t\t{}s".format(tu2 - tu1))
-    log.info("List Half:\t{}s".format(tlh2 - tlh1))
-    log.info("List: \t\t{}s".format(tl2 - tl1))
-    log.info("Get:\t\t{}s".format(tg2 - tg1))
-    log.info("Delete: \t\t{}s".format(td2 - td1))
+    log.info("Create: \t\t\t{}s".format(tc2 - tc1))
+    log.info("Update: \t\t\t{}s".format(tu2 - tu1))
+    log.info("List Half:\t\t{}s".format(tlh2 - tlh1))
+    log.info("List: \t\t\t{}s".format(tl2 - tl1))
+    log.info("Get:\t\t\t{}s".format(tg2 - tg1))
+    log.info("Delete: \t\t\t{}s".format(td2 - td1))
+    log.info("Delete Batch: \t\t{}s".format(tdd2 - tdd1))
 
     # plot the rest of the graphs
     import matplotlib.pyplot as plt

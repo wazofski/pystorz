@@ -20,8 +20,7 @@
     - And/Or/Not @done
     - In @done
 - replace the KeyFilter with generic IN @done
-
-- delete filtering support (high)
+- delete filtering support (high) @done
 
 - add the rest of the storz
     - metadata store

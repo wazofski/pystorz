@@ -163,9 +163,11 @@ class SqliteStore:
         for o in opt:
             o.ApplyFunction()(copt)
 
-        existing = self.Get(identity)
-        if existing is None:
-            raise Exception(constants.ErrNoSuchObject)
+        existing = None
+        if copt.filter is None:
+            existing = self.Get(identity)
+            if existing is None:
+                raise Exception(constants.ErrNoSuchObject)
 
         self.TestConnection()
 
@@ -174,10 +176,27 @@ class SqliteStore:
             self.DB.execute("BEGIN")
             cursor = self.DB.cursor()
 
-            self._removeIdentity(cursor, existing.Metadata().Identity().Path())
-            self._removeObject(
-                cursor, existing.PrimaryKey(), existing.Metadata().Kind()
-            )
+            if copt.filter is None:
+                self._removeIdentity(cursor, existing.Metadata().Identity().Path())
+                self._removeObject(
+                    cursor, existing.PrimaryKey(), existing.Metadata().Kind()
+                )
+            else:
+                clause = self._buildFilterClause(copt, identity)
+                keys = self._getObjectKeys(
+                    cursor,
+                    identity.Type(),
+                    clause)
+                
+                self._removeObjects(
+                    cursor,
+                    identity.Type(),
+                    clause)
+                
+                self._removeIdentities(
+                    cursor,
+                    identity.Type(),
+                    keys)
 
             self.DB.commit()
         except Exception as e:
@@ -361,6 +380,45 @@ class SqliteStore:
         )
 
         self._do_query(cursor, query)
+    
+    def _getObjectKeys(self, cursor, typ, clause):
+        query = """SELECT Pkey FROM Objects
+        WHERE Type = '{}' {}""".format(
+            typ.lower(),
+            clause,
+        )
+
+        self._do_query(cursor, query)
+        rows = cursor.fetchall()
+        res = []
+        for row in rows:
+            res.append(row[0])
+        return res
+
+    def _removeIdentities(self, cursor, typ, keys):
+        batch_size = 100
+        for i in range(0, len(keys), batch_size):
+            batch = keys[i:i+batch_size]
+            clause = "Pkey IN ({})".format(
+                ",".join(["'{}'".format(k) for k in batch])
+            )
+
+            query = """DELETE FROM IdIndex
+                WHERE Type = '{}' AND {}""".format(
+                    typ.lower(),
+                    clause,
+                )
+
+            self._do_query(cursor, query)
+
+    def _removeObjects(self, cursor, typ, clause):
+        query = """DELETE FROM Objects
+        WHERE Type = '{}' {}""".format(
+            typ.lower(),
+            clause,
+        )
+
+        self._do_query(cursor, query)
 
     def _parseObjectRow(self, data, typ):
         return utils.unmarshal_object(data, self.Schema, typ)
@@ -392,7 +450,7 @@ class SqliteStore:
         )
 
     def _convertFilter(self, filterSetting, sample):
-        if isinstance(filterSetting, options._ListDeleteOption):            
+        if isinstance(filterSetting, options._ListDeleteOption):
             copt = options.CommonOptionHolderFactory()
             filterSetting.ApplyFunction()(copt)
             filterSetting = copt.filter
@@ -420,6 +478,7 @@ class SqliteStore:
             raise Exception(constants.ErrInvalidFilter)
 
         if isinstance(filterSetting, options.InSetting):
+
             def convert_value(v):
                 # return "'{}'".format(v)
                 if isinstance(v, str):
@@ -428,11 +487,12 @@ class SqliteStore:
                     return str(v).lower()
                 else:
                     return str(v)
-            
+
             values = ", ".join([convert_value(v) for v in filterSetting.values])
 
             return " json_extract(Object, '$.{}') IN ({})".format(
-                filterSetting.key, values)
+                filterSetting.key, values
+            )
 
         if isinstance(filterSetting, options.EqSetting):
             return " json_extract(Object, '$.{}') = {} ".format(
