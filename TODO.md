@@ -19,17 +19,19 @@
     - Gt/Gte @done
     - And/Or/Not @done
     - In @done
-- replace the KeyFilter with generic IN @done
+- replace the KeyFilter with generic In @done
 - delete filtering support (high) @done
+- ability to build multiple model directories @done
 
 - add the rest of the storz
+    - web server
+    - web client store
+
     - metadata store
         - remove the functionality from the sql store
     - cache store
     - in memory store
     - mongo store
-    - web server
-    - web client store
     - router store
     - behavior store
     - 

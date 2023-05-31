@@ -14,8 +14,17 @@ log = logging.getLogger(__name__)
 log.debug('loading builder.py...')
 
 
-def Generate(model: str) -> None:
-    structs, resources = load_model(model)
+def Generate(*models) -> None:
+    structs = []
+    resources = []
+
+    for model in models:
+        log.debug(f"Loading model {model}...")
+        
+        s, r = load_model(model)
+        
+        structs.extend(s)
+        resources.extend(r)
 
     imports = [
         "import json",
