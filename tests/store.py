@@ -3,6 +3,7 @@ import sys
 import logging
 import inspect
 
+import time
 from datetime import datetime
 from pystorz.store import options, store, utils
 from pystorz.internal import constants
@@ -1238,3 +1239,118 @@ def test_list_and_OR_filter():
 
     assert ret is not None
     assert len(ret) == alive_count
+
+
+@test
+def test_performance():
+    NUMBER_OF_OBJECTS = 10000
+
+    log.info("Creating {} objects".format(NUMBER_OF_OBJECTS))
+    graph_create = [0.0]*NUMBER_OF_OBJECTS
+    tc1 = time.time()
+    objects = set()
+    for i in range(NUMBER_OF_OBJECTS):
+        t11 = time.time()
+        world = model.WorldFactory()
+        world.External().SetName("world-{}".format(i))
+        world.External().SetCounter(i)
+        world.External().SetAlive(i%2 == 0)
+        clt.Create(world)        
+        t22 = time.time()
+
+        objects.add(world)
+
+        # append milliseconds it took for a single create
+        graph_create[i] = t22 - t11
+    tc2 = time.time()
+
+    log.info("Updating {} objects".format(NUMBER_OF_OBJECTS))
+    graph_update = [0.0]*NUMBER_OF_OBJECTS
+    i = 0
+    tu1 = time.time()
+    for o in objects:
+        t11 = time.time()
+        o.External().SetAlive(not o.External().Alive())
+        clt.Update(o.Metadata().Identity(), o)
+        t22 = time.time()
+
+        # append milliseconds it took for a single create
+        graph_update[i] = t22 - t11
+        i += 1
+    tu2 = time.time()
+
+    tl1 = time.time()
+    log.info("Listing {} objects".format(NUMBER_OF_OBJECTS))
+    clt.List(model.WorldKindIdentity)
+    tl2 = time.time()
+
+    tlh1 = time.time()
+    log.info("Listing {} objects".format(NUMBER_OF_OBJECTS//2))
+    clt.List(model.WorldKindIdentity, options.Eq("external.alive", True))
+    tlh2 = time.time()
+    
+    tg1 = time.time()
+    graph_get = [0.0]*NUMBER_OF_OBJECTS
+    log.info("Getting {} objects".format(NUMBER_OF_OBJECTS))
+    for i in range(NUMBER_OF_OBJECTS):
+        tgg1 = time.time()
+        clt.Get(model.WorldIdentity("world-{}".format(i)))
+        tgg2 = time.time()
+        graph_get[i] = tgg2 - tgg1
+
+    tg2 = time.time()
+
+    td1 = time.time()
+    graph_del = [0.0]*NUMBER_OF_OBJECTS
+    log.info("Deleting {} objects".format(NUMBER_OF_OBJECTS))
+    for i in range(NUMBER_OF_OBJECTS):
+        tgg1 = time.time()
+        clt.Delete(model.WorldIdentity("world-{}".format(i)))
+        tgg2 = time.time()
+        graph_del[i] = tgg2 - tgg1
+
+    td2 = time.time()
+
+    log.info(f"Performance results: {NUMBER_OF_OBJECTS} objects")
+    log.info("Create: \t\t{}s".format(tc2 - tc1))
+    log.info("Update: \t\t{}s".format(tu2 - tu1))
+    log.info("List Half:\t{}s".format(tlh2 - tlh1))
+    log.info("List: \t\t{}s".format(tl2 - tl1))
+    log.info("Get:\t\t{}s".format(tg2 - tg1))
+    log.info("Delete: \t\t{}s".format(td2 - td1))
+
+    # plot the rest of the graphs
+    import matplotlib.pyplot as plt
+
+    plt.figure()
+    plt.plot(graph_create, label="create")
+    plt.savefig("perf_create.png")
+
+    plt.figure()
+    plt.plot(graph_update, label="update")
+    plt.savefig("perf_update.png")
+
+    plt.figure()
+    plt.plot(graph_get, label="get")
+    plt.savefig("perf_get.png")
+
+    plt.figure()
+    plt.plot(graph_del, label="delete")
+    plt.savefig("perf_delete.png")
+
+    # with info logs
+    # Performance results: 10000 objects
+    # Create: 	    5.962012052536011s
+    # Update: 		7.063429117202759s
+    # List Half:   	0.2144460678100586s
+    # List: 		0. 41225194931030273s
+    # Get:		    0.9138858318328857s
+    # Delete: 		4.72649621963501s
+
+    # with no logs
+    # Create: 		5.244661092758179s
+    # Update: 		6.249370098114014s
+    # List Half:	0.21255111694335938s
+    # List: 		0.40752696990966797s
+    # Get:		    0.6312203407287598s
+    # Delete: 		3.8235106468200684s

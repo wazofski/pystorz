@@ -424,6 +424,8 @@ class SqliteStore:
                 # return "'{}'".format(v)
                 if isinstance(v, str):
                     return "'{}'".format(v)
+                elif isinstance(v, bool):
+                    return str(v).lower()
                 else:
                     return str(v)
             

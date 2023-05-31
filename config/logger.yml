@@ -9,16 +9,12 @@ handlers:
     formatter: simple
     stream: ext://sys.stdout
 loggers:
-  pystorz.mgen.loader:
+  pystorz.mgen:
     level: INFO
     handlers: [console]
     propagate: no
-  pystorz.mgen.builder:
+  pystorz.sql:
     level: INFO
-    handlers: [console]
-    propagate: no
-  pystorz.sql.store:
-    level: DEBUG
     handlers: [console]
     propagate: no
   test.store:
