@@ -237,7 +237,7 @@ def test_can_put_change_naming_props():
     object_new_abc = model.WorldFactory()
     object_new_abc.External().SetName("abc")
     object_new_abc.External().SetDescription("new abc object")
-     
+
     object_new_abc = clt.Create(object_new_abc)
     assert object_new_abc is not None
 
@@ -605,9 +605,7 @@ def test_can_list_multiple_objects():
 
 @test
 def test_can_list_and_sort_multiple_objects():
-    ret = clt.List(
-        model.WorldKindIdentity,
-        options.Order("external.name"))
+    ret = clt.List(model.WorldKindIdentity, options.Order("external.name"))
 
     assert ret is not None
     assert len(ret) == 2
@@ -684,14 +682,14 @@ def test_list_and_filter_by_primary_key():
 
     assert len(keys) == 2
 
-    ret = clt.List(model.WorldKindIdentity, options.In(
-        "external.name", [keys[0], keys[1]]))
+    ret = clt.List(
+        model.WorldKindIdentity, options.In("external.name", [keys[0], keys[1]])
+    )
 
     assert len(ret) == 2
 
     for k in keys:
-        ret = clt.List(model.WorldKindIdentity,
-                       options.In("external.name", [k]))
+        ret = clt.List(model.WorldKindIdentity, options.In("external.name", [k]))
 
         assert len(ret) == 1
         assert ret[0].PrimaryKey() == k
@@ -733,9 +731,7 @@ def test_list_and_eq_filter():
     # for r in ret:
     #     log.info("object {}".format(utils.pps(r.ToJson())))
 
-    ret = clt.List(
-        model.WorldKindIdentity, options.Eq("external.name", worldName)
-    )
+    ret = clt.List(model.WorldKindIdentity, options.Eq("external.name", worldName))
 
     assert ret is not None
     assert len(ret) == 1
@@ -850,7 +846,7 @@ def test_metadata_updates():
     newName = "test_metadata_updates22"
     world.External().SetName(newName)
     world.External().SetDescription("test_metadata_updates2222")
-    
+
     err = None
     ret33 = None
     try:
@@ -937,9 +933,7 @@ def test_weird_characters():
     assert ret.External().Description() == desc
 
     # list and filter
-    ret = clt.List(
-        model.WorldKindIdentity, options.Eq("external.description", desc)
-    )
+    ret = clt.List(model.WorldKindIdentity, options.Eq("external.description", desc))
 
     assert ret is not None
     assert len(ret) == 1
@@ -952,14 +946,12 @@ def test_weird_characters():
 
 @test
 def test_list_and_filter_by_types():
-    ret = clt.List(model.WorldKindIdentity,
-                   options.Eq("external.counter", 123))
+    ret = clt.List(model.WorldKindIdentity, options.Eq("external.counter", 123))
 
     assert ret is not None
     assert len(ret) == 1
 
-    ret = clt.List(model.WorldKindIdentity,
-                   options.Eq("external.alive", True))
+    ret = clt.List(model.WorldKindIdentity, options.Eq("external.alive", True))
 
     assert ret is not None
     assert len(ret) == 1
@@ -972,7 +964,7 @@ def test_list_and_filter_and_sort():
     for r in ret:
         r.External().SetAlive(True)
         clt.Update(r.Metadata().Identity(), r)
-    
+
     ret[0].External().SetAlive(False)
     clt.Update(ret[0].Metadata().Identity(), ret[0])
 
@@ -983,7 +975,7 @@ def test_list_and_filter_and_sort():
     )
 
     assert ret is not None
-    assert len(ret) == total_length-1
+    assert len(ret) == total_length - 1
 
     world = ret[0]
     # abc is not alive so the next one is anotherWorldName
@@ -996,7 +988,7 @@ def test_list_and_filter_and_sort():
     )
 
     assert ret is not None
-    assert len(ret) == total_length-1
+    assert len(ret) == total_length - 1
 
     world = ret[0]
     # abc is not alive so the next one is anotherWorldName
@@ -1016,23 +1008,23 @@ def test_list_and_map_of_struct():
     world.Internal().SetMap({"nested": nested})
 
     d = world.Internal().Map()
-    assert d['nested'].Counter() == 123
+    assert d["nested"].Counter() == 123
     l = world.Internal().List()
     assert l[0].Counter() == 123
 
     ret = clt.Create(world)
     assert ret is not None
     d = ret.Internal().Map()
-    assert d['nested'].Counter() == 123
+    assert d["nested"].Counter() == 123
     l = ret.Internal().List()
     assert l[0].Counter() == 123
 
     ret = clt.Get(model.WorldIdentity("test_list_and_map_of_struct"))
     assert ret is not None
-    
+
     d = ret.Internal().Map()
-    assert d['nested'].Counter() == 123
-    assert d['nested'].Alive()
+    assert d["nested"].Counter() == 123
+    assert d["nested"].Alive()
 
     l = ret.Internal().List()
     assert l[0].Counter() == 123
@@ -1045,15 +1037,15 @@ def test_list_and_not_eq_filter():
     total_length = len(ret)
 
     ret = clt.List(
-        model.WorldKindIdentity, 
-        options.Not(options.Eq("external.name", worldName))
+        model.WorldKindIdentity, options.Not(options.Eq("external.name", worldName))
     )
 
     assert ret is not None
-    assert len(ret) == total_length-1
+    assert len(ret) == total_length - 1
 
     for w in ret:
         assert w.External().Name() != worldName
+
 
 @test
 def test_list_and_lt_gt_filter():
@@ -1065,38 +1057,30 @@ def test_list_and_lt_gt_filter():
         clt.Update(r.Metadata().Identity(), r)
         i += 10
 
-    half = 10*total_length//2
+    half = 10 * total_length // 2
 
-    ret = clt.List(
-        model.WorldKindIdentity, 
-        options.Lt("external.counter", half)
-    )
+    ret = clt.List(model.WorldKindIdentity, options.Lt("external.counter", half))
 
     assert ret is not None
     for r in ret:
         assert r.External().Counter() < half
-    
-    ret = clt.List(
-        model.WorldKindIdentity, 
-        options.Gt("external.counter", half)
-    )
+
+    ret = clt.List(model.WorldKindIdentity, options.Gt("external.counter", half))
 
     assert ret is not None
     for r in ret:
         assert r.External().Counter() > half
 
     ret = clt.List(
-        model.WorldKindIdentity, 
-        options.Not(options.Lt("external.counter", half))
+        model.WorldKindIdentity, options.Not(options.Lt("external.counter", half))
     )
 
     assert ret is not None
     for r in ret:
         assert r.External().Counter() >= half
-    
+
     ret = clt.List(
-        model.WorldKindIdentity, 
-        options.Not(options.Gt("external.counter", half))
+        model.WorldKindIdentity, options.Not(options.Gt("external.counter", half))
     )
 
     assert ret is not None
@@ -1104,36 +1088,28 @@ def test_list_and_lt_gt_filter():
         assert r.External().Counter() <= half
 
     ret = clt.List(
-        model.WorldKindIdentity, 
-        options.Not(options.Lte("external.counter", half))
+        model.WorldKindIdentity, options.Not(options.Lte("external.counter", half))
     )
 
     assert ret is not None
     for r in ret:
         assert r.External().Counter() > half
-    
+
     ret = clt.List(
-        model.WorldKindIdentity, 
-        options.Not(options.Gte("external.counter", half))
+        model.WorldKindIdentity, options.Not(options.Gte("external.counter", half))
     )
 
     assert ret is not None
     for r in ret:
         assert r.External().Counter() < half
 
-    ret = clt.List(
-        model.WorldKindIdentity, 
-        options.Lte("external.counter", half)
-    )
+    ret = clt.List(model.WorldKindIdentity, options.Lte("external.counter", half))
 
     assert ret is not None
     for r in ret:
         assert r.External().Counter() <= half
-    
-    ret = clt.List(
-        model.WorldKindIdentity, 
-        options.Gte("external.counter", half)
-    )
+
+    ret = clt.List(model.WorldKindIdentity, options.Gte("external.counter", half))
 
     assert ret is not None
     for r in ret:
@@ -1143,16 +1119,15 @@ def test_list_and_lt_gt_filter():
 @test
 def test_list_and_in_int_filter():
     ret = clt.List(
-        model.WorldKindIdentity, 
-        options.In("external.counter", [10, 20, 30, 40])
+        model.WorldKindIdentity, options.In("external.counter", [10, 20, 30, 40])
     )
 
     assert ret is not None
     assert len(ret) == 4
 
     ret = clt.List(
-        model.WorldKindIdentity, 
-        options.Not(options.In("external.counter", [10, 20, 30, 40]))
+        model.WorldKindIdentity,
+        options.Not(options.In("external.counter", [10, 20, 30, 40])),
     )
 
     assert ret is not None
@@ -1161,11 +1136,11 @@ def test_list_and_in_int_filter():
     for r in ret:
         assert r.External().Counter() not in [10, 20, 30, 40]
 
+
 @test
 def test_list_and_AND_filter():
     ret = clt.List(
-        model.WorldKindIdentity,
-        options.In("external.counter", [20, 30, 40, 50])
+        model.WorldKindIdentity, options.In("external.counter", [20, 30, 40, 50])
     )
 
     alive_count = 0
@@ -1174,10 +1149,11 @@ def test_list_and_AND_filter():
             alive_count += 1
 
     ret = clt.List(
-        model.WorldKindIdentity, 
+        model.WorldKindIdentity,
         options.And(
             options.In("external.counter", [20, 30, 40, 50]),
-            options.Eq("external.alive", True))
+            options.Eq("external.alive", True),
+        ),
     )
 
     assert ret is not None
@@ -1190,10 +1166,11 @@ def test_list_and_AND_filter():
         assert r.External().Alive()
 
     ret = clt.List(
-        model.WorldKindIdentity, 
+        model.WorldKindIdentity,
         options.And(
             options.In("external.counter", [20, 30, 40, 50]),
-            options.Not(options.Eq("external.alive", True)))
+            options.Not(options.Eq("external.alive", True)),
+        ),
     )
 
     assert ret is not None
@@ -1221,20 +1198,22 @@ def test_list_and_OR_filter():
             not_alive_counters.append(r.External().Counter())
 
     ret = clt.List(
-        model.WorldKindIdentity, 
+        model.WorldKindIdentity,
         options.Or(
             options.In("external.counter", not_alive_counters),
-            options.Eq("external.alive", True))
+            options.Eq("external.alive", True),
+        ),
     )
 
     assert ret is not None
     assert len(ret) == total_length
 
     ret = clt.List(
-        model.WorldKindIdentity, 
+        model.WorldKindIdentity,
         options.Or(
             options.Not(options.In("external.counter", not_alive_counters)),
-            options.Eq("external.alive", True))
+            options.Eq("external.alive", True),
+        ),
     )
 
     assert ret is not None
@@ -1246,7 +1225,7 @@ def test_performance():
     NUMBER_OF_OBJECTS = 10000
 
     log.info("Creating {} objects".format(NUMBER_OF_OBJECTS))
-    graph_create = [0.0]*NUMBER_OF_OBJECTS
+    graph_create = [0.0] * NUMBER_OF_OBJECTS
     tc1 = time.time()
     objects = set()
     for i in range(NUMBER_OF_OBJECTS):
@@ -1254,8 +1233,8 @@ def test_performance():
         world = model.WorldFactory()
         world.External().SetName("world-{}".format(i))
         world.External().SetCounter(i)
-        world.External().SetAlive(i%2 == 0)
-        clt.Create(world)        
+        world.External().SetAlive(i % 2 == 0)
+        clt.Create(world)
         t22 = time.time()
 
         objects.add(world)
@@ -1265,7 +1244,7 @@ def test_performance():
     tc2 = time.time()
 
     log.info("Updating {} objects".format(NUMBER_OF_OBJECTS))
-    graph_update = [0.0]*NUMBER_OF_OBJECTS
+    graph_update = [0.0] * NUMBER_OF_OBJECTS
     i = 0
     tu1 = time.time()
     for o in objects:
@@ -1285,12 +1264,12 @@ def test_performance():
     tl2 = time.time()
 
     tlh1 = time.time()
-    log.info("Listing {} objects".format(NUMBER_OF_OBJECTS//2))
+    log.info("Listing {} objects".format(NUMBER_OF_OBJECTS // 2))
     clt.List(model.WorldKindIdentity, options.Eq("external.alive", True))
     tlh2 = time.time()
-    
+
     tg1 = time.time()
-    graph_get = [0.0]*NUMBER_OF_OBJECTS
+    graph_get = [0.0] * NUMBER_OF_OBJECTS
     log.info("Getting {} objects".format(NUMBER_OF_OBJECTS))
     for i in range(NUMBER_OF_OBJECTS):
         tgg1 = time.time()
@@ -1301,7 +1280,7 @@ def test_performance():
     tg2 = time.time()
 
     td1 = time.time()
-    graph_del = [0.0]*NUMBER_OF_OBJECTS
+    graph_del = [0.0] * NUMBER_OF_OBJECTS
     log.info("Deleting {} objects".format(NUMBER_OF_OBJECTS))
     for i in range(NUMBER_OF_OBJECTS):
         tgg1 = time.time()
