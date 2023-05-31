@@ -1237,6 +1237,48 @@ def test_delete_filtered():
 
 
 @test
+def test_sql_injection():
+    # try to add a sql injection into a list query
+    ret = clt.List(model.WorldKindIdentity, options.Eq("external.name", "'; DROP TABLE Objects; --"))
+    assert ret is not None
+    assert len(ret) == 0
+
+    # try to add a sql injection into a naming property
+    world = model.WorldFactory()
+    world.External().SetName("', '', ''); DROP TABLE Objects; --")
+    world.External().SetCounter(1)
+    errored = False
+    try:
+        clt.Create(world)
+    except Exception as ex:
+        log.info("Caught exception: {}".format(ex))
+        errored = True
+    
+    # try to add a sql injection into another property
+    world = model.WorldFactory()
+    name = "sqlinjector"
+    world.External().SetName(name)
+    desc = "'); DROP TABLE Objects; --"
+    world.External().SetDescription(desc)
+    world.External().SetCounter(1)
+    clt.Create(world)
+
+    ret = clt.List(model.WorldKindIdentity, options.Eq("external.name", "sqlinjector"))
+    assert ret[0].External().Description() == desc
+    ret = clt.Get(model.WorldIdentity(name), options.Eq("external.name", "sqlinjector"))
+    assert ret.External().Description() == desc
+    
+    ret.External().SetName("', '', ''); DROP TABLE Objects; --")
+    errored = False
+    try:
+        clt.Update(ret.Metadata().Identity(), ret)
+    except Exception as ex:
+        log.info("Caught exception: {}".format(ex))
+        errored = True
+    
+    assert errored
+
+@test
 def test_performance():
     NUMBER_OF_OBJECTS = 1000
 
