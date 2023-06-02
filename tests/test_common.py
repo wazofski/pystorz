@@ -38,7 +38,7 @@ def sqlite():
     return SqliteStore(Schema(), SqliteConnection(db_file))
 
 
-def remote():
+def rest():
     log.debug("server/client setup")
     import os
 
@@ -73,7 +73,7 @@ def remote():
     return client
 
 
-@pytest.fixture(params=[sqlite(), remote()])
+@pytest.fixture(params=[sqlite(), rest()])
 def thestore(request):
     return request.param
 
