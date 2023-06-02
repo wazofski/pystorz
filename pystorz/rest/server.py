@@ -28,10 +28,10 @@ PageOffsetArg = "pageOffset"
 OrderByArg = "orderBy"
 
 
+ActionGet = "GET"
 ActionCreate = "POST"
 ActionUpdate = "PUT"
 ActionDelete = "DELETE"
-ActionGet = "GET"
 
 
 def _handle_exceptions(e):
@@ -162,11 +162,15 @@ class Server:
         self.Store = internals.internal_factory(schema, thestore)
         self.Exposed = {}
 
-        accepted_actions = set([ActionCreate, ActionUpdate, ActionDelete, ActionGet])
+        accepted_actions = set([
+            ActionGet,
+            ActionCreate,
+            ActionUpdate,
+            ActionDelete])
 
         for e in to_expose:
             for a in e.Actions:
-                if e not in accepted_actions:
+                if a not in accepted_actions:
                     raise Exception("invalid action: {}".format(a))
 
             self.Exposed[e.Kind] = e.Actions

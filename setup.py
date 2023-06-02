@@ -28,6 +28,7 @@ setup(
         "black",
         "jsonpath-python",
         "cherrypy"
+        "requests"
         # "pysqlite3",
     ],
     extras_require={

@@ -6,3 +6,4 @@ jsonpath-python
 matplotlib
 flask
 cherrypy
+requests

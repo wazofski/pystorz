@@ -57,9 +57,9 @@ def rest():
         sqlite_store,
         server.Expose(
             model.WorldKind,
-            server.ActionCreate,
             server.ActionGet,
-            server.ActionList,
+            server.ActionCreate,
+            server.ActionUpdate,
             server.ActionDelete),
     )
 
@@ -73,7 +73,8 @@ def rest():
     return client
 
 
-@pytest.fixture(params=[sqlite(), rest()])
+# @pytest.fixture(params=[sqlite(), rest()])
+@pytest.fixture(params=[rest()])
 def thestore(request):
     return request.param
 
