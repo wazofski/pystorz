@@ -8,8 +8,8 @@ class Object:
     def __init__(self):
         raise Exception("Object is an interface")
 
-    # def MetaHolder(self):
-    #     pass
+    def Metadata(self):
+        pass
 
     def Clone(self):
         pass
