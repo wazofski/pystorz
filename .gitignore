@@ -2,6 +2,7 @@ sample/Student.py
 sample/Teacher.py
 **/__pycache__/
 **/generated
+tests/.coverage
 test.db
 dist/**
 pystorz.egg-info/**
