@@ -1,0 +1,6 @@
+pytest
+PyYAML
+jinja2
+black
+jsonpath-python
+matplotlib
