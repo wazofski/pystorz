@@ -23,7 +23,8 @@
 - delete filtering support (high) @done
 - ability to build multiple model directories @done
 
-- test and add common casees for complex filters on datetime types
+- test and add common casees for complex filters on datetime types (high)
+- add mysql store (high)
 
 - add the rest of the storz
     - web server
@@ -31,6 +32,7 @@
 
     - metadata store
         - remove the functionality from the sql store
+    
     - cache store
     - in memory store
     - mongo store
