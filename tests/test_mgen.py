@@ -1,15 +1,13 @@
+from config import globals
+
 import os
 import shutil
 import pytest
 
 from datetime import datetime
-
-from config import globals
-
 from pystorz.mgen.builder import Generate
 
 import logging
-
 log = logging.getLogger(__name__)
 
 globals.logger_config()
@@ -18,8 +16,9 @@ globals.logger_config()
 @pytest.mark.mgen
 def test_mgen_can_generate():
     # ensure empty directory before generating
-    if os.path.exists(globals.TEST_MODEL_PATH):
-        shutil.rmtree(globals.TEST_MODEL_PATH)
+    generated_model_path = "generated"
+    if os.path.exists(generated_model_path):
+        shutil.rmtree(generated_model_path)
 
     Generate(globals.TEST_MODEL_PATH)
 
@@ -112,9 +111,10 @@ def test_schema():
     from generated import model
 
     world = model.WorldFactory()
-    world.External().SetName("abc")
+
     schema = model.Schema()
     obj = schema.ObjectForKind(str(world.Metadata().Kind()))
+    obj.External().SetName("abc")
     assert obj is not None
     
     anotherWorld = obj.Clone()
