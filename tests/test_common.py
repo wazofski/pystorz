@@ -4,6 +4,7 @@ import pytest
 import time
 
 import logging
+
 log = logging.getLogger(__name__)
 
 globals.logger_config()
@@ -26,7 +27,7 @@ newWorldDescription = "is only beoaoqwiewioqu"
 def sqlite():
     log.debug("sqlite setup")
     import os
-    
+
     from pystorz.sql.store import SqliteStore, SqliteConnection
     from generated.model import Schema
 
@@ -37,9 +38,7 @@ def sqlite():
     return SqliteStore(Schema(), SqliteConnection(db_file))
 
 
-@pytest.fixture(
-    params=[sqlite()]
-)
+@pytest.fixture(params=[sqlite()])
 def thestore(request):
     return request.param
 
@@ -895,7 +894,9 @@ def test_weird_characters(thestore):
     assert ret.External().Description() == desc
 
     # list and filter
-    ret = thestore.List(model.WorldKindIdentity, options.Eq("external.description", desc))
+    ret = thestore.List(
+        model.WorldKindIdentity, options.Eq("external.description", desc)
+    )
 
     assert ret is not None
     assert len(ret) == 1
@@ -1201,7 +1202,10 @@ def test_delete_filtered(thestore):
 @pytest.mark.common
 def test_sql_injection(thestore):
     # try to add a sql injection into a list query
-    ret = thestore.List(model.WorldKindIdentity, options.Eq("external.name", "'; DROP TABLE Objects; --"))
+    ret = thestore.List(
+        model.WorldKindIdentity,
+        options.Eq("external.name", "'; DROP TABLE Objects; --"),
+    )
     assert ret is not None
     assert len(ret) == 0
 
@@ -1215,7 +1219,7 @@ def test_sql_injection(thestore):
     except Exception as ex:
         log.info("Caught exception: {}".format(ex))
         errored = True
-    
+
     # try to add a sql injection into another property
     world = model.WorldFactory()
     name = "sqlinjector"
@@ -1225,11 +1229,15 @@ def test_sql_injection(thestore):
     world.External().SetCounter(1)
     thestore.Create(world)
 
-    ret = thestore.List(model.WorldKindIdentity, options.Eq("external.name", "sqlinjector"))
+    ret = thestore.List(
+        model.WorldKindIdentity, options.Eq("external.name", "sqlinjector")
+    )
     assert ret[0].External().Description() == desc
-    ret = thestore.Get(model.WorldIdentity(name), options.Eq("external.name", "sqlinjector"))
+    ret = thestore.Get(
+        model.WorldIdentity(name), options.Eq("external.name", "sqlinjector")
+    )
     assert ret.External().Description() == desc
-    
+
     ret.External().SetName("', '', ''); DROP TABLE Objects; --")
     errored = False
     try:
@@ -1237,7 +1245,7 @@ def test_sql_injection(thestore):
     except Exception as ex:
         log.info("Caught exception: {}".format(ex))
         errored = True
-    
+
     assert errored
 
 
@@ -1277,7 +1285,7 @@ def test_performance(thestore):
         # append milliseconds it took for a single create
         graph_update[i] = t22 - t11
         i += 1
-    
+
     tu2 = time.time()
 
     tl1 = time.time()
@@ -1318,7 +1326,7 @@ def test_performance(thestore):
         world.External().SetCounter(1000)
         world.External().SetAlive(i % 2 == 0)
         thestore.Create(world)
-    
+
     tdd1 = time.time()
     thestore.Delete(model.WorldKindIdentity, options.Eq("external.counter", 1000))
     tdd2 = time.time()

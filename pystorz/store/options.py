@@ -34,7 +34,10 @@ class DeleteOption(Option):
 
 
 class ListDeleteOption(ListOption, DeleteOption):
-    pass
+
+    @staticmethod
+    def fromJson(jsn):
+        raise NotImplementedError
 
 
 class OptionHolder:

@@ -4,6 +4,7 @@ from datetime import datetime
 from pystorz.mgen.builder import Generate
 
 import logging
+
 log = logging.getLogger(__name__)
 
 globals.logger_config()
@@ -22,6 +23,7 @@ def test_mgen_can_generate():
 
 def test_generated_model():
     from generated import model
+
     world = model.WorldFactory()
 
     # Test factory method
@@ -51,9 +53,7 @@ def test_generated_model():
     world.External().Nested().SetAnotherDescription("qwe")
     world.External().SetName("abc")
     world.Internal().SetDescription("qwe")
-    world.Internal().SetList([
-        model.NestedWorldFactory(),
-        model.NestedWorldFactory()])
+    world.Internal().SetList([model.NestedWorldFactory(), model.NestedWorldFactory()])
 
     world.Internal().SetMap(
         {
@@ -67,12 +67,11 @@ def test_generated_model():
 
 def test_serialization():
     from generated import model
+
     world = model.WorldFactory()
     world.External().SetName("abc")
     world.Internal().SetDescription("qwe")
-    world.Internal().SetList([
-        model.NestedWorldFactory(),
-        model.NestedWorldFactory()])
+    world.Internal().SetList([model.NestedWorldFactory(), model.NestedWorldFactory()])
 
     world.Internal().SetMap(
         {
@@ -110,7 +109,7 @@ def test_schema():
     obj = schema.ObjectForKind(str(world.Metadata().Kind()))
     obj.External().SetName("abc")
     assert obj is not None
-    
+
     anotherWorld = obj.Clone()
     assert anotherWorld is not None
     assert anotherWorld.Metadata().Kind() == world.Metadata().Kind()
@@ -121,15 +120,13 @@ def test_cloning():
     from generated import model
 
     world = model.WorldFactory()
-    
+
     world.External().Nested().SetCounter(10)
     world.External().Nested().SetAlive(True)
     world.External().Nested().SetAnotherDescription("qwe")
     world.External().SetName("abc")
     world.Internal().SetDescription("qwe")
-    world.Internal().SetList([
-        model.NestedWorldFactory(),
-        model.NestedWorldFactory()])
+    world.Internal().SetList([model.NestedWorldFactory(), model.NestedWorldFactory()])
 
     world.Internal().SetMap(
         {
@@ -158,4 +155,3 @@ def test_datetime_property_type():
     world.External().SetDate(dt)
 
     assert world.External().Date() == dt
-

@@ -23,6 +23,8 @@
 - delete filtering support (high) @done
 - ability to build multiple model directories @done
 
+- test and add common casees for complex filters on datetime types
+
 - add the rest of the storz
     - web server
     - web client store

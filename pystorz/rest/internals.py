@@ -16,12 +16,8 @@ class InternalStore:
         self.Store = data
 
 
-def internal_factory(data: store.Store) -> Callable[[store.SchemaHolder], store.Store]:
-    def factory(schema: store.SchemaHolder) -> store.Store:
-        client = InternalStore(schema, data)
-        return client
-
-    return factory
+def internal_factory(schema: store.SchemaHolder, data: store.Store) -> store.Store:
+    return InternalStore(schema, data)
 
 
 class InternalStore(store.Store):
