@@ -102,15 +102,15 @@ def to_bytes(obj):
 
 
 def list_parameters(ropt):
-    opt = ropt.CommonOptions()
+    opt = ropt.common_options()
 
     q = urlencode(
         {
-            server.OrderByArg: opt.OrderBy,
-            server.IncrementalArg: str(opt.OrderIncremental),
-            server.PageOffsetArg: str(opt.PageOffset),
-            server.PageSizeArg: str(opt.PageSize),
-            server.FilterArg: json.dumps(opt.PropFilter),
+            server.OrderByArg: opt.order_by,
+            server.IncrementalArg: str(opt.order_incremental),
+            server.PageOffsetArg: str(opt.page_offset),
+            server.PageSizeArg: str(opt.page_size),
+            server.FilterArg: json.dumps(opt.filter),
         }
     )
 
@@ -138,10 +138,10 @@ def strip_serialize(object):
 
 class Client(store.Store):
     
-    def __init__(self, base_url, schema, headers):
+    def __init__(self, base_url, schema, *header_options):
         self.base_url = urlparse(base_url)
         self.schema = schema
-        self.headers = headers
+        self.headers = header_options
 
     def Create(self, obj, *opt):
         if obj is None:

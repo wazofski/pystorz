@@ -67,7 +67,7 @@ def rest():
     port = 8080
     url = f"{host}:{port}"
 
-    client = client.Client(url, model.Schema(), {})
+    client = client.Client(url, model.Schema())
     srv.serve(host, port)
 
     return client
