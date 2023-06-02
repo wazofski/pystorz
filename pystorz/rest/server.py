@@ -123,7 +123,7 @@ def _make_type_handler(stor: store.Store, t: str, methods: list):
 
         opts = []
         if FilterArg in query_params:
-            opts.append(options.ListDeleteOption.fromJson(query_params[FilterArg]))
+            opts.append(options.ListDeleteOption.FromJson(query_params[FilterArg]))
 
         if PageSizeArg in query_params:
             ps = int(query_params[PageSizeArg])

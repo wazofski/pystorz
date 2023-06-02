@@ -8,6 +8,11 @@ handlers:
     level: DEBUG
     formatter: simple
     stream: ext://sys.stdout
+  pytest_handler:
+    class: logging.StreamHandler
+    level: DEBUG
+    formatter: simple
+    stream: ext://sys.stdout
 loggers:
   pystorz.mgen:
     level: INFO
@@ -17,10 +22,14 @@ loggers:
     level: ERROR
     handlers: [console]
     propagate: no
-  test.store:
-    level: INFO
+  pystorz.rest:
+    level: DEBUG
     handlers: [console]
     propagate: no
+  pytest:
+    level: INFO
+    handlers: [pytest_handler]
+    propagate: yes
 root:
   level: INFO
   handlers: [console]

@@ -104,17 +104,22 @@ def to_bytes(obj):
 def list_parameters(ropt):
     opt = ropt.common_options()
 
-    q = urlencode(
-        {
-            server.OrderByArg: opt.order_by,
-            server.IncrementalArg: str(opt.order_incremental),
-            server.PageOffsetArg: str(opt.page_offset),
-            server.PageSizeArg: str(opt.page_size),
-            server.FilterArg: json.dumps(opt.filter),
-        }
-    )
+    q = {}
+    if opt.order_by:
+        q[server.OrderByArg] = opt.order_by
+        q[server.IncrementalArg] = str(opt.order_incremental).lower()
 
-    return q
+    if opt.page_offset and opt.page_offset > 0:
+        q[server.PageOffsetArg] = str(opt.page_offset)
+
+    if opt.page_size and opt.page_size > 0:
+        q[server.PageSizeArg] = str(opt.page_size)
+
+    if opt.filter:
+        q[server.FilterArg] = opt.filter.ToJson()
+
+    return urlencode(q)
+
 
 
 import json
