@@ -120,7 +120,7 @@ def test_schema():
     anotherWorld = obj.Clone()
     assert anotherWorld is not None
     assert anotherWorld.Metadata().Kind() == world.Metadata().Kind()
-    assert anotherWorld.External().Name() == world.External().Name()
+    assert anotherWorld.External().Name() == obj.External().Name()
 
 
 @pytest.mark.mgen
