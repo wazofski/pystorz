@@ -56,20 +56,18 @@ def make_http_request(path, content, request_type, headers):
 
 def error_check(response):
     if len(response) == 0:
-        return None
+        return
 
     um = {}
 
     err = json.loads(response, object_hook=lambda d: um.update(d))
     if err is None:
         if "errors" in um:
-            return ValueError(um["errors"][0])
+            raise ValueError(um["errors"][0])
 
         if "error" in um:
             m = um["error"]
-            return Exception(f"{m['internal_code']} {m['internal']}")
-
-    return None
+            raise Exception(f"{m['internal_code']} {m['internal']}")
 
 
 def make_path_for_type(base_url, obj):
@@ -131,14 +129,12 @@ class StrippedObject:
 
 
 def strip_serialize(object):
-    data = object.ToJson()
-    obj = StrippedObject()
+    data = object.ToDict()
+    for k, v in data.items():
+        if k != "external":
+            del data[k]
 
-    err = utils.unmarshal_object(data, object_hook=lambda d: obj.__dict__.update(d))
-    if err is not None:
-        return None, err
-
-    return json.dumps(obj.__dict__).encode("utf-8")
+    return json.dumps(data)
 
 
 class Client(store.Store):
@@ -152,62 +148,44 @@ class Client(store.Store):
         if obj is None:
             raise ValueError(constants.ErrObjectNil)
 
-        log.Printf("get %s", obj.metadata().identity().path())
+        log.info("get {}".format(obj.metadata().identity().path()))
 
         copt = new_rest_options(self)
-        err = None
         for o in opt:
-            err = o.apply_function()(copt)
-            if err is not None:
-                return None, err
+            o.apply_function()(copt)
 
-        data, err = strip_serialize(obj)
-        if err is not None:
-            return None, err
-
-        data, err = self._process_request(
+        data = self._process_request(
             make_path_for_type(self.base_url, obj),
-            data,
+            strip_serialize(obj),
             server.ActionCreate,
             copt.headers,
         )
 
-        if err is not None:
-            return None, err
-
         clone = obj.clone()
-        err = json.Unmarshal(data, clone)
-        if err is not None:
-            log.Printf(str(data))
-            clone = None
-
-        return clone, err
+        clone.FromJson(data)
+        
+        return clone
 
     def Get(self, identity, *opt):
         log.info("get {}".format(identity.path()))
 
-        err = None
         copt = new_rest_options(self)
         for o in opt:
-            err = o.apply_function()(copt)
-            if err is not None:
-                return None, err
+            o.apply_function()(copt)
 
-        resp, err = self._process_request(
+        resp = self._process_request(
             make_path_for_identity(self.base_url, identity, ""),
             b"",
             server.ActionGet,
             copt.headers,
         )
 
-        if err is not None:
-            return None, err
-
         tp = identity.type()
         if tp == "id":
             tp = utils.object_kind(resp)
 
         return utils.unmarshal_object(resp, self.schema, tp)
+
 
     def Update(self, identity, obj, *opt):
         if obj is None:
@@ -216,92 +194,72 @@ class Client(store.Store):
         log.info("update {}".format(identity.path()))
 
         copt = new_rest_options(self)
-        err = None
         for o in opt:
-            err = o.apply_function()(copt)
-            if err is not None:
-                return None, err
-
-        data, err = strip_serialize(obj)
-        if err is not None:
-            return None, err
-
-        data, err = self._process_request(
+            o.apply_function()(copt)
+        
+        data = self._process_request(
             make_path_for_identity(self.base_url, identity, ""),
-            data,
+            strip_serialize(obj),
             server.ActionUpdate,
             copt.headers,
         )
 
-        if err is not None:
-            return None, err
-
         clone = obj.clone()
-        err = json.Unmarshal(data, clone)
-
-        return clone, err
+        clone.FromJson(data)
+        
+        return clone
 
     def Delete(self, identity, *opt):
         log.info("delete {}".format(identity.path()))
 
-        err = None
         copt = new_rest_options(self)
         for o in opt:
-            err = o.apply_function()(copt)
-            if err is not None:
-                return err
+            o.apply_function()(copt)
 
-        _, err = self._process_request(
+        self._process_request(
             make_path_for_identity(self.base_url, identity, ""),
-            b"",
+            "",
             server.ActionDelete,
             copt.headers,
         )
 
-        return err
 
     def List(self, identity, *opt):
         log.info("list {}".format(identity))
 
-        err = None
         copt = new_rest_options(self)
         for o in opt:
-            err = o.ApplyFunction()(copt)
-            if err is not None:
-                return None, err
+            o.ApplyFunction()(copt)
 
         params = list_parameters(copt)
         path = make_path_for_identity(self.base_url, identity, params)
-        res, err = self._process_request(path, b"", server.ActionGet, copt.Headers)
+        res = self._process_request(path, "", server.ActionGet, copt.headers)
 
-        if err is not None:
-            return None, err
-
-        parsed = []
-        err = json.loads(res, object_hook=lambda d: parsed.append(d))
-        if err is not None:
-            return None, err
+        parsed = json.loads(res)
 
         marshalledResult = store.ObjectList()
         if len(parsed) == 0:
-            return marshalledResult, None
+            return marshalledResult
 
         resource = self.schema.ObjectForKind(utils.ObjectKind(parsed[0]))
 
         for r in parsed:
             clone = resource.Clone()
-            clone.UnmarshalJSON(to_bytes(r))
+            clone.FromDict(r)
 
             marshalledResult.append(clone)
 
-        return marshalledResult, None
+        return marshalledResult
+
 
     def _make_request(self, path, content, request_type, headers):
         url = urljoin(self.base_url.geturl(), path)
         headers.update(self.headers)
         response = requests.request(request_type, url, data=content, headers=headers)
         response.raise_for_status()
+
         return response.content
+
 
     def _process_request(self, request_url, content, method, headers):
         req_id = str(uuid.uuid4())
@@ -312,27 +270,22 @@ class Client(store.Store):
         headers["Content-Type"] = "application/json"
         headers["X-Requested-With"] = "XMLHttpRequest"
 
-        logging.info(f"{method.lower()} {request_url.geturl()}")
+        log.info(f"{method.lower()} {request_url.geturl()}")
 
-        data, err = self._make_request(request_url, content, method, headers)
-        cerr = error_check(data)
-
-        if err is None:
-            err = cerr
-        elif cerr is not None:
-            err = f"{err} {cerr}"
-
-        if err is not None:
+        data = self._make_request(request_url, content, method, headers)
+        try:
+            error_check(data)
+        except Exception as err:
             if len(content) > 0:
                 try:
                     js = json.loads(content)
-                    logging.info("request content: %s", json.dumps(js))
+                    log.info("request content: %s", json.dumps(js))
                 except ValueError:
-                    logging.info("request content: %s", content)
+                    log.info("request content: %s", content)
 
             if len(data) > 0:
-                logging.info("response content: %s", data.decode("utf-8"))
+                log.info("response content: %s", data.decode("utf-8"))
 
-            return None, err
+            raise err
 
-        return data, err
+        return data

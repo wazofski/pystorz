@@ -1,6 +1,5 @@
 import uuid
 import json
-from typing import List
 
 
 class Object:
@@ -38,8 +37,7 @@ class ExternalHolder:
         pass
 
 
-class ObjectList(List[Object]):
-
+class ObjectList(list[Object]):
     pass
 
 
@@ -117,7 +115,7 @@ class SchemaHolder:
     def ObjectForKind(self, kind: str) -> Object:
         pass
 
-    def Types(self) -> List[str]:
+    def Types(self) -> list[str]:
         pass
 
 

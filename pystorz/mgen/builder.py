@@ -2,7 +2,6 @@ import os
 import shutil
 import black
 import logging
-from typing import List
 from io import StringIO
 
 from jinja2 import Template
@@ -53,7 +52,7 @@ def Generate(*models) -> None:
     utils.export_file(targetDir, "model.py", res)
 
 
-def compileResources(resources: List[Resource]) -> str:
+def compileResources(resources: list[Resource]) -> str:
     b = StringIO()
 
     for r in resources:
@@ -93,7 +92,7 @@ def compileResources(resources: List[Resource]) -> str:
     return b.getvalue()
 
 
-def compileStructs(structs: List[Struct]) -> str:
+def compileStructs(structs: list[Struct]) -> str:
     b = StringIO()
 
     for s in structs:
@@ -146,7 +145,7 @@ def render(rpath: str, data) -> str:
     return t.render(data=data)
 
 
-def addDefaultPropValues(props: List[Prop]) -> List[Prop]:
+def addDefaultPropValues(props: list[Prop]) -> list[Prop]:
     res = []
 
     for p in props:
