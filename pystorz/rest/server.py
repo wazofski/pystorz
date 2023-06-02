@@ -2,9 +2,8 @@ import json
 import logging
 import traceback
 
-# from urllib.parse import parse_qs, urlparse
-
 from pystorz.internal import constants
+from urllib.parse import urlparse, parse_qs
 
 from pystorz.store import store
 from pystorz.store import options
@@ -13,6 +12,9 @@ from pystorz.store import utils
 from pystorz.rest import internals
 
 from flask import Flask, request
+
+
+# from urllib.parse import parse_qs, urlparse
 
 
 log = logging.getLogger(__name__)
@@ -64,12 +66,10 @@ def _make_id_handler(stor, schema, exposed):
 
 
 def _handle_path(
-    stor: store.Store,
-    identity: store.ObjectIdentity,
-    object: store.Object):
-    
+    stor: store.Store, identity: store.ObjectIdentity, object: store.Object
+):
     ret = None
-    if request.ethod == ActionGet:
+    if request.method == ActionGet:
         try:
             ret = stor.Get(identity)
         except Exception as e:
@@ -96,73 +96,57 @@ def _handle_path(
     return _json_response(200, {})
 
 
-# def _make_object_handler(stor: store.Store, schema: store.SchemaHolder, t: str, methods: List[str]):
-#     def handler(pkey: str):
-#         robject = None
-#         id = store.ObjectIdentity(t.lower() + "/" + pkey)
-#         data = read_stream(r.Body)
-#         if err is None:
-#             robject, _ = unmarshal_object(data, self.Schema, t)
+def _make_object_handler(
+    stor: store.Store, schema: store.SchemaHolder, t: str, methods: list
+):
+    def handler(pkey: str):
+        id = store.ObjectIdentity("{}/{}".format(t.lower(), pkey))
 
-#         if r.Method not in methods:
-#             report_error(w, constants.ErrInvalidMethod, http.StatusMethodNotAllowed)
-#             return
+        robject = utils.unmarshal_object(request.content, schema, t)
 
-#         self.handle_path(w, r, id, robject)
+        if request.method not in methods:
+            return _error_response(405, constants.ErrInvalidMethod)
 
-#     return handler
+        return _handle_path(stor, id, robject)
+
+    return handler
 
 
-# def _make_type_handler(stor: store.Store, t: str, methods: List[str]):
-#     def handler(w: http.server.BaseHTTPRequestHandler):
-#         if r.Method not in methods:
-#             report_error(w, constants.ErrInvalidMethod, http.StatusMethodNotAllowed)
-#             return
+def _make_type_handler(stor: store.Store, t: str, methods: list):
+    def handler():
+        if request.Method not in methods:
+            return _error_response(405, constants.ErrInvalidMethod)
 
-#         query_params = parse_qs(urlparse(r.url).query)
+        url = urlparse(request.url)
+        query_params = parse_qs(url.query)
 
-#         opts = []
-#         filter_args = query_params.get(FilterArg)
-#         if filter_args:
-#             opts.append(options.ListDeleteOption.fromJson(filter_args[0]))
+        opts = []
+        if FilterArg in query_params:
+            opts.append(options.ListDeleteOption.fromJson(query_params[FilterArg]))
 
-#         page_size_args = query_params.get(PageSizeArg)
-#         if page_size_args:
-#             ps = int(page_size_args[0])
-#             opts.append(options.PageSize(ps))
+        if PageSizeArg in query_params:
+            ps = int(query_params[PageSizeArg])
+            opts.append(options.PageSize(ps))
 
-#         page_offset_args = query_params.get(PageOffsetArg)
-#         if page_offset_args:
-#             ps = int(page_offset_args[0])
-#             opts.append(options.PageOffset(ps))
+        if PageOffsetArg in query_params:
+            ps = int(query_params[PageOffsetArg])
+            opts.append(options.PageOffset(ps))
 
-#         order_by_args = query_params.get(OrderByArg)
-#         if order_by_args:
-#             ob = order_by_args[0]
-#             opts.append(options.OrderBy(ob))
+        if OrderByArg in query_params:
+            ascending = True
+            if IncrementalArg in query_params:
+                ascending = query_params[IncrementalArg] != "true"
 
-#         order_inc_args = query_params.get(IncrementalArg)
-#         if order_inc_args:
-#             ob = True
-#             err = json.loads(order_inc_args[0], ob)
-#             if err is not None:
-#                 report_error(w, err, http.StatusBadRequest)
-#                 return
-#             if not ob:
-#                 opts.append(OrderDescending())
+            opts.append(options.Order(query_params[OrderByArg], ascending))
 
-#         ret = self.Store.List(
-#             self.Context, store.ObjectIdentity(f"{strings.ToLower(t)}/"), opts
-#         )
+        try:
+            ret = stor.List(store.ObjectIdentity(t.lower() + "/"), opts)
+            return _json_response(200, [r.ToDict() for r in ret])
 
-#         if err is not None:
-#             report_error(w, err, http.StatusBadRequest)
-#             return
-#         elif ret is not None:
-#             resp, _ = json.Marshal(ret)
-#             write_response(w, resp)
+        except Exception as e:
+            return _error_response(400, str(e))
 
-#     return handler
+    return handler
 
 
 class Expose:
@@ -177,7 +161,13 @@ class Server:
         self.Store = internals.internal_factory(schema, thestore)
         self.Exposed = {}
 
+        accepted_actions = set([ActionCreate, ActionUpdate, ActionDelete, ActionGet])
+
         for e in to_expose:
+            for a in e.Actions:
+                if e not in accepted_actions:
+                    raise Exception("invalid action: {}".format(a))
+
             self.Exposed[e.Kind] = e.Actions
 
         self.app = Flask(__name__)
@@ -215,46 +205,20 @@ class Server:
 
         log.info("server stopped...")
 
+
     def register_handlers(self):
         self.app.add_url_rule(
-            "/id/<id>",
-            _make_id_handler(
-                self.Store,
-                self.Schema,
-                self.Exposed)
+            "/id/<id>", _make_id_handler(self.Store, self.Schema, self.Exposed)
         )
 
-        # self.add_handler(self.Router, "/id/{id}", )
-        # for e in exposed:
-        #     kind = e["Kind"]
-        #     actions = e["Actions"]
-        #     self.Exposed[kind] = actions
+        for e in self.Exposed:
+            self.app.add_url_rule(
+                f"/{e.Kind}/<pkey>",
+                _make_object_handler(self.Store, self.Schema, e.Kind, e.Actions),
+            )
 
-        #     self.add_handler(self.Router, f"/{kind}/{{pkey}}", self.make_object_handler(kind, actions))
-        #     self.add_handler(self.Router, f"/{kind}", self.make_type_handler(kind, actions))
-        #     self.add_handler(self.Router, f"/{kind}/", self.make_type_handler(kind, actions))
-
-        # add_handler(server.Router, "/id/{id}", server.make_id_handler())
-        # for e in exposed:
-        #     server.Exposed[e.Kind] = e.Actions
-
-        #     add_handler(
-        #         server.Router,
-        #         f"/{e.Kind}/{{pkey}}",
-        #         server.make_object_handler(e.Kind, e.Actions)
-        #     )
-        #     add_handler(
-        #         server.Router,
-        #         f"/{e.Kind}",
-        #         server.make_type_handler(e.Kind, e.Actions)
-        #     )
-        #     add_handler(
-        #         server.Router,
-        #         f"/{e.Kind}/",
-        #         server.make_type_handler(e.Kind, e.Actions)
-        #     )
-
-
-# def add_handler(router: mux.Router, pattern: str, handler: _HandlerFunc):
-#     app.add_url_rule("/" + url.capitalize() + "/", None,
-#                     finger, methods=["GET", "POST"])
+            type_handler = _make_type_handler(
+                self.Store, self.Schema, e.Kind, e.Actions
+            )
+            self.app.add_url_rule(f"/{e.Kind}", type_handler)
+            self.app.add_url_rule(f"/{e.Kind}/", type_handler)

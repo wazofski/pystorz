@@ -1,5 +1,4 @@
 from typing import List, Optional
-import logging
 from pystorz.store import utils
 
 
