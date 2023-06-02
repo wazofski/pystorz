@@ -52,6 +52,7 @@ def rest():
     sqlite_store = SqliteStore(model.Schema(), SqliteConnection(db_file))
 
     from pystorz.rest import server, client
+
     srv = server.Server(
         model.Schema(),
         sqlite_store,
@@ -60,7 +61,8 @@ def rest():
             server.ActionGet,
             server.ActionCreate,
             server.ActionUpdate,
-            server.ActionDelete),
+            server.ActionDelete,
+        ),
     )
 
     host = "http://localhost"
@@ -69,6 +71,7 @@ def rest():
 
     client = client.Client(url, model.Schema())
     srv.serve(host, port)
+    time.sleep(3)
 
     return client
 
@@ -167,7 +170,7 @@ def test_can_not_double_post_objects(thestore):
         err = e
 
     assert err is not None
-    log.info("expected error: {}".format(str(err)))
+    assert str(err) == constants.ErrObjectExists
     assert ret is None
 
 
@@ -217,7 +220,6 @@ def test_can_put_change_naming_props(thestore):
 
     assert ret is None
     assert err is not None
-    log.info("expected error: {}".format(str(err)))
     assert str(err) == constants.ErrNoSuchObject
 
     # good now we create object with name abc
@@ -248,7 +250,6 @@ def test_can_put_change_naming_props(thestore):
         err = e
 
     assert err is not None
-    log.info("expected error: {}".format(str(err)))
     assert str(err) == constants.ErrObjectExists
     assert ret is None
 
@@ -302,7 +303,7 @@ def test_cannot_put_nonexistent_objects(thestore):
         err = e
 
     assert err is not None
-    log.info("expected error: {}".format(str(err)))
+    assert str(err) == constants.ErrNoSuchObject
     assert ret is None
 
 
@@ -318,8 +319,7 @@ def test_cannot_put_nonexistent_objects_by_id(thestore):
         err = e
 
     assert err is not None
-    log.info("expected error: {}".format(str(err)))
-
+    assert str(err) == constants.ErrNoSuchObject
     assert ret is None
 
 
@@ -335,8 +335,7 @@ def test_cannot_put_objects_of_wrong_type(thestore):
         err = e
 
     assert err is not None
-    log.info("expected error: {}".format(str(err)))
-
+    assert str(err) == constants.ErrObjectIdentityMismatch
     assert ret is None
 
 
@@ -374,8 +373,7 @@ def test_cannot_get_nonexistent_objects(thestore):
         err = e
 
     assert err is not None
-    log.info("expected error: {}".format(str(err)))
-
+    assert str(err) == constants.ErrNoSuchObject
     assert ret is None
 
 
@@ -388,8 +386,7 @@ def test_cannot_get_nonexistent_objects_by_id(thestore):
         err = e
 
     assert err is not None
-    log.info("expected error: {}".format(str(err)))
-
+    assert str(err) == constants.ErrNoSuchObject
     assert ret is None
 
 
@@ -411,8 +408,7 @@ def test_can_delete_objects(thestore):
         err = e
 
     assert err is not None
-    log.info("expected error: {}".format(str(err)))
-
+    assert str(err) == constants.ErrNoSuchObject
     assert ret is None
 
 
@@ -435,8 +431,7 @@ def test_can_delete_objects_by_id(thestore):
         err = e
 
     assert err is not None
-    log.info("expected error: {}".format(str(err)))
-
+    assert str(err) == constants.ErrNoSuchObject
     assert ret is None
 
 
@@ -448,7 +443,7 @@ def test_delete_nonexistent_objects(thestore):
         err = e
 
     assert err is not None
-    log.info("expected error: {}".format(str(err)))
+    assert str(err) == constants.ErrNoSuchObject
 
 
 def test_delete_nonexistent_objects_by_id(thestore):
@@ -459,7 +454,7 @@ def test_delete_nonexistent_objects_by_id(thestore):
         err = e
 
     assert err is not None
-    log.info("expected error: {}".format(str(err)))
+    assert str(err) == constants.ErrNoSuchObject
 
 
 def test_get_nil_identity(thestore):
@@ -470,7 +465,7 @@ def test_get_nil_identity(thestore):
         err = e
 
     assert err is not None
-    log.info("expected error: {}".format(str(err)))
+    assert str(err) == constants.ErrObjectNil
 
 
 def test_create_nil_object(thestore):
@@ -481,7 +476,7 @@ def test_create_nil_object(thestore):
         err = e
 
     assert err is not None
-    log.info("expected error: {}".format(str(err)))
+    assert str(err) == constants.ErrObjectNil
 
 
 def test_put_nil_identity(thestore):
@@ -492,7 +487,7 @@ def test_put_nil_identity(thestore):
         err = e
 
     assert err is not None
-    log.info("expected error: {}".format(str(err)))
+    assert str(err) == constants.ErrObjectNil
 
 
 def test_put_nil_object(thestore):
@@ -503,7 +498,7 @@ def test_put_nil_object(thestore):
         err = e
 
     assert err is not None
-    log.info("expected error: {}".format(str(err)))
+    assert str(err) == constants.ErrObjectNil
 
 
 def test_delete_nil_identity(thestore):
@@ -514,7 +509,7 @@ def test_delete_nil_identity(thestore):
         err = e
 
     assert err is not None
-    log.info("expected error: {}".format(str(err)))
+    assert str(err) == constants.ErrObjectNil
 
 
 def test_delete_empty_identity(thestore):
@@ -525,7 +520,7 @@ def test_delete_empty_identity(thestore):
         err = e
 
     assert err is not None
-    log.info("expected error: {}".format(str(err)))
+    assert str(err) == constants.ErrNoSuchObject
 
 
 def test_create_multiple_objects(thestore):
@@ -667,7 +662,7 @@ def test_list_and_filter_by_nonexistent_props(thestore):
         )
         assert False
     except Exception as e:
-        log.info("expected error: {}".format(str(e)))
+        assert str(e) == constants.ErrInvalidFilter
 
 
 def test_cannot_list_specific_object(thestore):
@@ -675,7 +670,7 @@ def test_cannot_list_specific_object(thestore):
         thestore.List(model.WorldIdentity(worldName))
         assert False
     except Exception as e:
-        log.info("expected error: {}".format(str(e)))
+        assert str(e) == constants.ErrInvalidPath
 
 
 def test_cannot_list_specific_nonexistent_object(thestore):
@@ -683,7 +678,7 @@ def test_cannot_list_specific_nonexistent_object(thestore):
         thestore.List(model.WorldIdentity("akjhdsjkhdaskjhdaskj"))
         assert False
     except Exception as e:
-        log.info("expected error: {}".format(str(e)))
+        assert str(e) == constants.ErrInvalidPath
 
 
 def test_list_and_eq_filter(thestore):
@@ -810,7 +805,7 @@ def test_metadata_updates(thestore):
         ret33 = thestore.Update(model.WorldIdentity(name), world)
     except Exception as e:
         err = e
-        log.info("expected error: {}".format(str(e)))
+
     assert err is not None
     assert ret33 is None
     assert str(err) == constants.ErrObjectIdentityMismatch

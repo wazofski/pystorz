@@ -162,11 +162,7 @@ class Server:
         self.Store = internals.internal_factory(schema, thestore)
         self.Exposed = {}
 
-        accepted_actions = set([
-            ActionGet,
-            ActionCreate,
-            ActionUpdate,
-            ActionDelete])
+        accepted_actions = set([ActionGet, ActionCreate, ActionUpdate, ActionDelete])
 
         for e in to_expose:
             for a in e.Actions:
@@ -178,6 +174,7 @@ class Server:
         self.app = Flask(__name__)
         self.app.register_error_handler(Exception, _handle_exceptions)
 
+        self.register_handlers()
 
     @Async
     def serve(self, host: str, port: int):
@@ -212,20 +209,20 @@ class Server:
 
         log.info("server stopped...")
 
-
     def register_handlers(self):
         self.app.add_url_rule(
             "/id/<id>", _make_id_handler(self.Store, self.Schema, self.Exposed)
         )
 
-        for e in self.Exposed:
+        for k, v in self.Exposed.items():
             self.app.add_url_rule(
-                f"/{e.Kind}/<pkey>",
-                _make_object_handler(self.Store, self.Schema, e.Kind, e.Actions),
+                f"/{k}/<pkey>",
+                _make_object_handler(self.Store, self.Schema, k, v),
             )
 
             type_handler = _make_type_handler(
-                self.Store, self.Schema, e.Kind, e.Actions
+                self.Store, k, v
             )
-            self.app.add_url_rule(f"/{e.Kind}", type_handler)
-            self.app.add_url_rule(f"/{e.Kind}/", type_handler)
+            
+            self.app.add_url_rule(f"/{k}", type_handler)
+            self.app.add_url_rule(f"/{k}/", type_handler)

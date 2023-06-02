@@ -83,19 +83,25 @@ class SqliteStore:
             raise e
 
     def Update(self, identity, obj, *opt):
-        log.info("update {}".format(identity.Path()))
-
         copt = options.CommonOptionHolderFactory()
 
         for o in opt:
             o.ApplyFunction()(copt)
 
+        if identity is None:
+            raise Exception(constants.ErrInvalidPath)
+        
         if obj is None:
             raise Exception(constants.ErrObjectNil)
+
+        log.info("update {}".format(identity.Path()))
 
         existing = self.Get(identity)
         if existing is None:
             raise Exception(constants.ErrNoSuchObject)
+
+        if existing.Metadata().Kind() != obj.Metadata().Kind():
+            raise Exception(constants.ErrObjectIdentityMismatch)
 
         if existing.PrimaryKey() != obj.PrimaryKey():
             # log.info("primary key changed from {} to {}".format(
@@ -157,6 +163,9 @@ class SqliteStore:
             raise e
 
     def Delete(self, identity, *opt):
+        if identity is None:
+            raise Exception(constants.ErrInvalidPath)
+        
         log.info("delete {}".format(identity.Path()))
         copt = options.CommonOptionHolderFactory()
 
@@ -204,6 +213,9 @@ class SqliteStore:
             raise e
 
     def Get(self, identity, *opt):
+        if identity is None:
+            raise Exception(constants.ErrInvalidPath)
+        
         log.info("get {}".format(identity.Path()))
 
         copt = options.CommonOptionHolderFactory()
@@ -221,6 +233,9 @@ class SqliteStore:
         return self._getObject(cursor, identity.Key(), identity.Type())
 
     def List(self, identity, *opt):
+        if identity is None:
+            raise Exception(constants.ErrInvalidPath)
+        
         log.info("list {}".format(identity))
 
         if len(identity.Key()) > 0:

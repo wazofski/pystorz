@@ -8,7 +8,8 @@ from pystorz.rest import server
 from pystorz.store import store, utils, options
 from pystorz.internal import constants
 
-from urllib.parse import urlparse, urljoin, urlunparse, urlencode
+# from urllib.parse import urljoin, urlunparse, urlencode
+from urllib.parse import urlencode, urlparse
 
 
 log = logging.getLogger(__name__)
@@ -33,25 +34,23 @@ def new_rest_options(d):
     return res
 
 
-def make_http_request(path, content, request_type, headers):
-    requests.packages.urllib3.disable_warnings()  # Disable SSL verification warning
+# def make_http_request(path, content, request_type, headers):
+#     requests.packages.urllib3.disable_warnings()  # Disable SSL verification warning
 
-    url = urlunparse(path)
+#     req = requests.Request(request_type, path, data=content)
 
-    req = requests.Request(request_type, url, data=content)
+#     for k, v in headers.items():
+#         req.headers[k] = v
 
-    for k, v in headers.items():
-        req.headers[k] = v
+#     with requests.Session() as session:
+#         resp = session.send(req.prepare(), verify=False)
 
-    with requests.Session() as session:
-        resp = session.send(req.prepare(), verify=False)
+#         rd = resp.content
 
-        rd = resp.content
+#         if resp.status_code < 200 or resp.status_code >= 300:
+#             return rd, f"http {resp.status_code}"
 
-        if resp.status_code < 200 or resp.status_code >= 300:
-            return rd, f"http {resp.status_code}"
-
-        return rd, None
+#         return rd, None
 
 
 def error_check(response):
@@ -71,8 +70,7 @@ def error_check(response):
 
 
 def make_path_for_type(base_url, obj):
-    u = urljoin(base_url, obj.Metadata().Kind().lower())
-    return u
+    return "{}/{}".format(base_url, obj.Metadata().Kind().lower())
 
 
 def remove_trailing_slash(val):
@@ -83,20 +81,9 @@ def remove_trailing_slash(val):
 
 def make_path_for_identity(base_url, identity, params):
     if len(params) > 0:
-        path = f"{base_url}/{remove_trailing_slash(identity.Path())}?{params}"
-        u = urlparse(path)
-        return u
+        return f"{base_url}/{remove_trailing_slash(identity.Path())}?{params}"
 
-    u = urljoin(base_url, identity.Path())
-    return u
-
-
-def to_bytes(obj):
-    if obj is None:
-        return b""
-
-    jsn = json.dumps(obj)
-    return jsn.encode("utf-8")
+    return f"{base_url}/{identity.Path()}"
 
 
 def list_parameters(ropt):
@@ -120,9 +107,6 @@ def list_parameters(ropt):
 
 
 
-import json
-
-
 class StrippedObject:
     def __init__(self):
         self.External = {}
@@ -140,7 +124,7 @@ def strip_serialize(object):
 class Client(store.Store):
     
     def __init__(self, base_url, schema, *header_options):
-        self.base_url = urlparse(base_url)
+        self.base_url = base_url
         self.schema = schema
         self.headers = header_options
 
@@ -253,24 +237,33 @@ class Client(store.Store):
 
 
     def _make_request(self, path, content, request_type, headers):
-        url = urljoin(self.base_url.geturl(), path)
-        headers.update(self.headers)
-        response = requests.request(request_type, url, data=content, headers=headers)
-        response.raise_for_status()
+        # headers.update(self.headers)
+        
+        response = requests.request(
+            request_type,
+            f"{self.base_url}/{path}",
+            data=content,
+            headers=headers)
+
+        # response.raise_for_status()
 
         return response.content
 
 
     def _process_request(self, request_url, content, method, headers):
         req_id = str(uuid.uuid4())
-        request_url.path = request_url.path.replace("//", "/")
-        origin = request_url.geturl().replace(request_url.path, "")
-        headers["Origin"] = origin.replace(request_url.query, "")
+
+        url = urlparse(request_url)
+        path = url.path
+        new_path = path.replace("//", "/")
+        request_url = request_url.replace(path, new_path)
+
+        headers["Origin"] = request_url.replace(url.path, "").replace(url.query, "")
         headers["X-Request-ID"] = req_id
         headers["Content-Type"] = "application/json"
         headers["X-Requested-With"] = "XMLHttpRequest"
 
-        log.info(f"{method.lower()} {request_url.geturl()}")
+        log.info(f"{method.lower()} {request_url}")
 
         data = self._make_request(request_url, content, method, headers)
         try:
