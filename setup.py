@@ -27,6 +27,7 @@ setup(
         "jinja2",
         "black",
         "jsonpath-python",
+        "cherrypy"
         # "pysqlite3",
     ],
     extras_require={

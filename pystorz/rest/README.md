@@ -9,5 +9,5 @@ srv = rest.Server(model.Schema(), store_to_expose,
         rest.ActionDelete, rest.ActionUpdate),
     rest.TypeMethods("AnotherWorld", rest.ActionGet))
 
-srv.Serve(host, port)
+srv.serve(host, port) # blocking
 ```
