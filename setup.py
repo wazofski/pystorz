@@ -29,6 +29,13 @@ setup(
         "jsonpath-python",
         # "pysqlite3",
     ],
+    extras_require={
+        'dev': [
+            # 'pytest -v test_mgen.py -cov',
+            # 'pytest -v -k "thestore" test_common.py -cov',
+            # 'flake8',
+        ]
+    },
     classifiers=[
         "Intended Audience :: Developers",
         "Programming Language :: Python :: 3.7",

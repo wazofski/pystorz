@@ -1,5 +1,4 @@
 import logging
-from typing import Callable
 
 from pystorz.internal import constants
 from pystorz.store import store
