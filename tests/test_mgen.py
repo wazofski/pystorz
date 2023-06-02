@@ -1,9 +1,5 @@
 from config import globals
 
-import os
-import shutil
-import pytest
-
 from datetime import datetime
 from pystorz.mgen.builder import Generate
 
@@ -13,9 +9,10 @@ log = logging.getLogger(__name__)
 globals.logger_config()
 
 
-@pytest.mark.mgen
 def test_mgen_can_generate():
     # ensure empty directory before generating
+    import os, shutil
+
     generated_model_path = "generated"
     if os.path.exists(generated_model_path):
         shutil.rmtree(generated_model_path)
@@ -23,7 +20,6 @@ def test_mgen_can_generate():
     Generate(globals.TEST_MODEL_PATH)
 
 
-@pytest.mark.mgen
 def test_generated_model():
     from generated import model
     world = model.WorldFactory()
@@ -69,7 +65,6 @@ def test_generated_model():
     world.Internal().Map()["a"].SetL1([False, False, True])
 
 
-@pytest.mark.mgen
 def test_serialization():
     from generated import model
     world = model.WorldFactory()
@@ -106,7 +101,6 @@ def test_serialization():
     assert data == data2
 
 
-@pytest.mark.mgen
 def test_schema():
     from generated import model
 
@@ -123,7 +117,6 @@ def test_schema():
     assert anotherWorld.External().Name() == obj.External().Name()
 
 
-@pytest.mark.mgen
 def test_cloning():
     from generated import model
 
@@ -156,7 +149,6 @@ def test_cloning():
     assert len(newWorld.Internal().List()) == 2
 
 
-@pytest.mark.mgen
 def test_datetime_property_type():
     from generated import model
 
