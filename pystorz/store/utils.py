@@ -110,3 +110,4 @@ def decode_string(soup):
     return soup.replace("$%#", "'")
     # encoded_message = bytes(soup, 'utf-8')  # Convert the soup to bytes
     # return base64.b64decode(encoded_message).decode('utf-8')  # Decode the base64 bytes and convert to string
+

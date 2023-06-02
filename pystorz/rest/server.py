@@ -9,6 +9,7 @@ from pystorz.store import store
 from pystorz.store import options
 from pystorz.store import utils
 
+from pystorz.rest.asynch import Async
 from pystorz.rest import internals
 
 from flask import Flask, request
@@ -173,6 +174,8 @@ class Server:
         self.app = Flask(__name__)
         self.app.register_error_handler(Exception, _handle_exceptions)
 
+
+    @Async
     def serve(self, host: str, port: int):
         # launch a flask server to serve the html
         log.info("serving on {}:{}".format(host, port))

@@ -22,5 +22,10 @@ srv = server.Server(
 srv.serve(host, port) # blocking
 
 # client Store
-client = client.Client(url, model.Schema(), headers)
+client = client.Client(
+    url,
+    model.Schema(),
+    headers={
+        "Content-Type": "application/json",
+    })
 ```

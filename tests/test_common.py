@@ -38,7 +38,7 @@ def sqlite():
     return SqliteStore(Schema(), SqliteConnection(db_file))
 
 
-def client():
+def remote():
     log.debug("server/client setup")
     import os
 
@@ -63,11 +63,17 @@ def client():
             server.ActionDelete),
     )
 
-    
+    host = "http://localhost"
+    port = 8080
+    url = f"{host}:{port}"
+
+    client = client.Client(url, model.Schema(), {})
+    srv.serve(host, port)
+
+    return client
 
 
-
-@pytest.fixture(params=[sqlite()])
+@pytest.fixture(params=[sqlite(), remote()])
 def thestore(request):
     return request.param
 
