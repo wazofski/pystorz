@@ -45,6 +45,7 @@ def thestore(request):
 
 
 @pytest.mark.common
+@pytest.mark.common
 def test_clear_everything(thestore):
     ret = thestore.List(model.WorldKindIdentity)
     for r in ret:
@@ -66,6 +67,7 @@ def test_clear_everything(thestore):
     #
 
 
+@pytest.mark.common
 def test_list_empty_lists(thestore):
     ret = thestore.List(model.WorldKindIdentity)
 
@@ -73,6 +75,7 @@ def test_list_empty_lists(thestore):
     assert len(ret) == 0
 
 
+@pytest.mark.common
 def test_post_objects(thestore):
     w = model.WorldFactory()
     w.External().SetName("abc")
@@ -82,6 +85,7 @@ def test_post_objects(thestore):
     assert len(str(ret.Metadata().Identity())) != 0
 
 
+@pytest.mark.common
 def test_list_single_object(thestore):
     ret = thestore.List(model.WorldKindIdentity)
 
@@ -91,6 +95,7 @@ def test_list_single_object(thestore):
     assert world.External().Name() == "abc"
 
 
+@pytest.mark.common
 def test_post_other_objects(thestore):
     w = model.SecondWorldFactory()
     w.External().SetName("abc")
@@ -110,6 +115,7 @@ def test_post_other_objects(thestore):
     assert w != None
 
 
+@pytest.mark.common
 def test_get_objects(thestore):
     ret = thestore.Get(model.WorldIdentity("abc"))
 
@@ -119,6 +125,7 @@ def test_get_objects(thestore):
     assert world != None
 
 
+@pytest.mark.common
 def test_can_not_double_post_objects(thestore):
     w = model.WorldFactory()
 
@@ -137,6 +144,7 @@ def test_can_not_double_post_objects(thestore):
     assert ret is None
 
 
+@pytest.mark.common
 def test_can_put_objects(thestore):
     w = model.WorldFactory()
 
@@ -152,6 +160,7 @@ def test_can_put_objects(thestore):
     assert world.External().Description() == "def"
 
 
+@pytest.mark.common
 def test_can_put_change_naming_props(thestore):
     # object name abc exists
 
@@ -233,6 +242,7 @@ def test_can_put_change_naming_props(thestore):
     thestore.Delete(model.WorldIdentity("abc"))
 
 
+@pytest.mark.common
 def test_can_put_objects_by_id(thestore):
     ret = thestore.Get(model.WorldIdentity("def"))
 
@@ -255,6 +265,7 @@ def test_can_put_objects_by_id(thestore):
     assert world.External().Description() == "zxc"
 
 
+@pytest.mark.common
 def test_cannot_put_nonexistent_objects(thestore):
     world = model.WorldFactory()
     assert world is not None
@@ -272,6 +283,7 @@ def test_cannot_put_nonexistent_objects(thestore):
     assert ret is None
 
 
+@pytest.mark.common
 def test_cannot_put_nonexistent_objects_by_id(thestore):
     world = model.WorldFactory()
     world.External().SetName("zxcxzcxz")
@@ -289,6 +301,7 @@ def test_cannot_put_nonexistent_objects_by_id(thestore):
     assert ret is None
 
 
+@pytest.mark.common
 def test_cannot_put_objects_of_wrong_type(thestore):
     world = model.SecondWorldFactory()
     world.External().SetName("zxcxzcxz")
@@ -306,6 +319,7 @@ def test_cannot_put_objects_of_wrong_type(thestore):
     assert ret is None
 
 
+@pytest.mark.common
 def test_can_get_objects(thestore):
     ret = thestore.Get(model.WorldIdentity("def"))
 
@@ -315,6 +329,7 @@ def test_can_get_objects(thestore):
     assert world is not None
 
 
+@pytest.mark.common
 def test_can_get_objects_by_id(thestore):
     ret = thestore.Get(model.WorldIdentity("def"))
 
@@ -331,6 +346,7 @@ def test_can_get_objects_by_id(thestore):
     assert world is not None
 
 
+@pytest.mark.common
 def test_cannot_get_nonexistent_objects(thestore):
     err = None
     try:
@@ -345,6 +361,7 @@ def test_cannot_get_nonexistent_objects(thestore):
     assert ret is None
 
 
+@pytest.mark.common
 def test_cannot_get_nonexistent_objects_by_id(thestore):
     err = None
     try:
@@ -359,6 +376,7 @@ def test_cannot_get_nonexistent_objects_by_id(thestore):
     assert ret is None
 
 
+@pytest.mark.common
 def test_can_delete_objects(thestore):
     w = model.WorldFactory()
     w.External().SetName("tobedeleted")
@@ -382,6 +400,7 @@ def test_can_delete_objects(thestore):
     assert ret is None
 
 
+@pytest.mark.common
 def test_can_delete_objects_by_id(thestore):
     w = model.WorldFactory()
     w.External().SetName("tobedeleted")
@@ -406,6 +425,7 @@ def test_can_delete_objects_by_id(thestore):
     assert ret is None
 
 
+@pytest.mark.common
 def test_delete_nonexistent_objects(thestore):
     err = None
     try:
@@ -417,6 +437,7 @@ def test_delete_nonexistent_objects(thestore):
     log.info("expected error: {}".format(str(err)))
 
 
+@pytest.mark.common
 def test_delete_nonexistent_objects_by_id(thestore):
     err = None
     try:
@@ -428,6 +449,7 @@ def test_delete_nonexistent_objects_by_id(thestore):
     log.info("expected error: {}".format(str(err)))
 
 
+@pytest.mark.common
 def test_get_nil_identity(thestore):
     err = None
     try:
@@ -439,6 +461,7 @@ def test_get_nil_identity(thestore):
     log.info("expected error: {}".format(str(err)))
 
 
+@pytest.mark.common
 def test_create_nil_object(thestore):
     err = None
     try:
@@ -450,6 +473,7 @@ def test_create_nil_object(thestore):
     log.info("expected error: {}".format(str(err)))
 
 
+@pytest.mark.common
 def test_put_nil_identity(thestore):
     err = None
     try:
@@ -461,6 +485,7 @@ def test_put_nil_identity(thestore):
     log.info("expected error: {}".format(str(err)))
 
 
+@pytest.mark.common
 def test_put_nil_object(thestore):
     err = None
     try:
@@ -472,6 +497,7 @@ def test_put_nil_object(thestore):
     log.info("expected error: {}".format(str(err)))
 
 
+@pytest.mark.common
 def test_delete_nil_identity(thestore):
     err = None
     try:
@@ -483,6 +509,7 @@ def test_delete_nil_identity(thestore):
     log.info("expected error: {}".format(str(err)))
 
 
+@pytest.mark.common
 def test_delete_empty_identity(thestore):
     err = None
     try:
@@ -494,6 +521,7 @@ def test_delete_empty_identity(thestore):
     log.info("expected error: {}".format(str(err)))
 
 
+@pytest.mark.common
 def test_create_multiple_objects(thestore):
     ret = thestore.List(model.WorldKindIdentity)
 
@@ -519,6 +547,7 @@ def test_create_multiple_objects(thestore):
     thestore.Create(world3)
 
 
+@pytest.mark.common
 def test_can_list_multiple_objects(thestore):
     ret = thestore.List(model.WorldKindIdentity)
 
@@ -536,6 +565,7 @@ def test_can_list_multiple_objects(thestore):
     assert world2.External().Description() == newWorldDescription
 
 
+@pytest.mark.common
 def test_can_list_and_sort_multiple_objects(thestore):
     ret = thestore.List(model.WorldKindIdentity, options.Order("external.name"))
 
@@ -564,6 +594,7 @@ def test_can_list_and_sort_multiple_objects(thestore):
     assert world2.External().Name() == anotherWorldName
 
 
+@pytest.mark.common
 def test_list_and_paginate_multiple_objects(thestore):
     ret = thestore.List(
         model.WorldKindIdentity, options.Order("external.name"), options.PageSize(1)
@@ -603,6 +634,7 @@ def test_list_and_paginate_multiple_objects(thestore):
     assert world.External().Name() == anotherWorldName
 
 
+@pytest.mark.common
 def test_list_and_filter_by_primary_key(thestore):
     ret = thestore.List(model.WorldKindIdentity)
 
@@ -625,6 +657,7 @@ def test_list_and_filter_by_primary_key(thestore):
         assert ret[0].PrimaryKey() == k
 
 
+@pytest.mark.common
 def test_list_and_filter_by_nonexistent_props(thestore):
     try:
         thestore.List(
@@ -636,6 +669,7 @@ def test_list_and_filter_by_nonexistent_props(thestore):
         log.info("expected error: {}".format(str(e)))
 
 
+@pytest.mark.common
 def test_cannot_list_specific_object(thestore):
     try:
         thestore.List(model.WorldIdentity(worldName))
@@ -644,6 +678,7 @@ def test_cannot_list_specific_object(thestore):
         log.info("expected error: {}".format(str(e)))
 
 
+@pytest.mark.common
 def test_cannot_list_specific_nonexistent_object(thestore):
     try:
         thestore.List(model.WorldIdentity("akjhdsjkhdaskjhdaskj"))
@@ -652,6 +687,7 @@ def test_cannot_list_specific_nonexistent_object(thestore):
         log.info("expected error: {}".format(str(e)))
 
 
+@pytest.mark.common
 def test_list_and_eq_filter(thestore):
     # ret = thestore.List(model.WorldKindIdentity)
     # for r in ret:
@@ -670,6 +706,7 @@ def test_list_and_eq_filter(thestore):
     world_id = world.Metadata().Identity()
 
 
+@pytest.mark.common
 def test_list_and_filter_by_id(thestore):
     ret = thestore.List(
         model.WorldKindIdentity, options.Eq("metadata.identity", str(world_id))
@@ -684,6 +721,7 @@ def test_list_and_filter_by_id(thestore):
     assert world.External().Description() == worldDescription
 
 
+@pytest.mark.common
 def test_list_and_filter_by_nonexistent_id(thestore):
     ret = thestore.List(
         model.WorldKindIdentity, options.Eq("metadata.identity", "asdasdasd")
@@ -693,6 +731,7 @@ def test_list_and_filter_by_nonexistent_id(thestore):
     assert len(ret) == 0
 
 
+@pytest.mark.common
 def test_metadata_updates(thestore):
     # create a new world
     name = "test_metadata_updates"
@@ -805,6 +844,7 @@ def test_metadata_updates(thestore):
     assert ct3 == ct
 
 
+@pytest.mark.common
 def test_datetime_property_type(thestore):
     name = "test_datetime_property_type"
     world = model.WorldFactory()
@@ -839,6 +879,7 @@ def test_datetime_property_type(thestore):
     assert rdt2 == ndt
 
 
+@pytest.mark.common
 def test_weird_characters(thestore):
     world = model.WorldFactory()
     world.External().SetName("test_weird_characters")
@@ -865,6 +906,7 @@ def test_weird_characters(thestore):
     assert world.External().Description() == desc
 
 
+@pytest.mark.common
 def test_list_and_filter_by_types(thestore):
     ret = thestore.List(model.WorldKindIdentity, options.Eq("external.counter", 123))
 
@@ -877,6 +919,7 @@ def test_list_and_filter_by_types(thestore):
     assert len(ret) == 1
 
 
+@pytest.mark.common
 def test_list_and_filter_and_sort(thestore):
     ret = thestore.List(model.WorldKindIdentity)
     total_length = len(ret)
@@ -914,6 +957,7 @@ def test_list_and_filter_and_sort(thestore):
     assert world.External().Name() != anotherWorldName
 
 
+@pytest.mark.common
 def test_list_and_map_of_struct(thestore):
     world = model.WorldFactory()
     world.External().SetName("test_list_and_map_of_struct")
@@ -949,6 +993,7 @@ def test_list_and_map_of_struct(thestore):
     assert l[0].Alive()
 
 
+@pytest.mark.common
 def test_list_and_not_eq_filter(thestore):
     ret = thestore.List(model.WorldKindIdentity)
     total_length = len(ret)
@@ -964,6 +1009,7 @@ def test_list_and_not_eq_filter(thestore):
         assert w.External().Name() != worldName
 
 
+@pytest.mark.common
 def test_list_and_lt_gt_filter(thestore):
     ret = thestore.List(model.WorldKindIdentity)
     total_length = len(ret)
@@ -1032,6 +1078,7 @@ def test_list_and_lt_gt_filter(thestore):
         assert r.External().Counter() >= half
 
 
+@pytest.mark.common
 def test_list_and_in_int_filter(thestore):
     ret = thestore.List(
         model.WorldKindIdentity, options.In("external.counter", [10, 20, 30, 40])
@@ -1052,6 +1099,7 @@ def test_list_and_in_int_filter(thestore):
         assert r.External().Counter() not in [10, 20, 30, 40]
 
 
+@pytest.mark.common
 def test_list_and_AND_filter(thestore):
     ret = thestore.List(
         model.WorldKindIdentity, options.In("external.counter", [20, 30, 40, 50])
@@ -1059,7 +1107,7 @@ def test_list_and_AND_filter(thestore):
 
     alive_count = 0
     for r in ret:
-        if r.External().Alive(thestore):
+        if r.External().Alive():
             alive_count += 1
 
     ret = thestore.List(
@@ -1095,6 +1143,7 @@ def test_list_and_AND_filter(thestore):
         assert not r.External().Alive()
 
 
+@pytest.mark.common
 def test_list_and_OR_filter(thestore):
     ret = thestore.List(
         model.WorldKindIdentity,
@@ -1105,7 +1154,7 @@ def test_list_and_OR_filter(thestore):
     alive_count = 0
     not_alive_counters = []
     for r in ret:
-        if r.External().Alive(thestore):
+        if r.External().Alive():
             alive_count += 1
         else:
             not_alive_counters.append(r.External().Counter())
@@ -1133,6 +1182,7 @@ def test_list_and_OR_filter(thestore):
     assert len(ret) == alive_count
 
 
+@pytest.mark.common
 def test_delete_filtered(thestore):
     ret = thestore.List(model.WorldKindIdentity, options.Eq("external.alive", True))
     assert ret is not None
@@ -1148,6 +1198,7 @@ def test_delete_filtered(thestore):
         assert r.External().Alive() == False
 
 
+@pytest.mark.common
 def test_sql_injection(thestore):
     # try to add a sql injection into a list query
     ret = thestore.List(model.WorldKindIdentity, options.Eq("external.name", "'; DROP TABLE Objects; --"))
@@ -1190,6 +1241,7 @@ def test_sql_injection(thestore):
     assert errored
 
 
+@pytest.mark.skip
 def test_performance(thestore):
     NUMBER_OF_OBJECTS = 1000
 
