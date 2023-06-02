@@ -14,7 +14,7 @@ from generated import model
 from pystorz.internal import constants
 from pystorz.store import options, utils, store
 
-clt = store.Store()
+thestore = store.Store()
 
 world_id = None
 worldName = "c137zxczx"
@@ -22,8 +22,9 @@ anotherWorldName = "j19zeta7 qweqw"
 worldDescription = "zxkjhajkshdas world of argo"
 newWorldDescription = "is only beoaoqwiewioqu"
 
-@pytest.fixture
+
 def sqlite():
+    log.debug("sqlite setup")
     import os
     
     from pystorz.sql.store import SqliteStore, SqliteConnection
@@ -33,49 +34,56 @@ def sqlite():
     if os.path.exists(db_file):
         os.remove(db_file)
 
-    global clt
-    clt = SqliteStore(Schema(), SqliteConnection(db_file))
+    return SqliteStore(Schema(), SqliteConnection(db_file))
 
 
-def test_clear_everything():
-    ret = clt.List(model.WorldKindIdentity)
+@pytest.fixture(
+    params=[sqlite()]
+)
+def thestore(request):
+    return request.param
+
+
+@pytest.mark.common
+def test_clear_everything(thestore):
+    ret = thestore.List(model.WorldKindIdentity)
     for r in ret:
-        clt.Delete(r.Metadata().Identity())
+        thestore.Delete(r.Metadata().Identity())
 
-    ret = clt.List(model.SecondWorldKindIdentity)
+    ret = thestore.List(model.SecondWorldKindIdentity)
     for r in ret:
-        clt.Delete(r.Metadata().Identity())
+        thestore.Delete(r.Metadata().Identity())
 
-    ret = clt.List(model.SecondWorldKindIdentity)
+    ret = thestore.List(model.SecondWorldKindIdentity)
     assert len(ret) == 0
-    ret = clt.List(model.WorldKindIdentity)
+    ret = thestore.List(model.WorldKindIdentity)
     assert len(ret) == 0
 
-    # ret = clt.List(model.ThirdWorldKindIdentity)
+    # ret = thestore.List(model.ThirdWorldKindIdentity)
     #
     # for r in ret:
-    #     clt.Delete(r.Metadata().Identity())
+    #     thestore.Delete(r.Metadata().Identity())
     #
 
 
-def test_list_empty_lists():
-    ret = clt.List(model.WorldKindIdentity)
+def test_list_empty_lists(thestore):
+    ret = thestore.List(model.WorldKindIdentity)
 
     assert ret is not None
     assert len(ret) == 0
 
 
-def test_post_objects():
+def test_post_objects(thestore):
     w = model.WorldFactory()
     w.External().SetName("abc")
-    ret = clt.Create(w)
+    ret = thestore.Create(w)
 
     assert ret is not None
     assert len(str(ret.Metadata().Identity())) != 0
 
 
-def test_list_single_object():
-    ret = clt.List(model.WorldKindIdentity)
+def test_list_single_object(thestore):
+    ret = thestore.List(model.WorldKindIdentity)
 
     assert ret is not None
     assert len(ret) == 1
@@ -83,27 +91,27 @@ def test_list_single_object():
     assert world.External().Name() == "abc"
 
 
-def test_post_other_objects():
+def test_post_other_objects(thestore):
     w = model.SecondWorldFactory()
     w.External().SetName("abc")
-    ret = clt.Create(w)
+    ret = thestore.Create(w)
 
     assert ret != None
     assert len(str(ret.Metadata().Identity())) != 0
-    ret = clt.Get(ret.Metadata().Identity())
+    ret = thestore.Get(ret.Metadata().Identity())
 
     assert ret != None
     w = ret
     assert w != None
-    ret = clt.Get(model.SecondWorldIdentity("abc"))
+    ret = thestore.Get(model.SecondWorldIdentity("abc"))
 
     assert ret != None
     w = ret
     assert w != None
 
 
-def test_get_objects():
-    ret = clt.Get(model.WorldIdentity("abc"))
+def test_get_objects(thestore):
+    ret = thestore.Get(model.WorldIdentity("abc"))
 
     assert ret != None
     assert len(str(ret.Metadata().Identity())) != 0
@@ -111,7 +119,7 @@ def test_get_objects():
     assert world != None
 
 
-def test_can_not_double_post_objects():
+def test_can_not_double_post_objects(thestore):
     w = model.WorldFactory()
 
     w.External().SetName("abc")
@@ -119,7 +127,7 @@ def test_can_not_double_post_objects():
     err = None
     ret = None
     try:
-        ret = clt.Create(w)
+        ret = thestore.Create(w)
     except Exception as e:
         # log.error(e)
         err = e
@@ -129,13 +137,13 @@ def test_can_not_double_post_objects():
     assert ret is None
 
 
-def test_can_put_objects():
+def test_can_put_objects(thestore):
     w = model.WorldFactory()
 
     w.External().SetName("abc")
     w.External().SetDescription("def")
 
-    ret = clt.Update(model.WorldIdentity("abc"), w)
+    ret = thestore.Update(model.WorldIdentity("abc"), w)
 
     assert ret is not None
 
@@ -144,23 +152,23 @@ def test_can_put_objects():
     assert world.External().Description() == "def"
 
 
-def test_can_put_change_naming_props():
+def test_can_put_change_naming_props(thestore):
     # object name abc exists
 
-    original = clt.Get(model.WorldIdentity("abc"))
+    original = thestore.Get(model.WorldIdentity("abc"))
 
     original.External().SetName("def")
     original.External().SetDescription("originally abc")
-    ret = clt.Update(original.Metadata().Identity(), original)
+    ret = thestore.Update(original.Metadata().Identity(), original)
 
     assert ret is not None
 
-    obj_def = clt.Get(ret.Metadata().Identity())
+    obj_def = thestore.Get(ret.Metadata().Identity())
     assert obj_def is not None
     assert obj_def.External().Name() == "def"
     assert obj_def.External().Description() == "originally abc"
 
-    obj_def_by_name = clt.Get(model.WorldIdentity("def"))
+    obj_def_by_name = thestore.Get(model.WorldIdentity("def"))
     assert obj_def_by_name is not None
     assert obj_def_by_name.External().Name() == "def"
     assert obj_def_by_name.External().Description() == "originally abc"
@@ -169,7 +177,7 @@ def test_can_put_change_naming_props():
 
     try:
         ret = None
-        ret = clt.Get(model.WorldIdentity("abc"))
+        ret = thestore.Get(model.WorldIdentity("abc"))
     except Exception as e:
         err = e
 
@@ -183,10 +191,10 @@ def test_can_put_change_naming_props():
     object_new_abc.External().SetName("abc")
     object_new_abc.External().SetDescription("new abc object")
 
-    object_new_abc = clt.Create(object_new_abc)
+    object_new_abc = thestore.Create(object_new_abc)
     assert object_new_abc is not None
 
-    ret = clt.Get(model.WorldIdentity("abc"))
+    ret = thestore.Get(model.WorldIdentity("abc"))
     assert ret is not None
     assert ret.External().Name() == "abc"
     assert ret.External().Description() == object_new_abc.External().Description()
@@ -201,7 +209,7 @@ def test_can_put_change_naming_props():
     err = None
     try:
         ret = None
-        ret = clt.Update(object_new_abc.Metadata().Identity(), object_new_abc)
+        ret = thestore.Update(object_new_abc.Metadata().Identity(), object_new_abc)
     except Exception as e:
         err = e
 
@@ -211,22 +219,22 @@ def test_can_put_change_naming_props():
     assert ret is None
 
     # confirm nothing changed in abc and def objects
-    obj = clt.Get(model.WorldIdentity("abc"))
+    obj = thestore.Get(model.WorldIdentity("abc"))
     assert obj is not None
     assert obj.External().Name() == "abc"
     assert obj.External().Description() == object_new_abc.External().Description()
 
-    obj = clt.Get(model.WorldIdentity("def"))
+    obj = thestore.Get(model.WorldIdentity("def"))
     assert obj is not None
     assert obj.External().Name() == "def"
     assert obj.External().Description() == "originally abc"
 
     # clean up
-    clt.Delete(model.WorldIdentity("abc"))
+    thestore.Delete(model.WorldIdentity("abc"))
 
 
-def test_can_put_objects_by_id():
-    ret = clt.Get(model.WorldIdentity("def"))
+def test_can_put_objects_by_id(thestore):
+    ret = thestore.Get(model.WorldIdentity("def"))
 
     assert ret is not None
 
@@ -236,7 +244,7 @@ def test_can_put_objects_by_id():
 
     log.info(utils.pps(world.ToJson()))
 
-    ret = clt.Update(world.Metadata().Identity(), world)
+    ret = thestore.Update(world.Metadata().Identity(), world)
 
     log.info(utils.pps(ret.ToJson()))
 
@@ -247,7 +255,7 @@ def test_can_put_objects_by_id():
     assert world.External().Description() == "zxc"
 
 
-def test_cannot_put_nonexistent_objects():
+def test_cannot_put_nonexistent_objects(thestore):
     world = model.WorldFactory()
     assert world is not None
     world.External().SetName("zxcxzcxz")
@@ -255,7 +263,7 @@ def test_cannot_put_nonexistent_objects():
     err = None
     try:
         ret = None
-        ret = clt.Update(model.WorldIdentity("zcxzcxzc"), world)
+        ret = thestore.Update(model.WorldIdentity("zcxzcxzc"), world)
     except Exception as e:
         err = e
 
@@ -264,14 +272,14 @@ def test_cannot_put_nonexistent_objects():
     assert ret is None
 
 
-def test_cannot_put_nonexistent_objects_by_id():
+def test_cannot_put_nonexistent_objects_by_id(thestore):
     world = model.WorldFactory()
     world.External().SetName("zxcxzcxz")
 
     err = None
     try:
         ret = None
-        ret = clt.Update(world.Metadata().Identity(), world)
+        ret = thestore.Update(world.Metadata().Identity(), world)
     except Exception as e:
         err = e
 
@@ -281,14 +289,14 @@ def test_cannot_put_nonexistent_objects_by_id():
     assert ret is None
 
 
-def test_cannot_put_objects_of_wrong_type():
+def test_cannot_put_objects_of_wrong_type(thestore):
     world = model.SecondWorldFactory()
     world.External().SetName("zxcxzcxz")
 
     err = None
     try:
         ret = None
-        ret = clt.Update(model.WorldIdentity("qwe"), world)
+        ret = thestore.Update(model.WorldIdentity("qwe"), world)
     except Exception as e:
         err = e
 
@@ -298,8 +306,8 @@ def test_cannot_put_objects_of_wrong_type():
     assert ret is None
 
 
-def test_can_get_objects():
-    ret = clt.Get(model.WorldIdentity("def"))
+def test_can_get_objects(thestore):
+    ret = thestore.Get(model.WorldIdentity("def"))
 
     assert ret is not None
 
@@ -307,15 +315,15 @@ def test_can_get_objects():
     assert world is not None
 
 
-def test_can_get_objects_by_id():
-    ret = clt.Get(model.WorldIdentity("def"))
+def test_can_get_objects_by_id(thestore):
+    ret = thestore.Get(model.WorldIdentity("def"))
 
     assert ret is not None
 
     world = ret
     assert world is not None
 
-    ret = clt.Get(world.Metadata().Identity())
+    ret = thestore.Get(world.Metadata().Identity())
 
     assert ret is not None
 
@@ -323,11 +331,11 @@ def test_can_get_objects_by_id():
     assert world is not None
 
 
-def test_cannot_get_nonexistent_objects():
+def test_cannot_get_nonexistent_objects(thestore):
     err = None
     try:
         ret = None
-        ret = clt.Get(model.WorldIdentity("zxcxzczx"))
+        ret = thestore.Get(model.WorldIdentity("zxcxzczx"))
     except Exception as e:
         err = e
 
@@ -337,11 +345,11 @@ def test_cannot_get_nonexistent_objects():
     assert ret is None
 
 
-def test_cannot_get_nonexistent_objects_by_id():
+def test_cannot_get_nonexistent_objects_by_id(thestore):
     err = None
     try:
         ret = None
-        ret = clt.Get(store.ObjectIdentity("id/kjjakjjsadldkjalkdajs"))
+        ret = thestore.Get(store.ObjectIdentity("id/kjjakjjsadldkjalkdajs"))
     except Exception as e:
         err = e
 
@@ -351,20 +359,20 @@ def test_cannot_get_nonexistent_objects_by_id():
     assert ret is None
 
 
-def test_can_delete_objects():
+def test_can_delete_objects(thestore):
     w = model.WorldFactory()
     w.External().SetName("tobedeleted")
 
-    ret = clt.Create(w)
+    ret = thestore.Create(w)
 
     assert ret is not None
 
-    clt.Delete(model.WorldIdentity(w.External().Name()))
+    thestore.Delete(model.WorldIdentity(w.External().Name()))
 
     err = None
     try:
         ret = None
-        ret = clt.Get(model.WorldIdentity(w.External().Name()))
+        ret = thestore.Get(model.WorldIdentity(w.External().Name()))
     except Exception as e:
         err = e
 
@@ -374,21 +382,21 @@ def test_can_delete_objects():
     assert ret is None
 
 
-def test_can_delete_objects_by_id():
+def test_can_delete_objects_by_id(thestore):
     w = model.WorldFactory()
     w.External().SetName("tobedeleted")
 
-    ret = clt.Create(w)
+    ret = thestore.Create(w)
 
     assert ret is not None
     w = ret
 
-    clt.Delete(w.Metadata().Identity())
+    thestore.Delete(w.Metadata().Identity())
 
     err = None
     try:
         ret = None
-        ret = clt.Get(w.Metadata().Identity())
+        ret = thestore.Get(w.Metadata().Identity())
     except Exception as e:
         err = e
 
@@ -398,10 +406,10 @@ def test_can_delete_objects_by_id():
     assert ret is None
 
 
-def test_delete_nonexistent_objects():
+def test_delete_nonexistent_objects(thestore):
     err = None
     try:
-        clt.Delete(model.WorldIdentity("akjsdhsajkhdaskjh"))
+        thestore.Delete(model.WorldIdentity("akjsdhsajkhdaskjh"))
     except Exception as e:
         err = e
 
@@ -409,10 +417,10 @@ def test_delete_nonexistent_objects():
     log.info("expected error: {}".format(str(err)))
 
 
-def test_delete_nonexistent_objects_by_id():
+def test_delete_nonexistent_objects_by_id(thestore):
     err = None
     try:
-        clt.Delete(store.ObjectIdentity("id/kjjakjjsadldkjalkdajs"))
+        thestore.Delete(store.ObjectIdentity("id/kjjakjjsadldkjalkdajs"))
     except Exception as e:
         err = e
 
@@ -420,10 +428,10 @@ def test_delete_nonexistent_objects_by_id():
     log.info("expected error: {}".format(str(err)))
 
 
-def test_get_nil_identity():
+def test_get_nil_identity(thestore):
     err = None
     try:
-        clt.Get("")
+        thestore.Get("")
     except Exception as e:
         err = e
 
@@ -431,10 +439,10 @@ def test_get_nil_identity():
     log.info("expected error: {}".format(str(err)))
 
 
-def test_create_nil_object():
+def test_create_nil_object(thestore):
     err = None
     try:
-        clt.Create(None)
+        thestore.Create(None)
     except Exception as e:
         err = e
 
@@ -442,10 +450,10 @@ def test_create_nil_object():
     log.info("expected error: {}".format(str(err)))
 
 
-def test_put_nil_identity():
+def test_put_nil_identity(thestore):
     err = None
     try:
-        clt.Update("", model.WorldFactory())
+        thestore.Update("", model.WorldFactory())
     except Exception as e:
         err = e
 
@@ -453,10 +461,10 @@ def test_put_nil_identity():
     log.info("expected error: {}".format(str(err)))
 
 
-def test_put_nil_object():
+def test_put_nil_object(thestore):
     err = None
     try:
-        clt.Update(model.WorldIdentity("qwe"), None)
+        thestore.Update(model.WorldIdentity("qwe"), None)
     except Exception as e:
         err = e
 
@@ -464,10 +472,10 @@ def test_put_nil_object():
     log.info("expected error: {}".format(str(err)))
 
 
-def test_delete_nil_identity():
+def test_delete_nil_identity(thestore):
     err = None
     try:
-        clt.Delete("")
+        thestore.Delete("")
     except Exception as e:
         err = e
 
@@ -475,10 +483,10 @@ def test_delete_nil_identity():
     log.info("expected error: {}".format(str(err)))
 
 
-def test_delete_empty_identity():
+def test_delete_empty_identity(thestore):
     err = None
     try:
-        clt.Delete(model.WorldIdentity(""))
+        thestore.Delete(model.WorldIdentity(""))
     except Exception as e:
         err = e
 
@@ -486,11 +494,11 @@ def test_delete_empty_identity():
     log.info("expected error: {}".format(str(err)))
 
 
-def test_create_multiple_objects():
-    ret = clt.List(model.WorldKindIdentity)
+def test_create_multiple_objects(thestore):
+    ret = thestore.List(model.WorldKindIdentity)
 
     for r in ret:
-        clt.Delete(r.Metadata().Identity())
+        thestore.Delete(r.Metadata().Identity())
 
     world = model.WorldFactory()
     world.External().SetName(worldName)
@@ -500,19 +508,19 @@ def test_create_multiple_objects():
     world2.External().SetName(anotherWorldName)
     world2.External().SetDescription(newWorldDescription)
 
-    clt.Create(world)
+    thestore.Create(world)
 
-    clt.Create(world2)
+    thestore.Create(world2)
 
     world3 = model.SecondWorldFactory()
     world3.External().SetName(anotherWorldName)
     world3.External().SetDescription(newWorldDescription)
 
-    clt.Create(world3)
+    thestore.Create(world3)
 
 
-def test_can_list_multiple_objects():
-    ret = clt.List(model.WorldKindIdentity)
+def test_can_list_multiple_objects(thestore):
+    ret = thestore.List(model.WorldKindIdentity)
 
     assert ret is not None
     assert len(ret) == 2
@@ -528,8 +536,8 @@ def test_can_list_multiple_objects():
     assert world2.External().Description() == newWorldDescription
 
 
-def test_can_list_and_sort_multiple_objects():
-    ret = clt.List(model.WorldKindIdentity, options.Order("external.name"))
+def test_can_list_and_sort_multiple_objects(thestore):
+    ret = thestore.List(model.WorldKindIdentity, options.Order("external.name"))
 
     assert ret is not None
     assert len(ret) == 2
@@ -542,7 +550,7 @@ def test_can_list_and_sort_multiple_objects():
     assert world2.External().Name() == anotherWorldName
     assert world2.External().Description() == newWorldDescription
 
-    ret = clt.List(
+    ret = thestore.List(
         model.WorldKindIdentity,
         options.Order("external.name", False),
     )
@@ -556,8 +564,8 @@ def test_can_list_and_sort_multiple_objects():
     assert world2.External().Name() == anotherWorldName
 
 
-def test_list_and_paginate_multiple_objects():
-    ret = clt.List(
+def test_list_and_paginate_multiple_objects(thestore):
+    ret = thestore.List(
         model.WorldKindIdentity, options.Order("external.name"), options.PageSize(1)
     )
 
@@ -568,7 +576,7 @@ def test_list_and_paginate_multiple_objects():
     assert world.External().Name() == worldName
     assert world.External().Description() == worldDescription
 
-    ret = clt.List(
+    ret = thestore.List(
         model.WorldKindIdentity,
         options.Order("external.name"),
         options.PageSize(1),
@@ -581,7 +589,7 @@ def test_list_and_paginate_multiple_objects():
     world = ret[0]
     assert world.External().Name() == anotherWorldName
 
-    ret = clt.List(
+    ret = thestore.List(
         model.WorldKindIdentity,
         options.Order("external.name"),
         options.PageOffset(1),
@@ -595,8 +603,8 @@ def test_list_and_paginate_multiple_objects():
     assert world.External().Name() == anotherWorldName
 
 
-def test_list_and_filter_by_primary_key():
-    ret = clt.List(model.WorldKindIdentity)
+def test_list_and_filter_by_primary_key(thestore):
+    ret = thestore.List(model.WorldKindIdentity)
 
     keys = []
     for o in ret:
@@ -604,22 +612,22 @@ def test_list_and_filter_by_primary_key():
 
     assert len(keys) == 2
 
-    ret = clt.List(
+    ret = thestore.List(
         model.WorldKindIdentity, options.In("external.name", [keys[0], keys[1]])
     )
 
     assert len(ret) == 2
 
     for k in keys:
-        ret = clt.List(model.WorldKindIdentity, options.In("external.name", [k]))
+        ret = thestore.List(model.WorldKindIdentity, options.In("external.name", [k]))
 
         assert len(ret) == 1
         assert ret[0].PrimaryKey() == k
 
 
-def test_list_and_filter_by_nonexistent_props():
+def test_list_and_filter_by_nonexistent_props(thestore):
     try:
-        clt.List(
+        thestore.List(
             model.WorldKindIdentity,
             options.Eq("metadata.askdjhasd", "asdsadas"),
         )
@@ -628,28 +636,28 @@ def test_list_and_filter_by_nonexistent_props():
         log.info("expected error: {}".format(str(e)))
 
 
-def test_cannot_list_specific_object():
+def test_cannot_list_specific_object(thestore):
     try:
-        clt.List(model.WorldIdentity(worldName))
+        thestore.List(model.WorldIdentity(worldName))
         assert False
     except Exception as e:
         log.info("expected error: {}".format(str(e)))
 
 
-def test_cannot_list_specific_nonexistent_object():
+def test_cannot_list_specific_nonexistent_object(thestore):
     try:
-        clt.List(model.WorldIdentity("akjhdsjkhdaskjhdaskj"))
+        thestore.List(model.WorldIdentity("akjhdsjkhdaskjhdaskj"))
         assert False
     except Exception as e:
         log.info("expected error: {}".format(str(e)))
 
 
-def test_list_and_eq_filter():
-    # ret = clt.List(model.WorldKindIdentity)
+def test_list_and_eq_filter(thestore):
+    # ret = thestore.List(model.WorldKindIdentity)
     # for r in ret:
     #     log.info("object {}".format(utils.pps(r.ToJson())))
 
-    ret = clt.List(model.WorldKindIdentity, options.Eq("external.name", worldName))
+    ret = thestore.List(model.WorldKindIdentity, options.Eq("external.name", worldName))
 
     assert ret is not None
     assert len(ret) == 1
@@ -662,8 +670,8 @@ def test_list_and_eq_filter():
     world_id = world.Metadata().Identity()
 
 
-def test_list_and_filter_by_id():
-    ret = clt.List(
+def test_list_and_filter_by_id(thestore):
+    ret = thestore.List(
         model.WorldKindIdentity, options.Eq("metadata.identity", str(world_id))
     )
 
@@ -676,8 +684,8 @@ def test_list_and_filter_by_id():
     assert world.External().Description() == worldDescription
 
 
-def test_list_and_filter_by_nonexistent_id():
-    ret = clt.List(
+def test_list_and_filter_by_nonexistent_id(thestore):
+    ret = thestore.List(
         model.WorldKindIdentity, options.Eq("metadata.identity", "asdasdasd")
     )
 
@@ -685,7 +693,7 @@ def test_list_and_filter_by_nonexistent_id():
     assert len(ret) == 0
 
 
-def test_metadata_updates():
+def test_metadata_updates(thestore):
     # create a new world
     name = "test_metadata_updates"
     world = model.WorldFactory()
@@ -693,7 +701,7 @@ def test_metadata_updates():
 
     # log.debug(">> creating world: {}".format(name))
 
-    ret = clt.Create(world)
+    ret = thestore.Create(world)
     assert ret is not None
     r = ret.Metadata().Revision()
     assert r == 1
@@ -711,7 +719,7 @@ def test_metadata_updates():
     world.External().SetDescription("test_metadata_updates")
 
     # log.debug(">> updating world: {}".format(name))
-    ret = clt.Update(model.WorldIdentity(name), world)
+    ret = thestore.Update(model.WorldIdentity(name), world)
 
     assert ret is not None
     assert ret.Metadata().Revision() == 2
@@ -735,7 +743,7 @@ def test_metadata_updates():
 
     # do a get and check the times
     # log.debug(">> getting world: {}".format(name))
-    ret = clt.Get(model.WorldIdentity(name))
+    ret = thestore.Get(model.WorldIdentity(name))
     assert ret is not None
     assert ret.Metadata().Revision() == 2
 
@@ -765,7 +773,7 @@ def test_metadata_updates():
     err = None
     ret33 = None
     try:
-        ret33 = clt.Update(model.WorldIdentity(name), world)
+        ret33 = thestore.Update(model.WorldIdentity(name), world)
     except Exception as e:
         err = e
         log.info("expected error: {}".format(str(e)))
@@ -776,7 +784,7 @@ def test_metadata_updates():
     newName = "test_metadata_updates22"
     ret.External().SetName(newName)
     ret.External().SetDescription("test_metadata_updates2222")
-    ret = clt.Update(meta_id2, ret)
+    ret = thestore.Update(meta_id2, ret)
 
     # check the created time must be the same
     ct3 = ret.Metadata().Created()
@@ -797,7 +805,7 @@ def test_metadata_updates():
     assert ct3 == ct
 
 
-def test_datetime_property_type():
+def test_datetime_property_type(thestore):
     name = "test_datetime_property_type"
     world = model.WorldFactory()
     world.External().SetName(name)
@@ -806,12 +814,12 @@ def test_datetime_property_type():
 
     assert world.External().Date() == dt
 
-    ret = clt.Create(world)
+    ret = thestore.Create(world)
     assert ret is not None
 
     ndt = datetime.now()
     world.External().SetDate(ndt)
-    ret = clt.Update(world.Metadata().Identity(), world)
+    ret = thestore.Update(world.Metadata().Identity(), world)
 
     assert ret is not None
 
@@ -821,7 +829,7 @@ def test_datetime_property_type():
     assert rdt > dt
 
     # do a get and check the times
-    ret = clt.Get(model.WorldIdentity(name))
+    ret = thestore.Get(model.WorldIdentity(name))
     assert ret is not None
 
     # check the updated time
@@ -831,22 +839,22 @@ def test_datetime_property_type():
     assert rdt2 == ndt
 
 
-def test_weird_characters():
+def test_weird_characters(thestore):
     world = model.WorldFactory()
     world.External().SetName("test_weird_characters")
     world.External().SetAlive(True)
     world.External().SetCounter(123)
     desc = "a's gone to $ with a # then did a ` WHERE an IN''SERT INTO'"
     world.External().SetDescription(desc)
-    ret = clt.Create(world)
+    ret = thestore.Create(world)
     assert ret is not None
 
-    ret = clt.Get(model.WorldIdentity("test_weird_characters"))
+    ret = thestore.Get(model.WorldIdentity("test_weird_characters"))
     assert ret is not None
     assert ret.External().Description() == desc
 
     # list and filter
-    ret = clt.List(model.WorldKindIdentity, options.Eq("external.description", desc))
+    ret = thestore.List(model.WorldKindIdentity, options.Eq("external.description", desc))
 
     assert ret is not None
     assert len(ret) == 1
@@ -857,29 +865,29 @@ def test_weird_characters():
     assert world.External().Description() == desc
 
 
-def test_list_and_filter_by_types():
-    ret = clt.List(model.WorldKindIdentity, options.Eq("external.counter", 123))
+def test_list_and_filter_by_types(thestore):
+    ret = thestore.List(model.WorldKindIdentity, options.Eq("external.counter", 123))
 
     assert ret is not None
     assert len(ret) == 1
 
-    ret = clt.List(model.WorldKindIdentity, options.Eq("external.alive", True))
+    ret = thestore.List(model.WorldKindIdentity, options.Eq("external.alive", True))
 
     assert ret is not None
     assert len(ret) == 1
 
 
-def test_list_and_filter_and_sort():
-    ret = clt.List(model.WorldKindIdentity)
+def test_list_and_filter_and_sort(thestore):
+    ret = thestore.List(model.WorldKindIdentity)
     total_length = len(ret)
     for r in ret:
         r.External().SetAlive(True)
-        clt.Update(r.Metadata().Identity(), r)
+        thestore.Update(r.Metadata().Identity(), r)
 
     ret[0].External().SetAlive(False)
-    clt.Update(ret[0].Metadata().Identity(), ret[0])
+    thestore.Update(ret[0].Metadata().Identity(), ret[0])
 
-    ret = clt.List(
+    ret = thestore.List(
         model.WorldKindIdentity,
         options.Eq("external.alive", True),
         options.Order("external.name"),
@@ -892,7 +900,7 @@ def test_list_and_filter_and_sort():
     # abc is not alive so the next one is anotherWorldName
     assert world.External().Name() == anotherWorldName
 
-    ret = clt.List(
+    ret = thestore.List(
         model.WorldKindIdentity,
         options.Eq("external.alive", True),
         options.Order("external.name", False),
@@ -906,7 +914,7 @@ def test_list_and_filter_and_sort():
     assert world.External().Name() != anotherWorldName
 
 
-def test_list_and_map_of_struct():
+def test_list_and_map_of_struct(thestore):
     world = model.WorldFactory()
     world.External().SetName("test_list_and_map_of_struct")
 
@@ -922,14 +930,14 @@ def test_list_and_map_of_struct():
     l = world.Internal().List()
     assert l[0].Counter() == 123
 
-    ret = clt.Create(world)
+    ret = thestore.Create(world)
     assert ret is not None
     d = ret.Internal().Map()
     assert d["nested"].Counter() == 123
     l = ret.Internal().List()
     assert l[0].Counter() == 123
 
-    ret = clt.Get(model.WorldIdentity("test_list_and_map_of_struct"))
+    ret = thestore.Get(model.WorldIdentity("test_list_and_map_of_struct"))
     assert ret is not None
 
     d = ret.Internal().Map()
@@ -941,11 +949,11 @@ def test_list_and_map_of_struct():
     assert l[0].Alive()
 
 
-def test_list_and_not_eq_filter():
-    ret = clt.List(model.WorldKindIdentity)
+def test_list_and_not_eq_filter(thestore):
+    ret = thestore.List(model.WorldKindIdentity)
     total_length = len(ret)
 
-    ret = clt.List(
+    ret = thestore.List(
         model.WorldKindIdentity, options.Not(options.Eq("external.name", worldName))
     )
 
@@ -956,30 +964,30 @@ def test_list_and_not_eq_filter():
         assert w.External().Name() != worldName
 
 
-def test_list_and_lt_gt_filter():
-    ret = clt.List(model.WorldKindIdentity)
+def test_list_and_lt_gt_filter(thestore):
+    ret = thestore.List(model.WorldKindIdentity)
     total_length = len(ret)
     i = 0
     for r in ret:
         r.External().SetCounter(i)
-        clt.Update(r.Metadata().Identity(), r)
+        thestore.Update(r.Metadata().Identity(), r)
         i += 10
 
     half = 10 * total_length // 2
 
-    ret = clt.List(model.WorldKindIdentity, options.Lt("external.counter", half))
+    ret = thestore.List(model.WorldKindIdentity, options.Lt("external.counter", half))
 
     assert ret is not None
     for r in ret:
         assert r.External().Counter() < half
 
-    ret = clt.List(model.WorldKindIdentity, options.Gt("external.counter", half))
+    ret = thestore.List(model.WorldKindIdentity, options.Gt("external.counter", half))
 
     assert ret is not None
     for r in ret:
         assert r.External().Counter() > half
 
-    ret = clt.List(
+    ret = thestore.List(
         model.WorldKindIdentity, options.Not(options.Lt("external.counter", half))
     )
 
@@ -987,7 +995,7 @@ def test_list_and_lt_gt_filter():
     for r in ret:
         assert r.External().Counter() >= half
 
-    ret = clt.List(
+    ret = thestore.List(
         model.WorldKindIdentity, options.Not(options.Gt("external.counter", half))
     )
 
@@ -995,7 +1003,7 @@ def test_list_and_lt_gt_filter():
     for r in ret:
         assert r.External().Counter() <= half
 
-    ret = clt.List(
+    ret = thestore.List(
         model.WorldKindIdentity, options.Not(options.Lte("external.counter", half))
     )
 
@@ -1003,7 +1011,7 @@ def test_list_and_lt_gt_filter():
     for r in ret:
         assert r.External().Counter() > half
 
-    ret = clt.List(
+    ret = thestore.List(
         model.WorldKindIdentity, options.Not(options.Gte("external.counter", half))
     )
 
@@ -1011,28 +1019,28 @@ def test_list_and_lt_gt_filter():
     for r in ret:
         assert r.External().Counter() < half
 
-    ret = clt.List(model.WorldKindIdentity, options.Lte("external.counter", half))
+    ret = thestore.List(model.WorldKindIdentity, options.Lte("external.counter", half))
 
     assert ret is not None
     for r in ret:
         assert r.External().Counter() <= half
 
-    ret = clt.List(model.WorldKindIdentity, options.Gte("external.counter", half))
+    ret = thestore.List(model.WorldKindIdentity, options.Gte("external.counter", half))
 
     assert ret is not None
     for r in ret:
         assert r.External().Counter() >= half
 
 
-def test_list_and_in_int_filter():
-    ret = clt.List(
+def test_list_and_in_int_filter(thestore):
+    ret = thestore.List(
         model.WorldKindIdentity, options.In("external.counter", [10, 20, 30, 40])
     )
 
     assert ret is not None
     assert len(ret) == 4
 
-    ret = clt.List(
+    ret = thestore.List(
         model.WorldKindIdentity,
         options.Not(options.In("external.counter", [10, 20, 30, 40])),
     )
@@ -1044,17 +1052,17 @@ def test_list_and_in_int_filter():
         assert r.External().Counter() not in [10, 20, 30, 40]
 
 
-def test_list_and_AND_filter():
-    ret = clt.List(
+def test_list_and_AND_filter(thestore):
+    ret = thestore.List(
         model.WorldKindIdentity, options.In("external.counter", [20, 30, 40, 50])
     )
 
     alive_count = 0
     for r in ret:
-        if r.External().Alive():
+        if r.External().Alive(thestore):
             alive_count += 1
 
-    ret = clt.List(
+    ret = thestore.List(
         model.WorldKindIdentity,
         options.And(
             options.In("external.counter", [20, 30, 40, 50]),
@@ -1071,7 +1079,7 @@ def test_list_and_AND_filter():
         assert r.External().Counter() in [20, 30, 40, 50]
         assert r.External().Alive()
 
-    ret = clt.List(
+    ret = thestore.List(
         model.WorldKindIdentity,
         options.And(
             options.In("external.counter", [20, 30, 40, 50]),
@@ -1087,8 +1095,8 @@ def test_list_and_AND_filter():
         assert not r.External().Alive()
 
 
-def test_list_and_OR_filter():
-    ret = clt.List(
+def test_list_and_OR_filter(thestore):
+    ret = thestore.List(
         model.WorldKindIdentity,
     )
 
@@ -1097,12 +1105,12 @@ def test_list_and_OR_filter():
     alive_count = 0
     not_alive_counters = []
     for r in ret:
-        if r.External().Alive():
+        if r.External().Alive(thestore):
             alive_count += 1
         else:
             not_alive_counters.append(r.External().Counter())
 
-    ret = clt.List(
+    ret = thestore.List(
         model.WorldKindIdentity,
         options.Or(
             options.In("external.counter", not_alive_counters),
@@ -1113,7 +1121,7 @@ def test_list_and_OR_filter():
     assert ret is not None
     assert len(ret) == total_length
 
-    ret = clt.List(
+    ret = thestore.List(
         model.WorldKindIdentity,
         options.Or(
             options.Not(options.In("external.counter", not_alive_counters)),
@@ -1125,24 +1133,24 @@ def test_list_and_OR_filter():
     assert len(ret) == alive_count
 
 
-def test_delete_filtered():
-    ret = clt.List(model.WorldKindIdentity, options.Eq("external.alive", True))
+def test_delete_filtered(thestore):
+    ret = thestore.List(model.WorldKindIdentity, options.Eq("external.alive", True))
     assert ret is not None
     alive_count = len(ret)
     assert alive_count > 0
 
-    clt.Delete(model.WorldKindIdentity, options.Eq("external.alive", True))
+    thestore.Delete(model.WorldKindIdentity, options.Eq("external.alive", True))
 
-    ret = clt.List(model.WorldKindIdentity)
+    ret = thestore.List(model.WorldKindIdentity)
     assert ret is not None
     assert len(ret) > 0
     for r in ret:
         assert r.External().Alive() == False
 
 
-def test_sql_injection():
+def test_sql_injection(thestore):
     # try to add a sql injection into a list query
-    ret = clt.List(model.WorldKindIdentity, options.Eq("external.name", "'; DROP TABLE Objects; --"))
+    ret = thestore.List(model.WorldKindIdentity, options.Eq("external.name", "'; DROP TABLE Objects; --"))
     assert ret is not None
     assert len(ret) == 0
 
@@ -1152,7 +1160,7 @@ def test_sql_injection():
     world.External().SetCounter(1)
     errored = False
     try:
-        clt.Create(world)
+        thestore.Create(world)
     except Exception as ex:
         log.info("Caught exception: {}".format(ex))
         errored = True
@@ -1164,24 +1172,25 @@ def test_sql_injection():
     desc = "'); DROP TABLE Objects; --"
     world.External().SetDescription(desc)
     world.External().SetCounter(1)
-    clt.Create(world)
+    thestore.Create(world)
 
-    ret = clt.List(model.WorldKindIdentity, options.Eq("external.name", "sqlinjector"))
+    ret = thestore.List(model.WorldKindIdentity, options.Eq("external.name", "sqlinjector"))
     assert ret[0].External().Description() == desc
-    ret = clt.Get(model.WorldIdentity(name), options.Eq("external.name", "sqlinjector"))
+    ret = thestore.Get(model.WorldIdentity(name), options.Eq("external.name", "sqlinjector"))
     assert ret.External().Description() == desc
     
     ret.External().SetName("', '', ''); DROP TABLE Objects; --")
     errored = False
     try:
-        clt.Update(ret.Metadata().Identity(), ret)
+        thestore.Update(ret.Metadata().Identity(), ret)
     except Exception as ex:
         log.info("Caught exception: {}".format(ex))
         errored = True
     
     assert errored
 
-def test_performance():
+
+def test_performance(thestore):
     NUMBER_OF_OBJECTS = 1000
 
     log.info("Creating {} objects".format(NUMBER_OF_OBJECTS))
@@ -1194,7 +1203,7 @@ def test_performance():
         world.External().SetName("world-{}".format(i))
         world.External().SetCounter(i)
         world.External().SetAlive(i % 2 == 0)
-        clt.Create(world)
+        thestore.Create(world)
         t22 = time.time()
 
         objects.add(world)
@@ -1210,7 +1219,7 @@ def test_performance():
     for o in objects:
         t11 = time.time()
         o.External().SetAlive(not o.External().Alive())
-        clt.Update(o.Metadata().Identity(), o)
+        thestore.Update(o.Metadata().Identity(), o)
         t22 = time.time()
 
         # append milliseconds it took for a single create
@@ -1221,12 +1230,12 @@ def test_performance():
 
     tl1 = time.time()
     log.info("Listing {} objects".format(NUMBER_OF_OBJECTS))
-    clt.List(model.WorldKindIdentity)
+    thestore.List(model.WorldKindIdentity)
     tl2 = time.time()
 
     tlh1 = time.time()
     log.info("Listing {} objects".format(NUMBER_OF_OBJECTS // 2))
-    clt.List(model.WorldKindIdentity, options.Eq("external.alive", True))
+    thestore.List(model.WorldKindIdentity, options.Eq("external.alive", True))
     tlh2 = time.time()
 
     tg1 = time.time()
@@ -1234,7 +1243,7 @@ def test_performance():
     log.info("Getting {} objects".format(NUMBER_OF_OBJECTS))
     for i in range(NUMBER_OF_OBJECTS):
         tgg1 = time.time()
-        clt.Get(model.WorldIdentity("world-{}".format(i)))
+        thestore.Get(model.WorldIdentity("world-{}".format(i)))
         tgg2 = time.time()
         graph_get[i] = tgg2 - tgg1
 
@@ -1245,7 +1254,7 @@ def test_performance():
     log.info("Deleting {} objects".format(NUMBER_OF_OBJECTS))
     for i in range(NUMBER_OF_OBJECTS):
         tgg1 = time.time()
-        clt.Delete(model.WorldIdentity("world-{}".format(i)))
+        thestore.Delete(model.WorldIdentity("world-{}".format(i)))
         tgg2 = time.time()
         graph_del[i] = tgg2 - tgg1
 
@@ -1256,13 +1265,13 @@ def test_performance():
         world.External().SetName("world-{}".format(i))
         world.External().SetCounter(1000)
         world.External().SetAlive(i % 2 == 0)
-        clt.Create(world)
+        thestore.Create(world)
     
     tdd1 = time.time()
-    clt.Delete(model.WorldKindIdentity, options.Eq("external.counter", 1000))
+    thestore.Delete(model.WorldKindIdentity, options.Eq("external.counter", 1000))
     tdd2 = time.time()
 
-    ret = clt.List(model.WorldKindIdentity)
+    ret = thestore.List(model.WorldKindIdentity)
     assert ret is not None
     assert len(ret) > 0
     for r in ret:
@@ -1295,20 +1304,3 @@ def test_performance():
     plt.figure()
     plt.plot(graph_del, label="delete")
     plt.savefig("perf_delete.png")
-
-    # with info logs
-    # Performance results: 10000 objects
-    # Create: 	    5.962012052536011s
-    # Update: 		7.063429117202759s
-    # List Half:   	0.2144460678100586s
-    # List: 		0. 41225194931030273s
-    # Get:		    0.9138858318328857s
-    # Delete: 		4.72649621963501s
-
-    # with no logs
-    # Create: 		5.244661092758179s
-    # Update: 		6.249370098114014s
-    # List Half:	0.21255111694335938s
-    # List: 		0.40752696990966797s
-    # Get:		    0.6312203407287598s
-    # Delete: 		3.8235106468200684s
