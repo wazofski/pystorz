@@ -31,11 +31,40 @@ def sqlite():
     from pystorz.sql.store import SqliteStore, SqliteConnection
     from generated.model import Schema
 
-    db_file = "test.db"
+    db_file = "testsqlite.db"
     if os.path.exists(db_file):
         os.remove(db_file)
 
     return SqliteStore(Schema(), SqliteConnection(db_file))
+
+
+def client():
+    log.debug("server/client setup")
+    import os
+
+    from pystorz.sql.store import SqliteStore, SqliteConnection
+    from generated import model
+
+    db_file = "testclient.db"
+    if os.path.exists(db_file):
+        os.remove(db_file)
+
+    sqlite_store = SqliteStore(model.Schema(), SqliteConnection(db_file))
+
+    from pystorz.rest import server, client
+    srv = server.Server(
+        model.Schema(),
+        sqlite_store,
+        server.Expose(
+            model.WorldKind,
+            server.ActionCreate,
+            server.ActionGet,
+            server.ActionList,
+            server.ActionDelete),
+    )
+
+    
+
 
 
 @pytest.fixture(params=[sqlite()])

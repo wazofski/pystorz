@@ -3,7 +3,7 @@ sample/Teacher.py
 **/__pycache__/
 **/generated
 tests/.coverage
-test.db
+*.db
 dist/**
 pystorz.egg-info/**
 .vscode

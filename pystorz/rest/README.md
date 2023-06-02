@@ -3,11 +3,24 @@ REST API Server that exposes Store functionality
 
 ## Usage
 ```
-srv = rest.Server(model.Schema(), store_to_expose,
-    rest.TypeMethods(model.WorldKind,
-        rest.ActionGet, rest.ActionCreate,
-        rest.ActionDelete, rest.ActionUpdate),
-    rest.TypeMethods("AnotherWorld", rest.ActionGet))
+from pystorz.rest import server, client
+
+srv = server.Server(
+    model.Schema(),
+    store_to_expose,
+    server.Expose(
+        model.WorldKind,
+        server.ActionCreate,
+        server.ActionGet,
+        server.ActionDelete),
+    server.Expose(
+        model.AnotherWorldKind,
+        server.ActionCreate,
+        server.ActionGet),
+    )
 
 srv.serve(host, port) # blocking
+
+# client Store
+client = client.Client(url, model.Schema(), headers)
 ```

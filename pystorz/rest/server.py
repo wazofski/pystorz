@@ -156,7 +156,7 @@ class Expose:
 
 
 class Server:
-    def __init__(self, schema, thestore, to_expose):
+    def __init__(self, schema, thestore, *to_expose):
         self.Schema = schema
         self.Store = internals.internal_factory(schema, thestore)
         self.Exposed = {}
