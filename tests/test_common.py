@@ -77,8 +77,8 @@ def rest():
     return client
 
 
-# @pytest.fixture(params=[sqlite(), rest()])
-@pytest.fixture(params=[rest()])
+@pytest.fixture(params=[sqlite()])
+# @pytest.fixture(params=[rest()])
 def thestore(request):
     return request.param
 
@@ -328,10 +328,15 @@ def test_cannot_put_objects_of_wrong_type(thestore):
     world = model.SecondWorldFactory()
     world.External().SetName("zxcxzcxz")
 
+    thestore.Create(world)
+
+    existing_world = thestore.List(model.WorldKindIdentity)[0]
+    assert existing_world is not None
+
     err = None
     try:
         ret = None
-        ret = thestore.Update(model.WorldIdentity("qwe"), world)
+        ret = thestore.Update(existing_world.Metadata().Identity(), world)
     except Exception as e:
         err = e
 
@@ -466,8 +471,28 @@ def test_get_nil_identity(thestore):
         err = e
 
     assert err is not None
-    assert str(err) == constants.ErrObjectNil
+    assert str(err) == constants.ErrInvalidPath
 
+
+def test_list_nil_identity(thestore):
+    err = None
+    try:
+        thestore.List(None)
+    except Exception as e:
+        err = e
+
+    assert err is not None
+    assert str(err) == constants.ErrInvalidPath
+
+# def test_list_invalid_identity(thestore):
+#     err = None
+#     try:
+#         thestore.List(store.ObjectIdentity("aksjdhsajkd/"))
+#     except Exception as e:
+#         err = e
+
+#     assert err is not None
+#     assert str(err) == constants.ErrInvalidPath
 
 def test_create_nil_object(thestore):
     err = None
@@ -483,12 +508,12 @@ def test_create_nil_object(thestore):
 def test_put_nil_identity(thestore):
     err = None
     try:
-        thestore.Update("", model.WorldFactory())
+        thestore.Update(None, model.WorldFactory())
     except Exception as e:
         err = e
 
     assert err is not None
-    assert str(err) == constants.ErrObjectNil
+    assert str(err) == constants.ErrInvalidPath
 
 
 def test_put_nil_object(thestore):
@@ -505,12 +530,12 @@ def test_put_nil_object(thestore):
 def test_delete_nil_identity(thestore):
     err = None
     try:
-        thestore.Delete("")
+        thestore.Delete(None)
     except Exception as e:
         err = e
 
     assert err is not None
-    assert str(err) == constants.ErrObjectNil
+    assert str(err) == constants.ErrInvalidPath
 
 
 def test_delete_empty_identity(thestore):
@@ -582,7 +607,7 @@ def test_can_list_and_sort_multiple_objects(thestore):
 
     ret = thestore.List(
         model.WorldKindIdentity,
-        options.Order("external.name", False),
+        options.Order("external.name", False)
     )
 
     assert ret is not None
@@ -596,7 +621,9 @@ def test_can_list_and_sort_multiple_objects(thestore):
 
 def test_list_and_paginate_multiple_objects(thestore):
     ret = thestore.List(
-        model.WorldKindIdentity, options.Order("external.name"), options.PageSize(1)
+        model.WorldKindIdentity,
+        options.Order("external.name"),
+        options.PageSize(1)
     )
 
     assert ret is not None
@@ -610,7 +637,7 @@ def test_list_and_paginate_multiple_objects(thestore):
         model.WorldKindIdentity,
         options.Order("external.name"),
         options.PageSize(1),
-        options.PageOffset(1),
+        options.PageOffset(1)
     )
 
     assert ret is not None
@@ -623,7 +650,7 @@ def test_list_and_paginate_multiple_objects(thestore):
         model.WorldKindIdentity,
         options.Order("external.name"),
         options.PageOffset(1),
-        options.PageSize(1000),
+        options.PageSize(1000)
     )
 
     assert ret is not None
@@ -643,13 +670,16 @@ def test_list_and_filter_by_primary_key(thestore):
     assert len(keys) == 2
 
     ret = thestore.List(
-        model.WorldKindIdentity, options.In("external.name", [keys[0], keys[1]])
+        model.WorldKindIdentity,
+        options.In("external.name", [keys[0], keys[1]])
     )
 
     assert len(ret) == 2
 
     for k in keys:
-        ret = thestore.List(model.WorldKindIdentity, options.In("external.name", [k]))
+        ret = thestore.List(
+            model.WorldKindIdentity,
+            options.In("external.name", [k]))
 
         assert len(ret) == 1
         assert ret[0].PrimaryKey() == k
@@ -687,7 +717,9 @@ def test_list_and_eq_filter(thestore):
     # for r in ret:
     #     log.info("object {}".format(utils.pps(r.ToJson())))
 
-    ret = thestore.List(model.WorldKindIdentity, options.Eq("external.name", worldName))
+    ret = thestore.List(
+        model.WorldKindIdentity,
+        options.Eq("external.name", worldName))
 
     assert ret is not None
     assert len(ret) == 1
@@ -702,7 +734,8 @@ def test_list_and_eq_filter(thestore):
 
 def test_list_and_filter_by_id(thestore):
     ret = thestore.List(
-        model.WorldKindIdentity, options.Eq("metadata.identity", str(world_id))
+        model.WorldKindIdentity,
+        options.Eq("metadata.identity", str(world_id))
     )
 
     assert ret is not None
@@ -716,7 +749,8 @@ def test_list_and_filter_by_id(thestore):
 
 def test_list_and_filter_by_nonexistent_id(thestore):
     ret = thestore.List(
-        model.WorldKindIdentity, options.Eq("metadata.identity", "asdasdasd")
+        model.WorldKindIdentity,
+        options.Eq("metadata.identity", "asdasdasd")
     )
 
     assert ret is not None
@@ -1082,6 +1116,34 @@ def test_list_and_in_int_filter(thestore):
 
     for r in ret:
         assert r.External().Counter() not in [10, 20, 30, 40]
+
+
+def test_list_and_in_bool_filter(thestore):
+    ret = thestore.List(
+        model.WorldKindIdentity,
+        options.In("external.alive", [True])
+    )
+
+    assert ret is not None
+    for r in ret:
+        assert r.External().Alive()
+
+    ret = thestore.List(
+        model.WorldKindIdentity,
+        options.In("external.alive", [False]),
+    )
+
+    assert ret is not None
+    for r in ret:
+        assert not r.External().Alive()
+
+    ret = thestore.List(
+        model.WorldKindIdentity,
+        options.In("external.counter", [True]),
+    )
+
+    assert ret is not None
+    assert len(ret) == 0
 
 
 def test_list_and_AND_filter(thestore):

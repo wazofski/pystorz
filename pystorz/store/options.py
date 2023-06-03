@@ -157,7 +157,7 @@ class NotSetting(ListDeleteOption):
         self.filter = flt
 
     def ToDict(self):
-        return {"type": "not", "filter": self.filter.ToDict() }
+        return {"type": "not", "filter": self.filter.ToDict()}
 
 
 class InSetting(ListDeleteOption):
@@ -183,6 +183,20 @@ class CommonOptionHolder:
 
 def CommonOptionHolderFactory() -> CommonOptionHolder:
     return CommonOptionHolder()
+
+
+class _ListDeleteOption(ListDeleteOption):
+    def __init__(self, function):
+        self.function = function
+
+    def get_delete_option(self):
+        return self
+
+    def get_list_option(self):
+        return self
+
+    def ApplyFunction(self):
+        return self.function
 
 
 def And(*filters: list[ListDeleteOption]) -> ListDeleteOption:
@@ -293,7 +307,7 @@ def In(key: str, *values: list) -> ListDeleteOption:
 def PageSize(ps: int) -> ListOption:
     if ps < 0:
         raise Exception("page size cannot be negative")
-    
+
     def option_function(options: OptionHolder):
         common_options = options.common_options()
         if common_options.page_size is not None:
@@ -302,43 +316,21 @@ def PageSize(ps: int) -> ListOption:
         common_options.page_size = ps
         # logging.info(f"pagination size option {ps}")
 
-    return _ListOption(option_function)
+    return _ListDeleteOption(option_function)
 
 
 def PageOffset(po: int) -> ListOption:
     if po < 0:
         raise Exception("page offset cannot be negative")
-    
+
     def option_function(options: OptionHolder):
         common_options = options.common_options()
         if common_options.page_offset is not None:
             raise Exception("page offset option has already been set")
-        
+
         common_options.page_offset = po
 
-    return _ListOption(option_function)
-
-
-class _ListDeleteOption(ListDeleteOption):
-    def __init__(self, function):
-        self.function = function
-
-    def get_delete_option(self):
-        return self
-
-    def get_list_option(self):
-        return self
-
-    def ApplyFunction(self):
-        return self.function
-
-
-class _ListOption(ListOption):
-    def __init__(self, function):
-        self.function = function
-
-    def get_list_option(self):
-        return self
+    return _ListDeleteOption(option_function)
 
 
 def Order(field, ascending=True):
@@ -350,4 +342,4 @@ def Order(field, ascending=True):
         else:
             raise Exception("order by option has already been set")
 
-    return _ListOption(f)
+    return _ListDeleteOption(f)

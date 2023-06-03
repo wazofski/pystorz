@@ -1,3 +1,4 @@
+import threading
 import logging
 import sqlite3
 from pystorz.internal import constants
@@ -22,18 +23,17 @@ def SqliteConnection(path):
 
 class SqliteStore:
     def __init__(self, Schema, MakeConnection):
-        self.Schema = Schema
-        self.MakeConnection = MakeConnection
-        self.DB = None
+        self._schema = Schema
+        self._makeConnection = MakeConnection
+        self._connection_cache = {}
 
-    def TestConnection(self):
-        if self.DB is not None:
-            return
+    def _connection(self):
+        tid = threading.get_ident()
+        if tid not in self._connection_cache:
+            self._connection_cache[tid] = self._makeConnection()
+            self._prepareTables(self._connection_cache[tid])
 
-        self.DB = self.MakeConnection()
-        self._prepareTables()
-
-        return self.DB.cursor()
+        return self._connection_cache[tid]
 
     def Create(self, obj, opt=[]):
         if obj is None:
@@ -41,9 +41,9 @@ class SqliteStore:
 
         log.info("create {}".format(obj.PrimaryKey()))
 
-        copt = options.CommonOptionHolderFactory()
-        for o in opt:
-            o.ApplyFunction()(copt)
+        # copt = options.CommonOptionHolderFactory()
+        # for o in opt:
+        #     o.ApplyFunction()(copt)
 
         lk = obj.Metadata().Kind().lower()
         path = "{}/{}".format(lk, obj.PrimaryKey())
@@ -52,19 +52,20 @@ class SqliteStore:
             existing = self.Get(store.ObjectIdentity(path))
         except Exception as e:
             pass
+
         if existing is not None:
             raise Exception(constants.ErrObjectExists)
-
-        self.TestConnection()
 
         obj.Metadata().SetCreated(datetime.now())
         obj.Metadata().SetUpdated(obj.Metadata().Created())
         obj.Metadata().SetRevision(1)
 
+        db = self._connection()
+
         try:
             # Start a transaction
-            self.DB.execute("BEGIN")
-            cursor = self.DB.cursor()
+            db.execute("BEGIN")
+            cursor = db.cursor()
 
             self._setIdentity(
                 cursor,
@@ -76,17 +77,16 @@ class SqliteStore:
             self._setObject(cursor, obj.PrimaryKey(), obj.Metadata().Kind(), obj)
 
             # Commit the transaction
-            self.DB.commit()
+            db.commit()
             return obj.Clone()
         except Exception as e:
-            self.DB.rollback()
+            db.rollback()
             raise e
 
     def Update(self, identity, obj, *opt):
-        copt = options.CommonOptionHolderFactory()
-
-        for o in opt:
-            o.ApplyFunction()(copt)
+        # copt = options.CommonOptionHolderFactory()
+        # for o in opt:
+        #     o.ApplyFunction()(copt)
 
         if identity is None:
             raise Exception(constants.ErrInvalidPath)
@@ -97,9 +97,6 @@ class SqliteStore:
         log.info("update {}".format(identity.Path()))
 
         existing = self.Get(identity)
-        if existing is None:
-            raise Exception(constants.ErrNoSuchObject)
-
         if existing.Metadata().Kind() != obj.Metadata().Kind():
             raise Exception(constants.ErrObjectIdentityMismatch)
 
@@ -128,12 +125,12 @@ class SqliteStore:
             if target is not None:
                 raise Exception(constants.ErrObjectExists)
 
-        self.TestConnection()
+        db = self._connection()
 
         try:
             # Start a transaction
-            self.DB.execute("BEGIN")
-            cursor = self.DB.cursor()
+            db.execute("BEGIN")
+            cursor = db.cursor()
 
             self._removeIdentity(cursor, existing.Metadata().Identity().Path())
 
@@ -156,10 +153,10 @@ class SqliteStore:
 
             self._setObject(cursor, obj.PrimaryKey(), obj.Metadata().Kind(), obj)
 
-            self.DB.commit()
+            db.commit()
             return obj.Clone()
         except Exception as e:
-            self.DB.rollback()
+            db.rollback()
             raise e
 
     def Delete(self, identity, *opt):
@@ -168,40 +165,36 @@ class SqliteStore:
 
         log.info("delete {}".format(identity.Path()))
         copt = options.CommonOptionHolderFactory()
-
         for o in opt:
             o.ApplyFunction()(copt)
 
         existing = None
         if copt.filter is None:
             existing = self.Get(identity)
-            if existing is None:
-                raise Exception(constants.ErrNoSuchObject)
 
-        self.TestConnection()
+        db = self._connection()
 
-        try:
-            # Start a transaction
-            self.DB.execute("BEGIN")
-            cursor = self.DB.cursor()
+        # try:
+        # Start a transaction
+        db.execute("BEGIN")
+        cursor = db.cursor()
 
-            if copt.filter is None:
-                self._removeIdentity(cursor, existing.Metadata().Identity().Path())
-                self._removeObject(
-                    cursor, existing.PrimaryKey(), existing.Metadata().Kind()
-                )
-            else:
-                clause = self._buildFilterClause(copt, identity)
-                keys = self._getObjectKeys(cursor, identity.Type(), clause)
+        if copt.filter is None:
+            self._removeIdentity(cursor, existing.Metadata().Identity().Path())
+            self._removeObject(
+                cursor, existing.PrimaryKey(), existing.Metadata().Kind()
+            )
+        else:
+            clause = self._buildFilterClause(copt, identity)
+            keys = self._getObjectKeys(cursor, identity.Type(), clause)
 
-                self._removeObjects(cursor, identity.Type(), clause)
+            self._removeObjects(cursor, identity.Type(), clause)
+            self._removeIdentities(cursor, identity.Type(), keys)
 
-                self._removeIdentities(cursor, identity.Type(), keys)
-
-            self.DB.commit()
-        except Exception as e:
-            self.DB.rollback()
-            raise e
+        db.commit()
+        # except Exception as e:
+        #     db.rollback()
+        #     raise e
 
     def Get(self, identity, *opt):
         if identity is None:
@@ -213,9 +206,8 @@ class SqliteStore:
         for o in opt:
             o.ApplyFunction()(copt)
 
-        self.TestConnection()
-
-        cursor = self.DB.cursor()
+        db = self._connection()
+        cursor = db.cursor()
 
         if identity.IsId():
             pkey, typ = self._getIdentity(cursor, identity.Path())
@@ -223,7 +215,7 @@ class SqliteStore:
 
         return self._getObject(cursor, identity.Key(), identity.Type())
 
-    def List(self, identity, *opt):
+    def List(self, identity, *opt: list[options.ListOption]):
         if identity is None:
             raise Exception(constants.ErrInvalidPath)
 
@@ -233,12 +225,12 @@ class SqliteStore:
             raise Exception(constants.ErrInvalidPath)
 
         copt = options.CommonOptionHolderFactory()
+
         for o in opt:
             o.ApplyFunction()(copt)
 
-        self.TestConnection()
-
-        cursor = self.DB.cursor()
+        db = self._connection()
+        cursor = db.cursor()
 
         query = """SELECT Object FROM Objects 
         WHERE Type = '{}'""".format(
@@ -263,13 +255,12 @@ class SqliteStore:
         if copt.page_offset is not None and copt.page_offset > 0:
             query = query + " OFFSET {}".format(copt.page_offset)
 
-        cursor = self.DB.cursor()
         self._do_query(cursor, query)
         rows = cursor.fetchall()
 
         return self._parseObjectRows(rows, identity.Type())
 
-    def _prepareTables(self):
+    def _prepareTables(self, db):
         create = """
         CREATE TABLE IF NOT EXISTS IdIndex (
             Path VARCHAR(25) NOT NULL PRIMARY KEY,
@@ -277,7 +268,7 @@ class SqliteStore:
             Type VARCHAR(25) NOT NULL);
         """
 
-        cursor = self.DB.cursor()
+        cursor = db.cursor()
         self._do_query(cursor, create)
 
         create = """
@@ -290,7 +281,8 @@ class SqliteStore:
 
         cursor.execute(create)
         cursor.close()
-        self.DB.commit()
+
+        db.commit()
 
     def _getIdentity(self, cursor, path):
         query = """SELECT Pkey, Type FROM IdIndex 
@@ -308,24 +300,24 @@ class SqliteStore:
             raise Exception(constants.ErrNoSuchObject)
 
     def _setIdentity(self, cursor, path, pkey, typ):
-        existing_pkey, existing_typ = None, None
+        # existing_pkey, existing_typ = None, None
 
-        try:
-            existing_pkey, existing_typ = self._getIdentity(cursor, path)
-        except Exception as e:
-            log.debug("identity get failed: {}".format(e))
+        # try:
+        #     existing_pkey, existing_typ = self._getIdentity(cursor, path)
+        # except Exception as e:
+        #     log.debug("identity get failed: {}".format(e))
 
-        query = ""
-        if existing_pkey is not None and existing_typ is not None:
-            query = """UPDATE IdIndex SET Pkey='{}', Type='{}'
-            WHERE Path='{}'""".format(
-                pkey, typ.lower(), path
-            )
-        else:
-            query = """INSERT INTO IdIndex (Pkey, Type, Path)
-            VALUES ('{}', '{}', '{}')""".format(
-                pkey, typ.lower(), path
-            )
+        # query = ""
+        # if existing_pkey is not None and existing_typ is not None:
+        #     query = """UPDATE IdIndex SET Pkey='{}', Type='{}'
+        #     WHERE Path='{}'""".format(
+        #         pkey, typ.lower(), path
+        #     )
+        # else:
+        query = """INSERT INTO IdIndex (Pkey, Type, Path)
+        VALUES ('{}', '{}', '{}')""".format(
+            pkey, typ.lower(), path
+        )
 
         self._do_query(cursor, query)
 
@@ -355,27 +347,27 @@ class SqliteStore:
 
     def _setObject(self, cursor, pkey, typ, obj):
         query = ""
-        existing_obj = None
+        # existing_obj = None
 
-        try:
-            existing_obj = self._getObject(cursor, pkey, typ)
-        except Exception as e:
-            log.debug("object get failed: {}".format(e))
+        # try:
+        #     existing_obj = self._getObject(cursor, pkey, typ)
+        # except Exception as e:
+        #     log.debug("object get failed: {}".format(e))
 
         data = obj.ToJson()
         # encode the data so it doesn't contain any SQL unfriendly characters
         data = utils.encode_string(data)
 
-        if existing_obj is not None:
-            query = """UPDATE Objects SET Object='{}'
-            WHERE Pkey = '{}' AND Type = '{}'""".format(
-                data, pkey, typ.lower()
-            )
-        else:
-            query = """INSERT INTO Objects (Object, Pkey, Type)
-            VALUES ('{}', '{}', '{}')""".format(
-                data, pkey, typ.lower()
-            )
+        # if existing_obj is not None:
+        #     query = """UPDATE Objects SET Object='{}'
+        #     WHERE Pkey = '{}' AND Type = '{}'""".format(
+        #         data, pkey, typ.lower()
+        #     )
+        # else:
+        query = """INSERT INTO Objects (Object, Pkey, Type)
+        VALUES ('{}', '{}', '{}')""".format(
+            data, pkey, typ.lower()
+        )
 
         self._do_query(cursor, query)
 
@@ -425,7 +417,7 @@ class SqliteStore:
         self._do_query(cursor, query)
 
     def _parseObjectRow(self, data, typ):
-        return utils.unmarshal_object(data, self.Schema, typ)
+        return utils.unmarshal_object(data, self._schema, typ)
 
     def _parseObjectRows(self, rows, typ):
         res = []
@@ -443,9 +435,9 @@ class SqliteStore:
         if copt.filter is None:
             return ""
 
-        sample = self.Schema.ObjectForKind(identity.Type())
-        if sample is None:
-            raise Exception(constants.ErrNoSuchObject)
+        sample = self._schema.ObjectForKind(identity.Type())
+        # if sample is None:
+        #     raise Exception(constants.ErrInvalidPath)
 
         return """
             AND ({})
