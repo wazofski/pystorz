@@ -11,7 +11,9 @@ from pystorz.store import store
 from pystorz.store import options
 from pystorz.store import utils
 
-from pystorz.rest import internals
+from pystorz.rest.internals import InternalStore
+from pystorz.meta.store import MetaStore
+
 
 from flask import Flask, request
 
@@ -50,7 +52,9 @@ def _handle_exceptions(e):
 
 
 def _json_response(code: int, data: dict):
-    return json.dumps(data), code, {"Content-Type": "application/json"}
+    ret = json.dumps(data)
+    log.debug("json response: {}".format(ret))
+    return ret, code, {"Content-Type": "application/json"}
 
 
 def _error_response(code: int, message: str):
@@ -189,7 +193,11 @@ class Expose:
 class Server:
     def __init__(self, schema, thestore, *to_expose: list[Expose]):
         self.Schema = schema
-        self.Store = internals.InternalStore(schema, thestore)
+        self.Store = InternalStore(
+            schema, 
+            MetaStore(
+                schema,
+                thestore))
 
         accepted_actions = set([ActionGet, ActionCreate, ActionUpdate, ActionDelete])
 

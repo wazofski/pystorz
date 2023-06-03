@@ -56,10 +56,6 @@ class SqliteStore:
         if existing is not None:
             raise Exception(constants.ErrObjectExists)
 
-        obj.Metadata().SetCreated(datetime.now())
-        obj.Metadata().SetUpdated(obj.Metadata().Created())
-        obj.Metadata().SetRevision(1)
-
         db = self._connection()
 
         try:
@@ -146,10 +142,6 @@ class SqliteStore:
             self._removeObject(
                 cursor, existing.PrimaryKey(), existing.Metadata().Kind()
             )
-
-            obj.Metadata().SetCreated(existing.Metadata().Created())
-            obj.Metadata().SetUpdated(datetime.now())
-            obj.Metadata().SetRevision(existing.Metadata().Revision() + 1)
 
             self._setObject(cursor, obj.PrimaryKey(), obj.Metadata().Kind(), obj)
 
@@ -445,35 +437,35 @@ class SqliteStore:
             self._convertFilter(copt.filter, sample)
         )
 
-    def _convertFilter(self, filterSetting, sample):
-        if isinstance(filterSetting, options._ListDeleteOption):
+    def _convertFilter(self, filterOption, sample):
+        if isinstance(filterOption, options._ListDeleteOption):
             copt = options.CommonOptionHolderFactory()
-            filterSetting.ApplyFunction()(copt)
-            filterSetting = copt.filter
+            filterOption.ApplyFunction()(copt)
+            filterOption = copt.filter
 
-        if isinstance(filterSetting, options.AndSetting):
+        if isinstance(filterOption, options.AndOption):
             return "( {} )".format(
                 " AND ".join(
-                    [self._convertFilter(f, sample) for f in filterSetting.filters]
+                    [self._convertFilter(f, sample) for f in filterOption.filters]
                 )
             )
 
-        if isinstance(filterSetting, options.OrSetting):
+        if isinstance(filterOption, options.OrOption):
             return "( {} )".format(
                 " OR ".join(
-                    [self._convertFilter(f, sample) for f in filterSetting.filters]
+                    [self._convertFilter(f, sample) for f in filterOption.filters]
                 )
             )
 
-        if isinstance(filterSetting, options.NotSetting):
+        if isinstance(filterOption, options.NotOption):
             return "( NOT {} )".format(
-                self._convertFilter(filterSetting.filter, sample)
+                self._convertFilter(filterOption.filter, sample)
             )
 
-        if utils.object_path(sample, filterSetting.key) is None:
+        if utils.object_path(sample, filterOption.key) is None:
             raise Exception(constants.ErrInvalidFilter)
 
-        if isinstance(filterSetting, options.InSetting):
+        if isinstance(filterOption, options.InOption):
 
             def convert_value(v):
                 # return "'{}'".format(v)
@@ -484,35 +476,35 @@ class SqliteStore:
                 else:
                     return str(v)
 
-            values = ", ".join([convert_value(v) for v in filterSetting.values])
+            values = ", ".join([convert_value(v) for v in filterOption.values])
 
             return " json_extract(Object, '$.{}') IN ({})".format(
-                filterSetting.key, values
+                filterOption.key, values
             )
 
-        if isinstance(filterSetting, options.EqSetting):
+        if isinstance(filterOption, options.EqOption):
             return " json_extract(Object, '$.{}') = {} ".format(
-                filterSetting.key, filterSetting.value
+                filterOption.key, filterOption.value
             )
 
-        if isinstance(filterSetting, options.LtSetting):
+        if isinstance(filterOption, options.LtOption):
             return " json_extract(Object, '$.{}') < {} ".format(
-                filterSetting.key, filterSetting.value
+                filterOption.key, filterOption.value
             )
 
-        if isinstance(filterSetting, options.GtSetting):
+        if isinstance(filterOption, options.GtOption):
             return " json_extract(Object, '$.{}') > {} ".format(
-                filterSetting.key, filterSetting.value
+                filterOption.key, filterOption.value
             )
 
-        if isinstance(filterSetting, options.LteSetting):
+        if isinstance(filterOption, options.LteOption):
             return " json_extract(Object, '$.{}') <= {} ".format(
-                filterSetting.key, filterSetting.value
+                filterOption.key, filterOption.value
             )
 
-        if isinstance(filterSetting, options.GteSetting):
+        if isinstance(filterOption, options.GteOption):
             return " json_extract(Object, '$.{}') >= {} ".format(
-                filterSetting.key, filterSetting.value
+                filterOption.key, filterOption.value
             )
 
         raise Exception(constants.ErrInvalidFilter)

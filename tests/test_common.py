@@ -14,6 +14,7 @@ from generated import model
 
 from pystorz.internal import constants
 from pystorz.store import options, utils, store
+from pystorz.meta.store import MetaStore
 
 thestore = store.Store()
 
@@ -34,8 +35,12 @@ def sqlite():
     db_file = "testsqlite.db"
     if os.path.exists(db_file):
         os.remove(db_file)
-
-    return SqliteStore(Schema(), SqliteConnector(db_file))
+    schema = Schema()
+    return MetaStore(
+        schema,
+        SqliteStore(
+            schema,
+            SqliteConnector(db_file)))
 
 
 def rest():
@@ -80,8 +85,8 @@ def rest():
     return client.Client(url, model.Schema())
 
 
-# @pytest.fixture(params=[sqlite()])
-@pytest.fixture(params=[rest()])
+@pytest.fixture(params=[sqlite()])
+# @pytest.fixture(params=[rest()])
 def thestore(request):
     return request.param
 
