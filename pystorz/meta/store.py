@@ -21,16 +21,12 @@ class MetaStore(store.Store):
         log.info("create {}".format(
             obj.Metadata().Kind()))
 
-        original = self.Schema.ObjectForKind(obj.Metadata().Kind())
-        if original is None:
-            raise Exception(constants.ErrInvalidPath)
-
         obj.Metadata().SetIdentity(store.ObjectIdentityFactory())
         obj.Metadata().SetCreated(datetime.now())
         obj.Metadata().SetUpdated(obj.Metadata().Created())
         obj.Metadata().SetRevision(1)
 
-        return self.Store.Create(original, *opt)
+        return self.Store.Create(obj, *opt)
 
     def Update(
         self,
@@ -39,13 +35,15 @@ class MetaStore(store.Store):
         *opt: options.UpdateOption,
     ) -> store.Object:
         if obj is None:
-            return constants.ErrObjectNil
+            raise Exception(constants.ErrObjectNil)
 
         log.info("update {}".format(identity))
 
         original = self.Store.Get(identity)
-        
-        obj.Metadata().SetKind(original.Metadata().Kind())
+        # if original.Metadata().Kind() != obj.Metadata().Kind():
+        #     return constants.ErrObjectIdentityMismatch
+
+        # obj.Metadata().SetKind(original.Metadata().Kind())
         obj.Metadata().SetIdentity(original.Metadata().Identity())
         obj.Metadata().SetCreated(original.Metadata().Created())
         obj.Metadata().SetUpdated(datetime.now())

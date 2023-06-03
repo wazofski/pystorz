@@ -37,7 +37,7 @@ class InternalStore(store.Store):
         *opt: options.UpdateOption,
     ) -> store.Object:
         if obj is None:
-            return constants.ErrObjectNil
+            raise Exception(constants.ErrObjectNil)
 
         log.info("update {}".format(identity))
 

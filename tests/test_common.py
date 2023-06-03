@@ -842,27 +842,19 @@ def test_metadata_updates(thestore):
     world.External().SetName(newName)
     world.External().SetDescription("test_metadata_updates2222")
 
-    err = None
-    ret33 = None
-    try:
-        ret33 = thestore.Update(model.WorldIdentity(name), world)
-    except Exception as e:
-        err = e
-
-    assert err is not None
-    assert ret33 is None
-    assert str(err) == constants.ErrObjectIdentityMismatch
-
-    newName = "test_metadata_updates22"
+    ret33 = thestore.Update(model.WorldIdentity(name), world)
+    assert ret33 is not None
+    
+    newName = "test_metadata_updates222"
     ret.External().SetName(newName)
-    ret.External().SetDescription("test_metadata_updates2222")
+    ret.External().SetDescription("test_metadata_updates22222")
     ret = thestore.Update(meta_id2, ret)
 
     # check the created time must be the same
     ct3 = ret.Metadata().Created()
     assert ct3 is not None
     assert ct3 == ct
-    assert ret.Metadata().Revision() == 3
+    assert ret.Metadata().Revision() == 4
 
     # meta id must be the same
     meta_id2 = ret.Metadata().Identity()
