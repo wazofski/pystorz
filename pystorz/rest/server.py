@@ -210,30 +210,30 @@ class Server:
         # launch a flask server to serve the html
         log.info("serving on {}:{}".format(host, port))
 
-        self.app.run(host, port)
+        # self.app.run(host, port)
 
-        # cherrypy.tree.graft(self.app, "/")
-        # cherrypy.config.update(
-        #     {
-        #         "server.socket_host": host,
-        #         "server.socket_port": port,
-        #     }
-        # )
+        cherrypy.tree.graft(self.app, "/")
+        cherrypy.config.update(
+            {
+                "server.socket_host": host,
+                "server.socket_port": port,
+            }
+        )
 
-        # cherrypy.config.update(
-        #     {
-        #         "log.access_file": "",  # Disable CherryPy's default access log
-        #         # 'log.screen': False,    # Disable logging to the console
-        #     }
-        # )
+        cherrypy.config.update(
+            {
+                "log.access_file": "",  # Disable CherryPy's default access log
+                # 'log.screen': False,    # Disable logging to the console
+            }
+        )
 
-        # # Enable access logging
-        # cherrypy.log.access_log = log
+        # Enable access logging
+        cherrypy.log.access_log = log
 
-        # try:
-        #     cherrypy.engine.start()
-        # except KeyboardInterrupt:
-        #     cherrypy.engine.stop()
+        try:
+            cherrypy.engine.start()
+        except KeyboardInterrupt:
+            cherrypy.engine.stop()
 
         log.info("server stopped...")
 
