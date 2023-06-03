@@ -12,6 +12,9 @@ types:
     name: ThirdWorld
     external: WorldExternal
     primarykey: external.name
+  - kind: Object
+    name: FourthWorld
+    internal: WorldInternal
   - kind: Struct
     name: WorldExternal
     properties:

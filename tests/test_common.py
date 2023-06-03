@@ -61,20 +61,17 @@ def rest():
             server.ActionGet,
             server.ActionCreate,
             server.ActionUpdate,
-            server.ActionDelete,
-        )
+            server.ActionDelete)
     )
 
-    host = "localhost"
+    host = "127.0.0.1"
     port = 8080
     url = f"http://{host}:{port}"
 
-    client = client.Client(url, model.Schema())
-    
     srv.Serve(host, port)
     time.sleep(3)
 
-    return client
+    return client.Client(url, model.Schema())
 
 
 # @pytest.fixture(params=[sqlite()])

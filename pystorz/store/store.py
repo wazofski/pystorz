@@ -29,7 +29,7 @@ class Object:
         pass
 
 
-class ExternalHolder:
+class ExternalHolder(Object):
     def ExternalInternalSet(self, obj: object):
         pass
 

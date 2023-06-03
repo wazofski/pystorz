@@ -109,6 +109,8 @@ def compileStruct(s: Struct) -> str:
 
     s.properties = addDefaultPropValues(s.properties)
 
+    parent = "store.Object"
+
     for p in s.properties:
         if p.name != "Meta":
             # methods.append(f"{p.name}(self) -> {p.StrippedType()}")
@@ -118,11 +120,16 @@ def compileStruct(s: Struct) -> str:
             # methods.append(f"Set{p.name}(self, val: {p.StrippedType()})")
             methods.append(f"Set{p.name}(self, val)")
 
-    b.write(render("mgen/templates/interface.py",
+        if p.name == "External":
+            parent = "store.ExternalHolder"
+    
+    b.write(
+        render(
+            "mgen/templates/interface.py",
             {
                 'name': s.name,
                 'methods': methods,
-                'implements': "store.Object"
+                'implements': parent
             }))
 
     for p in s.properties:
