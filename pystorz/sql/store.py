@@ -8,7 +8,7 @@ from datetime import datetime
 log = logging.getLogger(__name__)
 
 
-def SqliteConnection(path):
+def SqliteConnector(path):
     def func():
         return sqlite3.connect(path)
 

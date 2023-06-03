@@ -47,7 +47,7 @@ Check out the go version (link above) for more information.
     # initialize a store
     stor = SqliteStore(
         Schema(),
-        SqliteConnection("path/to/your/sqlite3.db"))
+        SqliteConnector("path/to/your/sqlite3.db"))
 
     world = model.WorldFactory()
     world.External().SetName("hello")

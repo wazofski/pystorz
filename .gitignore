@@ -8,3 +8,4 @@ dist/**
 pystorz.egg-info/**
 .vscode
 .DS_Store
+test.py

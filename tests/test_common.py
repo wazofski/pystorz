@@ -28,28 +28,28 @@ def sqlite():
     log.debug("sqlite setup")
     import os
 
-    from pystorz.sql.store import SqliteStore, SqliteConnection
+    from pystorz.sql.store import SqliteStore, SqliteConnector
     from generated.model import Schema
 
     db_file = "testsqlite.db"
     if os.path.exists(db_file):
         os.remove(db_file)
 
-    return SqliteStore(Schema(), SqliteConnection(db_file))
+    return SqliteStore(Schema(), SqliteConnector(db_file))
 
 
 def rest():
     log.debug("server/client setup")
     import os
 
-    from pystorz.sql.store import SqliteStore, SqliteConnection
+    from pystorz.sql.store import SqliteStore, SqliteConnector
     from generated import model
 
     db_file = "testclient.db"
     if os.path.exists(db_file):
         os.remove(db_file)
 
-    sqlite_store = SqliteStore(model.Schema(), SqliteConnection(db_file))
+    sqlite_store = SqliteStore(model.Schema(), SqliteConnector(db_file))
 
     from pystorz.rest import server, client
 
