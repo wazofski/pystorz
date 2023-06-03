@@ -68,7 +68,7 @@ def _make_id_handler(stor, schema, exposed):
             if obj_methods is None or request.method not in obj_methods:
                 return _error_response(405, constants.ErrInvalidMethod)
 
-            robject = utils.unmarshal_object(request.content, schema, kind)
+            robject = utils.unmarshal_object(request.data, schema, kind)
 
         return _handle_path(stor, iddentifier, robject)
 
@@ -112,7 +112,7 @@ def _make_object_handler(
     def handler(pkey: str):
         id = store.ObjectIdentity("{}/{}".format(t.lower(), pkey))
 
-        robject = utils.unmarshal_object(request.content, schema, t)
+        robject = utils.unmarshal_object(request.data, schema, t)
 
         if request.method not in methods:
             return _error_response(405, constants.ErrInvalidMethod)
@@ -166,24 +166,24 @@ class Expose:
 
 
 class Server:
-    def __init__(self, schema, thestore, *to_expose):
+    def __init__(self, schema, thestore, *to_expose: list[Expose]):
         self.Schema = schema
         self.Store = internals.internal_factory(schema, thestore)
-        self.Exposed = {}
-
+        
         accepted_actions = set([ActionGet, ActionCreate, ActionUpdate, ActionDelete])
 
+        exposed = {}
         for e in to_expose:
             for a in e.Actions:
                 if a not in accepted_actions:
                     raise Exception("invalid action: {}".format(a))
 
-            self.Exposed[e.Kind] = e.Actions
+            exposed[e.Kind] = e.Actions
 
         self.app = Flask(__name__)
         self.app.register_error_handler(Exception, _handle_exceptions)
 
-        self._register_handlers()
+        self._register_handlers(exposed)
 
     def Serve(self, host: str, port: int):
         # launch a flask server to serve the html
@@ -217,21 +217,34 @@ class Server:
     def Join(self):
         cherrypy.engine.block()
 
-    def _register_handlers(self):
+    def _register_handlers(self, exposed):
         self.app.add_url_rule(
             "/id/<id>",
             "id_handler",
-            _make_id_handler(self.Store, self.Schema, self.Exposed)
+            _make_id_handler(self.Store, self.Schema, exposed),
+            methods=[ActionGet, ActionCreate, ActionUpdate, ActionDelete]
         )
 
-        for k, v in self.Exposed.items():
+        for k, v in exposed.items():
+            log.info("exposing {} with {}".format(k, v))
+            
             self.app.add_url_rule(
                 f"/{k.lower()}/<pkey>",
                 f"{k}_handler",
                 _make_object_handler(self.Store, self.Schema, k, v),
+                methods=v
             )
 
             type_handler = _make_type_handler(self.Store, k, v)
 
-            self.app.add_url_rule(f"/{k.lower()}", f"{k}_type_handler1", type_handler)
-            self.app.add_url_rule(f"/{k.lower()}/", f"{k}_type_handler2", type_handler)
+            self.app.add_url_rule(
+                f"/{k.lower()}",
+                f"{k}_type_handler1",
+                type_handler,
+                methods=v)
+            
+            self.app.add_url_rule(
+                f"/{k.lower()}/",
+                f"{k}_type_handler2",
+                type_handler,
+                methods=v)

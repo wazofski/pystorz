@@ -62,7 +62,7 @@ def rest():
             server.ActionCreate,
             server.ActionUpdate,
             server.ActionDelete,
-        ),
+        )
     )
 
     host = "localhost"
@@ -77,8 +77,8 @@ def rest():
     return client
 
 
-@pytest.fixture(params=[sqlite()])
-# @pytest.fixture(params=[rest()])
+# @pytest.fixture(params=[sqlite()])
+@pytest.fixture(params=[rest()])
 def thestore(request):
     return request.param
 

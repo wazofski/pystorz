@@ -265,7 +265,7 @@ class Client(store.Store):
                     log.info("request content: %s", content)
 
             if len(data) > 0:
-                log.info("response content: %s", data.decode("utf-8"))
+                log.info("response content: %s", data)
 
             raise err
 
