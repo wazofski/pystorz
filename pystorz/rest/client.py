@@ -156,7 +156,7 @@ class Client(store.Store):
             copt.headers,
         )
 
-        tp = identity.type()
+        tp = identity.Type()
         if tp == "id":
             tp = utils.object_kind(json.loads(resp))
 

@@ -73,7 +73,10 @@ def _make_id_handler(stor, schema, exposed):
             if obj_methods is None or request.method not in obj_methods:
                 return _error_response(405, constants.ErrInvalidMethod)
 
-            robject = utils.unmarshal_object(request.data, schema, kind)
+            try:
+                robject = utils.unmarshal_object(request.data, schema, kind)
+            except Exception as e:
+                log.debug("unmarshal error: {}".format(e))
 
         return _handle_path(stor, iddentifier, robject)
 
@@ -122,7 +125,11 @@ def _make_object_handler(
 
         id = store.ObjectIdentity("{}/{}".format(t.lower(), pkey))
 
-        robject = utils.unmarshal_object(request.data, schema, t)
+        robject = None
+        try:
+            robject = utils.unmarshal_object(request.data, schema, t)
+        except Exception as e:
+            log.debug("unmarshal error: {}".format(e))
 
         if request.method not in methods:
             return _error_response(405, constants.ErrInvalidMethod)
@@ -175,7 +182,11 @@ def _make_type_handler(
                 return _error_response(400, str(e))
 
         elif request.method == ActionCreate:
-            robject = utils.unmarshal_object(request.data, schema, t)
+            try:
+                robject = utils.unmarshal_object(request.data, schema, t)
+            except Exception as e:
+                log.debug("unmarshal error: {}".format(e))
+                raise Exception(constants.ErrInvalidRequest)
 
             return _handle_path(stor, store.ObjectIdentity(t + "/"), robject)
 
@@ -246,14 +257,22 @@ class Server:
         cherrypy.log.access_log = log
         cherrypy.engine.start()
 
+        return self.Stop
+    
+    def Stop(self):
+        try:
+            cherrypy.engine.stop()
+        except Exception as e:
+            log.error("error stopping server: {}".format(e))
+        
+        log.info("server stopped...")
+
     def Join(self):
         try:
             cherrypy.engine.block()
         except KeyboardInterrupt:
-            cherrypy.engine.stop()
-
-        log.info("server stopped...")
-
+            self.Stop()
+        
     def _register_handlers(self, exposed):
         self._register_handler(
             "/id/<id>",

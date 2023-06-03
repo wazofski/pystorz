@@ -30,7 +30,7 @@ def clone_object(obj: store.Object, schema: store.SchemaHolder) -> store.Object:
 
 
 def unmarshal_object(
-    body: bytes, schema: store.SchemaHolder, kind: str
+    body: str, schema: store.SchemaHolder, kind: str
 ) -> store.Object:
     resource = schema.ObjectForKind(kind)
     resource.FromJson(body)
@@ -59,7 +59,7 @@ def timestamp() -> str:
     return time.strftime("%Y-%m-%dT%H:%M:%S.%fZ", time.gmtime())
 
 
-def serialize(mo: store.Object) -> bytes:
+def serialize(mo: store.Object) -> str:
     if mo is None:
         raise constants.ErrObjectNil
     return json.dumps(mo, default=lambda x: x.to_dict())

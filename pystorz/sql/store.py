@@ -35,11 +35,13 @@ class SqliteStore:
 
         return self._connection_cache[tid]
 
-    def Create(self, obj, opt=[]):
+    def Create(self, obj, *opt):
         if obj is None:
             raise Exception(constants.ErrObjectNil)
 
-        log.info("create {}".format(obj.PrimaryKey()))
+        log.info("create {} {}".format(
+            obj.Metadata().Kind(),
+            obj.PrimaryKey()))
 
         # copt = options.CommonOptionHolderFactory()
         # for o in opt:

@@ -18,8 +18,8 @@ class MetaStore(store.Store):
         if obj is None:
             raise Exception(constants.ErrObjectNil)
 
-        log.info("create {}".format(
-            obj.Metadata().Kind()))
+        log.info("create {} {}".format(
+            obj.Metadata().Kind(), obj.PrimaryKey()))
 
         obj.Metadata().SetIdentity(store.ObjectIdentityFactory())
         obj.Metadata().SetCreated(datetime.now())

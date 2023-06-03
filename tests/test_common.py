@@ -18,6 +18,7 @@ from pystorz.meta.store import MetaStore
 
 thestore = store.Store()
 
+stopper = None
 world_id = None
 worldName = "c137zxczx"
 anotherWorldName = "j19zeta7 qweqw"
@@ -79,14 +80,15 @@ def rest():
     port = 8080
     url = f"http://{host}:{port}"
 
-    srv.Serve(host, port)
+    global stopper
+    stopper = srv.Serve(host, port)
     # time.sleep(3)
 
     return client.Client(url, model.Schema())
 
 
-@pytest.fixture(params=[sqlite()])
-# @pytest.fixture(params=[rest()])
+# @pytest.fixture(params=[sqlite()])
+@pytest.fixture(params=[rest()])
 def thestore(request):
     return request.param
 
@@ -1406,3 +1408,10 @@ def test_performance(thestore):
     plt.figure()
     plt.plot(graph_del, label="delete")
     plt.savefig("perf_delete.png")
+
+
+def test_cleanup(thestore):
+    global stopper
+    if stopper is not None:
+        stopper()
+        stopper = None
