@@ -12,7 +12,7 @@ class _HeaderOption(
     def __init__(self, function):
         self.function = function
 
-    def apply_function(self):
+    def ApplyFunction(self):
         return self.function
 
     def get_create_option(self) -> options.Option:

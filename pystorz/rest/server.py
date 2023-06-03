@@ -1,6 +1,7 @@
 import json
 import logging
 import traceback
+import cherrypy
 
 from pystorz.internal import constants
 from urllib.parse import urlparse, parse_qs
@@ -9,7 +10,6 @@ from pystorz.store import store
 from pystorz.store import options
 from pystorz.store import utils
 
-from pystorz.rest.asynch import Async
 from pystorz.rest import internals
 
 from flask import Flask, request
@@ -35,8 +35,14 @@ ActionDelete = "DELETE"
 
 
 def _handle_exceptions(e):
-    log.error(e)
-    traceback.print_exc()
+    error_code = 500
+    msg = str(e)
+    if msg == constants.ErrNoSuchObject:
+        error_code = 404
+    if msg == constants.ErrInvalidMethod:
+        error_code = 405
+
+    return _error_response(error_code, msg)
 
 
 def _json_response(code: int, data: dict):
@@ -48,9 +54,9 @@ def _error_response(code: int, message: str):
 
 
 def _make_id_handler(stor, schema, exposed):
-    def handler(id_param):
-        id = store.ObjectIdentity(id_param)
-        existing = stor.Get(id)
+    def handler(id):
+        iddentifier = store.ObjectIdentity(id)
+        existing = stor.Get(iddentifier)
 
         robject = None
         if existing is not None:
@@ -61,7 +67,7 @@ def _make_id_handler(stor, schema, exposed):
 
             robject = utils.unmarshal_object(request.content, schema, kind)
 
-        return _handle_path(stor, id, robject)
+        return _handle_path(stor, iddentifier, robject)
 
     return handler
 
@@ -115,7 +121,7 @@ def _make_object_handler(
 
 def _make_type_handler(stor: store.Store, t: str, methods: list):
     def handler():
-        if request.Method not in methods:
+        if request.method not in methods:
             return _error_response(405, constants.ErrInvalidMethod)
 
         url = urlparse(request.url)
@@ -174,14 +180,11 @@ class Server:
         self.app = Flask(__name__)
         self.app.register_error_handler(Exception, _handle_exceptions)
 
-        self.register_handlers()
+        self._register_handlers()
 
-    @Async
-    def serve(self, host: str, port: int):
+    def Serve(self, host: str, port: int):
         # launch a flask server to serve the html
         log.info("serving on {}:{}".format(host, port))
-
-        import cherrypy
 
         cherrypy.tree.graft(self.app, "/")
         cherrypy.config.update(
@@ -203,26 +206,29 @@ class Server:
 
         try:
             cherrypy.engine.start()
-            cherrypy.engine.block()
         except KeyboardInterrupt:
             cherrypy.engine.stop()
 
         log.info("server stopped...")
 
-    def register_handlers(self):
+    def Join(self):
+        cherrypy.engine.block()
+
+    def _register_handlers(self):
         self.app.add_url_rule(
-            "/id/<id>", _make_id_handler(self.Store, self.Schema, self.Exposed)
+            "/id/<id>",
+            "id_handler",
+            _make_id_handler(self.Store, self.Schema, self.Exposed)
         )
 
         for k, v in self.Exposed.items():
             self.app.add_url_rule(
-                f"/{k}/<pkey>",
+                f"/{k.lower()}/<pkey>",
+                f"{k}_handler",
                 _make_object_handler(self.Store, self.Schema, k, v),
             )
 
-            type_handler = _make_type_handler(
-                self.Store, k, v
-            )
-            
-            self.app.add_url_rule(f"/{k}", type_handler)
-            self.app.add_url_rule(f"/{k}/", type_handler)
+            type_handler = _make_type_handler(self.Store, k, v)
+
+            self.app.add_url_rule(f"/{k.lower()}", f"{k}_type_handler1", type_handler)
+            self.app.add_url_rule(f"/{k.lower()}/", f"{k}_type_handler2", type_handler)

@@ -90,7 +90,7 @@ class SqliteStore:
 
         if identity is None:
             raise Exception(constants.ErrInvalidPath)
-        
+
         if obj is None:
             raise Exception(constants.ErrObjectNil)
 
@@ -165,7 +165,7 @@ class SqliteStore:
     def Delete(self, identity, *opt):
         if identity is None:
             raise Exception(constants.ErrInvalidPath)
-        
+
         log.info("delete {}".format(identity.Path()))
         copt = options.CommonOptionHolderFactory()
 
@@ -192,20 +192,11 @@ class SqliteStore:
                 )
             else:
                 clause = self._buildFilterClause(copt, identity)
-                keys = self._getObjectKeys(
-                    cursor,
-                    identity.Type(),
-                    clause)
-                
-                self._removeObjects(
-                    cursor,
-                    identity.Type(),
-                    clause)
-                
-                self._removeIdentities(
-                    cursor,
-                    identity.Type(),
-                    keys)
+                keys = self._getObjectKeys(cursor, identity.Type(), clause)
+
+                self._removeObjects(cursor, identity.Type(), clause)
+
+                self._removeIdentities(cursor, identity.Type(), keys)
 
             self.DB.commit()
         except Exception as e:
@@ -215,7 +206,7 @@ class SqliteStore:
     def Get(self, identity, *opt):
         if identity is None:
             raise Exception(constants.ErrInvalidPath)
-        
+
         log.info("get {}".format(identity.Path()))
 
         copt = options.CommonOptionHolderFactory()
@@ -235,7 +226,7 @@ class SqliteStore:
     def List(self, identity, *opt):
         if identity is None:
             raise Exception(constants.ErrInvalidPath)
-        
+
         log.info("list {}".format(identity))
 
         if len(identity.Key()) > 0:
@@ -395,7 +386,7 @@ class SqliteStore:
         )
 
         self._do_query(cursor, query)
-    
+
     def _getObjectKeys(self, cursor, typ, clause):
         query = """SELECT Pkey FROM Objects
         WHERE Type = '{}' {}""".format(
@@ -413,16 +404,14 @@ class SqliteStore:
     def _removeIdentities(self, cursor, typ, keys):
         batch_size = 100
         for i in range(0, len(keys), batch_size):
-            batch = keys[i:i+batch_size]
-            clause = "Pkey IN ({})".format(
-                ",".join(["'{}'".format(k) for k in batch])
-            )
+            batch = keys[i : i + batch_size]
+            clause = "Pkey IN ({})".format(",".join(["'{}'".format(k) for k in batch]))
 
             query = """DELETE FROM IdIndex
                 WHERE Type = '{}' AND {}""".format(
-                    typ.lower(),
-                    clause,
-                )
+                typ.lower(),
+                clause,
+            )
 
             self._do_query(cursor, query)
 

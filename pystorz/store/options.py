@@ -3,7 +3,7 @@ from pystorz.store import utils
 
 
 class Option:
-    def apply_function(self):
+    def ApplyFunction(self):
         raise NotImplementedError
 
 
@@ -329,9 +329,6 @@ class _ListDeleteOption(ListDeleteOption):
     def get_list_option(self):
         return self
 
-    def ApplyFunction(self):
-        return self.function
-
 
 class _ListOption(ListOption):
     def __init__(self, function):
@@ -339,9 +336,6 @@ class _ListOption(ListOption):
 
     def get_list_option(self):
         return self
-
-    def ApplyFunction(self):
-        return self.function
 
 
 def Order(field, ascending=True):

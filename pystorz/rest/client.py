@@ -29,7 +29,7 @@ def new_rest_options(d):
     res.headers = {}
 
     for h in d.headers:
-        h.apply_function()(res)
+        h.ApplyFunction()(res)
 
     return res
 
@@ -81,9 +81,9 @@ def remove_trailing_slash(val):
 
 def make_path_for_identity(base_url, identity, params):
     if len(params) > 0:
-        return f"{base_url}/{remove_trailing_slash(identity.Path())}?{params}"
+        return f"{base_url}/{remove_trailing_slash(identity.Path().lower())}?{params}"
 
-    return f"{base_url}/{identity.Path()}"
+    return f"{base_url}/{identity.Path().lower()}"
 
 
 def list_parameters(ropt):
@@ -136,7 +136,7 @@ class Client(store.Store):
 
         copt = new_rest_options(self)
         for o in opt:
-            o.apply_function()(copt)
+            o.ApplyFunction()(copt)
 
         data = self._process_request(
             make_path_for_type(self.base_url, obj),
@@ -155,7 +155,7 @@ class Client(store.Store):
 
         copt = new_rest_options(self)
         for o in opt:
-            o.apply_function()(copt)
+            o.ApplyFunction()(copt)
 
         resp = self._process_request(
             make_path_for_identity(self.base_url, identity, ""),
@@ -179,7 +179,7 @@ class Client(store.Store):
 
         copt = new_rest_options(self)
         for o in opt:
-            o.apply_function()(copt)
+            o.ApplyFunction()(copt)
         
         data = self._process_request(
             make_path_for_identity(self.base_url, identity, ""),
@@ -198,7 +198,7 @@ class Client(store.Store):
 
         copt = new_rest_options(self)
         for o in opt:
-            o.apply_function()(copt)
+            o.ApplyFunction()(copt)
 
         self._process_request(
             make_path_for_identity(self.base_url, identity, ""),

@@ -65,12 +65,13 @@ def rest():
         ),
     )
 
-    host = "http://localhost"
+    host = "localhost"
     port = 8080
-    url = f"{host}:{port}"
+    url = f"http://{host}:{port}"
 
     client = client.Client(url, model.Schema())
-    srv.serve(host, port)
+    
+    srv.Serve(host, port)
     time.sleep(3)
 
     return client

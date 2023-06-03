@@ -37,10 +37,10 @@ def test_sample_request():
     # make an http request to localhost:8080
 
     response = requests.request(
-            "GET",
-            "http://localhost:8080/worlds",
-            "",
-            headers={})
-    
+        "GET",
+        "http://localhost:8080/worlds",
+        "",
+        headers={})
+
     assert response is not None
     assert response.status_code == 200
