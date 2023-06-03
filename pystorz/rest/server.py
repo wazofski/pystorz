@@ -203,8 +203,15 @@ class Server:
 
         self.app = Flask(__name__)
         self.app.register_error_handler(Exception, _handle_exceptions)
-
+        
         self._register_handlers(exposed)
+
+        @self.app.before_request
+        def _log_request_info():
+            log.debug("Request: {} {}".format(request.method, request.url))
+            log.debug("Headers: {}".format(request.headers))
+            log.debug("Body: {}".format(request.data))
+
 
     def Serve(self, host: str, port: int):
         # launch a flask server to serve the html
@@ -229,16 +236,15 @@ class Server:
 
         # Enable access logging
         cherrypy.log.access_log = log
+        cherrypy.engine.start()
 
+    def Join(self):
         try:
-            cherrypy.engine.start()
+            cherrypy.engine.block()
         except KeyboardInterrupt:
             cherrypy.engine.stop()
 
         log.info("server stopped...")
-
-    def Join(self):
-        cherrypy.engine.block()
 
     def _register_handlers(self, exposed):
         self._register_handler(
@@ -249,23 +255,23 @@ class Server:
         )
 
         for k, v in exposed.items():
-            log.info("exposing {} with {}".format(k, v))
+            methods = list(v)
 
             self._register_handler(
                 f"/{k.lower()}/<pkey>",
                 f"{k}_handler",
-                _make_object_handler(self.Store, self.Schema, k, v),
-                methods=v,
+                _make_object_handler(self.Store, self.Schema, k, methods),
+                methods=methods,
             )
 
             type_handler = _make_type_handler(self.Store, self.Schema, k, v)
 
             self._register_handler(
-                f"/{k.lower()}", f"{k}_type_handler1", type_handler, methods=v
+                f"/{k.lower()}", f"{k}_type_handler1", type_handler, methods=methods
             )
 
             self._register_handler(
-                f"/{k.lower()}/", f"{k}_type_handler2", type_handler, methods=v
+                f"/{k.lower()}/", f"{k}_type_handler2", type_handler, methods=methods
             )
 
     def _register_handler(self, path: str, name: str, func, methods: list):

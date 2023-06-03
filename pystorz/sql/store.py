@@ -17,7 +17,7 @@ def SqliteConnector(path):
 
 # def MySqlConnection(path):
 #     def __call__():
-#         log.Printf("mysql connection %s", path)
+#         log.info("mysql connection %s", path)
 #         return mysql.connect(path)
 
 

@@ -61,7 +61,13 @@ def rest():
             server.ActionGet,
             server.ActionCreate,
             server.ActionUpdate,
-            server.ActionDelete)
+            server.ActionDelete),
+        server.Expose(
+            model.SecondWorldKind,
+            server.ActionGet,
+            server.ActionCreate,
+            server.ActionUpdate,
+            server.ActionDelete),
     )
 
     host = "127.0.0.1"
@@ -69,7 +75,7 @@ def rest():
     url = f"http://{host}:{port}"
 
     srv.Serve(host, port)
-    time.sleep(3)
+    # time.sleep(3)
 
     return client.Client(url, model.Schema())
 

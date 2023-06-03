@@ -9,7 +9,7 @@ from pystorz.store import store, utils, options
 from pystorz.internal import constants
 
 # from urllib.parse import urljoin, urlunparse, urlencode
-from urllib.parse import urlencode, urlparse
+from urllib.parse import quote, urlparse
 
 
 log = logging.getLogger(__name__)
@@ -97,9 +97,9 @@ def list_parameters(ropt):
         q[server.PageSizeArg] = str(opt.page_size)
 
     if opt.filter:
-        q[server.FilterArg] = opt.filter.ToJson()
+        q[server.FilterArg] = opt.filter.ToDict()
 
-    return urlencode(q)
+    return quote(json.dumps(q))
 
 
 def strip_serialize(object):
@@ -134,7 +134,7 @@ class Client(store.Store):
             copt.headers,
         )
 
-        clone = obj.clone()
+        clone = obj.Clone()
         clone.FromJson(data)
 
         return clone
@@ -158,7 +158,7 @@ class Client(store.Store):
 
         tp = identity.type()
         if tp == "id":
-            tp = utils.object_kind(resp)
+            tp = utils.object_kind(json.loads(resp))
 
         return utils.unmarshal_object(resp, self.schema, tp)
 
@@ -179,7 +179,7 @@ class Client(store.Store):
             copt.headers,
         )
 
-        clone = obj.clone()
+        clone = obj.Clone()
         clone.FromJson(data)
 
         return clone
@@ -215,7 +215,7 @@ class Client(store.Store):
         if len(parsed) == 0:
             return marshalledResult
 
-        resource = self.schema.ObjectForKind(utils.ObjectKind(parsed[0]))
+        resource = self.schema.ObjectForKind(utils.object_kind(parsed[0]))
 
         for r in parsed:
             clone = resource.Clone()
@@ -227,10 +227,10 @@ class Client(store.Store):
 
     def _make_request(self, path, content, request_type, headers):
         # headers.update(self.headers)
-        log.info(f"requesting {request_type} {path}")
+        log.debug(f"making {request_type} request to {path}")
 
         response = requests.request(
-            request_type, f"{self.base_url}/{path}", data=content, headers=headers
+            request_type, path, data=content, headers=headers
         )
 
         # response.raise_for_status()
@@ -250,8 +250,6 @@ class Client(store.Store):
         headers["X-Request-ID"] = req_id
         headers["Content-Type"] = "application/json"
         headers["X-Requested-With"] = "XMLHttpRequest"
-
-        log.info(f"{method.lower()} {request_url}")
 
         data = self._make_request(request_url, content, method, headers)
         try:

@@ -37,14 +37,14 @@ def unmarshal_object(
     return resource
 
 
-# def object_kind(response: bytes) -> str:
-#     obj = _MetaHolder()
-#     err = json.loads(response, object_hook=lambda d: obj.__dict__.update(d))
-#     if err:
-#         return ""
-#     if obj.Metadata is None:
-#         return ""
-#     return obj.Metadata['kind']
+def object_kind(data) -> str:
+    if "metadata" not in data:
+        return None
+    
+    if "kind" not in data["metadata"]:
+        return None
+    
+    return data["metadata"]["kind"]
 
 
 def pps(string: str) -> str:
