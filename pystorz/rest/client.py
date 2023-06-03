@@ -4,7 +4,7 @@ import uuid
 import logging
 import requests
 
-from pystorz.rest import server
+from pystorz.rest import server, headers
 from pystorz.store import store, utils, options
 from pystorz.internal import constants
 
@@ -57,16 +57,12 @@ def error_check(response):
     if len(response) == 0:
         return
 
-    um = {}
+    data = json.loads(response)
+    if "errors" in data:
+        raise Exception(data["errors"][0])
 
-    err = json.loads(response, object_hook=lambda d: um.update(d))
-    if err is None:
-        if "errors" in um:
-            raise ValueError(um["errors"][0])
-
-        if "error" in um:
-            m = um["error"]
-            raise Exception(f"{m['internal_code']} {m['internal']}")
+    if "error" in data:
+        raise Exception(data["error"])
 
 
 def make_path_for_type(base_url, obj):
@@ -106,24 +102,17 @@ def list_parameters(ropt):
     return urlencode(q)
 
 
-
-class StrippedObject:
-    def __init__(self):
-        self.External = {}
-
-
 def strip_serialize(object):
     data = object.ToDict()
-    for k, v in data.items():
-        if k != "external":
-            del data[k]
-
-    return json.dumps(data)
+    res = {}
+    if "external" in data:
+        res["external"] = data["external"]
+    
+    return json.dumps(res)
 
 
 class Client(store.Store):
-    
-    def __init__(self, base_url, schema, *header_options):
+    def __init__(self, base_url, schema, *header_options: list[headers._HeaderOption]):
         self.base_url = base_url
         self.schema = schema
         self.headers = header_options
@@ -132,7 +121,7 @@ class Client(store.Store):
         if obj is None:
             raise ValueError(constants.ErrObjectNil)
 
-        log.info("get {}".format(obj.metadata().identity().path()))
+        log.info("get {}".format(obj.Metadata().Identity().Path()))
 
         copt = new_rest_options(self)
         for o in opt:
@@ -147,11 +136,14 @@ class Client(store.Store):
 
         clone = obj.clone()
         clone.FromJson(data)
-        
+
         return clone
 
     def Get(self, identity, *opt):
-        log.info("get {}".format(identity.path()))
+        if identity is None:
+            raise Exception(constants.ErrInvalidPath)
+
+        log.info("get {}".format(identity.Path()))
 
         copt = new_rest_options(self)
         for o in opt:
@@ -170,17 +162,16 @@ class Client(store.Store):
 
         return utils.unmarshal_object(resp, self.schema, tp)
 
-
     def Update(self, identity, obj, *opt):
         if obj is None:
             raise Exception(constants.ErrObjectNil)
 
-        log.info("update {}".format(identity.path()))
+        log.info("update {}".format(identity.Path()))
 
         copt = new_rest_options(self)
         for o in opt:
             o.ApplyFunction()(copt)
-        
+
         data = self._process_request(
             make_path_for_identity(self.base_url, identity, ""),
             strip_serialize(obj),
@@ -190,11 +181,11 @@ class Client(store.Store):
 
         clone = obj.clone()
         clone.FromJson(data)
-        
+
         return clone
 
     def Delete(self, identity, *opt):
-        log.info("delete {}".format(identity.path()))
+        log.info("delete {}".format(identity.Path()))
 
         copt = new_rest_options(self)
         for o in opt:
@@ -206,7 +197,6 @@ class Client(store.Store):
             server.ActionDelete,
             copt.headers,
         )
-
 
     def List(self, identity, *opt):
         log.info("list {}".format(identity))
@@ -235,24 +225,22 @@ class Client(store.Store):
 
         return marshalledResult
 
-
     def _make_request(self, path, content, request_type, headers):
         # headers.update(self.headers)
-        
+        log.info(f"requesting {request_type} {path}")
+
         response = requests.request(
-            request_type,
-            f"{self.base_url}/{path}",
-            data=content,
-            headers=headers)
+            request_type, f"{self.base_url}/{path}", data=content, headers=headers
+        )
 
         # response.raise_for_status()
 
         return response.content
 
-
     def _process_request(self, request_url, content, method, headers):
         req_id = str(uuid.uuid4())
 
+        request_url = request_url.lower()
         url = urlparse(request_url)
         path = url.path
         new_path = path.replace("//", "/")

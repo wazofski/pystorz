@@ -28,7 +28,7 @@ class InternalStore(store.Store):
         if obj is None:
             return None, constants.ErrObjectNil
 
-        log.info("create %s", obj.PrimaryKey())
+        log.info("create {}".format(obj.PrimaryKey()))
 
         original = self.Schema.ObjectForKind(obj.Metadata().Kind())
         if original is None:
@@ -60,7 +60,7 @@ class InternalStore(store.Store):
         if obj is None:
             return None, constants.ErrObjectNil
 
-        self.Log.info("update %s", identity.Path())
+        log.info("update {}".format(identity.Path()))
 
         original, err = self.Store.Get(identity)
         if err is not None:
@@ -85,17 +85,20 @@ class InternalStore(store.Store):
         return self.Store.Update(identity, original, *opt)
 
     def Delete(self, identity: store.ObjectIdentity, *opt: options.DeleteOption):
-        log.info("delete %s", identity.Path())
+        log.info("delete {}".format(identity.Path()))
+
         return self.Store.Delete(identity, *opt)
 
     def Get(
         self, identity: store.ObjectIdentity, *opt: options.GetOption
     ) -> store.Object:
-        log.info("get %s", identity.Path())
+        log.info("get {}".format(identity.Path()))
+
         return self.Store.Get(identity, *opt)
 
     def List(
         self, identity: store.ObjectIdentity, *opt: options.ListOption
     ) -> store.ObjectList:
-        log.info("list %s", identity.Type())
+        log.info("list {}".format(identity.Type()))
+        
         return self.Store.List(identity, *opt)

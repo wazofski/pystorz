@@ -4,7 +4,7 @@ from pystorz.store import utils
 
 class Option:
     def ApplyFunction(self):
-        raise NotImplementedError
+        pass
 
 
 class CreateOption(Option):
@@ -328,6 +328,9 @@ class _ListDeleteOption(ListDeleteOption):
 
     def get_list_option(self):
         return self
+
+    def ApplyFunction(self):
+        return self.function
 
 
 class _ListOption(ListOption):

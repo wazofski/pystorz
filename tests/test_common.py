@@ -461,7 +461,7 @@ def test_delete_nonexistent_objects_by_id(thestore):
 def test_get_nil_identity(thestore):
     err = None
     try:
-        thestore.Get("")
+        thestore.Get(None)
     except Exception as e:
         err = e
 

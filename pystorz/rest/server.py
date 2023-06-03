@@ -150,7 +150,7 @@ def _make_type_handler(stor: store.Store, t: str, methods: list):
             opts.append(options.Order(query_params[OrderByArg], ascending))
 
         try:
-            ret = stor.List(store.ObjectIdentity(t.lower() + "/"), opts)
+            ret = stor.List(store.ObjectIdentity(t.lower() + "/"), *opts)
             return _json_response(200, [r.ToDict() for r in ret])
 
         except Exception as e:
