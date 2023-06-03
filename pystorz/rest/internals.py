@@ -8,16 +8,6 @@ log = logging.getLogger(__name__)
 from pystorz.store import options
 
 
-class InternalStore:
-    def __init__(self, schema: store.SchemaHolder, data: store.Store):
-        self.Schema = schema
-        self.Store = data
-
-
-def internal_factory(schema: store.SchemaHolder, data: store.Store) -> store.Store:
-    return InternalStore(schema, data)
-
-
 class InternalStore(store.Store):
     def __init__(self, schema: store.SchemaHolder, data: store.Store):
         self.Schema = schema

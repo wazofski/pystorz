@@ -1,6 +1,6 @@
 import json
 import logging
-import traceback
+# import traceback
 import cherrypy
 
 from pystorz.internal import constants
@@ -168,7 +168,7 @@ class Expose:
 class Server:
     def __init__(self, schema, thestore, *to_expose: list[Expose]):
         self.Schema = schema
-        self.Store = internals.internal_factory(schema, thestore)
+        self.Store = internals.InternalStore(schema, thestore)
         
         accepted_actions = set([ActionGet, ActionCreate, ActionUpdate, ActionDelete])
 
