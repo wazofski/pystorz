@@ -1,5 +1,6 @@
 import json
 import logging
+
 # import traceback
 import cherrypy
 
@@ -78,6 +79,9 @@ def _make_id_handler(stor, schema, exposed):
 def _handle_path(
     stor: store.Store, identity: store.ObjectIdentity, object: store.Object
 ):
+    log.info("handle path {}".format(identity))
+    log.info("method {}".format(request.method))
+
     ret = None
     if request.method == ActionGet:
         try:
@@ -110,6 +114,8 @@ def _make_object_handler(
     stor: store.Store, schema: store.SchemaHolder, t: str, methods: list
 ):
     def handler(pkey: str):
+        log.info("handle object {} {} {}".format(pkey, t, request.method))
+
         id = store.ObjectIdentity("{}/{}".format(t.lower(), pkey))
 
         robject = utils.unmarshal_object(request.data, schema, t)
@@ -122,39 +128,54 @@ def _make_object_handler(
     return handler
 
 
-def _make_type_handler(stor: store.Store, t: str, methods: list):
+def _make_type_handler(
+    stor: store.Store,
+    schema: store.SchemaHolder,
+    t: str,
+    methods: list
+):
     def handler():
+        log.info("handle type {} {}".format(t, request.method))
+
         if request.method not in methods:
             return _error_response(405, constants.ErrInvalidMethod)
 
-        url = urlparse(request.url)
-        query_params = parse_qs(url.query)
+        if request.method == ActionGet:
+            url = urlparse(request.url)
+            query_params = parse_qs(url.query)
 
-        opts = []
-        if FilterArg in query_params:
-            opts.append(options.ListDeleteOption.FromJson(query_params[FilterArg]))
+            opts = []
+            if FilterArg in query_params:
+                opts.append(options.ListDeleteOption.FromJson(query_params[FilterArg]))
 
-        if PageSizeArg in query_params:
-            ps = int(query_params[PageSizeArg])
-            opts.append(options.PageSize(ps))
+            if PageSizeArg in query_params:
+                ps = int(query_params[PageSizeArg])
+                opts.append(options.PageSize(ps))
 
-        if PageOffsetArg in query_params:
-            ps = int(query_params[PageOffsetArg])
-            opts.append(options.PageOffset(ps))
+            if PageOffsetArg in query_params:
+                ps = int(query_params[PageOffsetArg])
+                opts.append(options.PageOffset(ps))
 
-        if OrderByArg in query_params:
-            ascending = True
-            if IncrementalArg in query_params:
-                ascending = query_params[IncrementalArg] != "true"
+            if OrderByArg in query_params:
+                ascending = True
+                if IncrementalArg in query_params:
+                    ascending = query_params[IncrementalArg] != "true"
 
-            opts.append(options.Order(query_params[OrderByArg], ascending))
+                opts.append(options.Order(query_params[OrderByArg], ascending))
 
-        try:
-            ret = stor.List(store.ObjectIdentity(t.lower() + "/"), *opts)
-            return _json_response(200, [r.ToDict() for r in ret])
+            try:
+                ret = stor.List(store.ObjectIdentity(t.lower() + "/"), *opts)
+                return _json_response(200, [r.ToDict() for r in ret])
 
-        except Exception as e:
-            return _error_response(400, str(e))
+            except Exception as e:
+                return _error_response(400, str(e))
+
+        elif request.method == ActionCreate:
+            robject = utils.unmarshal_object(request.data, schema, t)
+
+            return _handle_path(stor, store.ObjectIdentity(t + "/"), robject)
+
+        return _error_response(405, constants.ErrInvalidMethod)
 
     return handler
 
@@ -169,7 +190,7 @@ class Server:
     def __init__(self, schema, thestore, *to_expose: list[Expose]):
         self.Schema = schema
         self.Store = internals.InternalStore(schema, thestore)
-        
+
         accepted_actions = set([ActionGet, ActionCreate, ActionUpdate, ActionDelete])
 
         exposed = {}
@@ -189,28 +210,30 @@ class Server:
         # launch a flask server to serve the html
         log.info("serving on {}:{}".format(host, port))
 
-        cherrypy.tree.graft(self.app, "/")
-        cherrypy.config.update(
-            {
-                "server.socket_host": host,
-                "server.socket_port": port,
-            }
-        )
+        self.app.run(host, port)
 
-        cherrypy.config.update(
-            {
-                "log.access_file": "",  # Disable CherryPy's default access log
-                # 'log.screen': False,    # Disable logging to the console
-            }
-        )
+        # cherrypy.tree.graft(self.app, "/")
+        # cherrypy.config.update(
+        #     {
+        #         "server.socket_host": host,
+        #         "server.socket_port": port,
+        #     }
+        # )
 
-        # Enable access logging
-        cherrypy.log.access_log = log
+        # cherrypy.config.update(
+        #     {
+        #         "log.access_file": "",  # Disable CherryPy's default access log
+        #         # 'log.screen': False,    # Disable logging to the console
+        #     }
+        # )
 
-        try:
-            cherrypy.engine.start()
-        except KeyboardInterrupt:
-            cherrypy.engine.stop()
+        # # Enable access logging
+        # cherrypy.log.access_log = log
+
+        # try:
+        #     cherrypy.engine.start()
+        # except KeyboardInterrupt:
+        #     cherrypy.engine.stop()
 
         log.info("server stopped...")
 
@@ -218,33 +241,34 @@ class Server:
         cherrypy.engine.block()
 
     def _register_handlers(self, exposed):
-        self.app.add_url_rule(
+        self._register_handler(
             "/id/<id>",
             "id_handler",
             _make_id_handler(self.Store, self.Schema, exposed),
-            methods=[ActionGet, ActionCreate, ActionUpdate, ActionDelete]
+            methods=[ActionGet, ActionCreate, ActionUpdate, ActionDelete],
         )
 
         for k, v in exposed.items():
             log.info("exposing {} with {}".format(k, v))
-            
-            self.app.add_url_rule(
+
+            self._register_handler(
                 f"/{k.lower()}/<pkey>",
                 f"{k}_handler",
                 _make_object_handler(self.Store, self.Schema, k, v),
-                methods=v
+                methods=v,
             )
 
-            type_handler = _make_type_handler(self.Store, k, v)
+            type_handler = _make_type_handler(self.Store, self.Schema, k, v)
 
-            self.app.add_url_rule(
-                f"/{k.lower()}",
-                f"{k}_type_handler1",
-                type_handler,
-                methods=v)
-            
-            self.app.add_url_rule(
-                f"/{k.lower()}/",
-                f"{k}_type_handler2",
-                type_handler,
-                methods=v)
+            self._register_handler(
+                f"/{k.lower()}", f"{k}_type_handler1", type_handler, methods=v
+            )
+
+            self._register_handler(
+                f"/{k.lower()}/", f"{k}_type_handler2", type_handler, methods=v
+            )
+
+    def _register_handler(self, path: str, name: str, func, methods: list):
+        log.info("registering {} at {} with {}".format(name, path, methods))
+
+        self.app.add_url_rule(path, name, func, methods=methods)

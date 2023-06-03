@@ -19,7 +19,7 @@ loggers:
     handlers: [console]
     propagate: no
   pystorz.sql:
-    level: ERROR
+    level: DEBUG 
     handlers: [console]
     propagate: no
   pystorz.rest:

@@ -17,7 +17,9 @@ class InternalStore(store.Store):
         if obj is None:
             raise Exception(constants.ErrObjectNil)
 
-        log.info("create {}".format(obj.PrimaryKey()))
+        log.info("create {} {}".format(
+            obj.Metadata().Kind(),
+            obj.PrimaryKey()))
 
         original = self.Schema.ObjectForKind(obj.Metadata().Kind())
         if original is None:
@@ -41,7 +43,7 @@ class InternalStore(store.Store):
         if obj is None:
             return constants.ErrObjectNil
 
-        log.info("update {}".format(identity.Path()))
+        log.info("update {}".format(identity))
 
         original = self.Store.Get(identity)
         if isinstance(obj, store.ExternalHolder):
@@ -52,17 +54,17 @@ class InternalStore(store.Store):
         return self.Store.Update(identity, original, *opt)
 
     def Delete(self, identity: store.ObjectIdentity, *opt: options.DeleteOption):
-        log.info("delete {}".format(identity.Path()))
+        log.info("delete {}".format(identity))
         return self.Store.Delete(identity, *opt)
 
     def Get(
         self, identity: store.ObjectIdentity, *opt: options.GetOption
     ) -> store.Object:
-        log.info("get {}".format(identity.Path()))
+        log.info("get {}".format(identity))
         return self.Store.Get(identity, *opt)
 
     def List(
         self, identity: store.ObjectIdentity, *opt: options.ListOption
     ) -> store.ObjectList:
-        log.info("list {}".format(identity.Type()))
+        log.info("list {}".format(identity))
         return self.Store.List(identity, *opt)
