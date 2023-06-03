@@ -2,7 +2,6 @@ from pystorz.store import options
 
 
 class _HeaderOption(
-    options.Option,
     options.GetOption,
     options.CreateOption,
     options.UpdateOption,

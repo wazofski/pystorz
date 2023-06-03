@@ -177,7 +177,7 @@ class CommonOptionHolder:
         self.page_size = None
         self.page_offset = None
 
-    def common_options(self) -> "CommonOptionHolder":
+    def common_options(self):
         return self
 
 
