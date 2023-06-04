@@ -1,5 +1,6 @@
 import logging
 import threading
+import sqlparse
 
 from pystorz.internal import constants
 from pystorz.store import store, options, utils
@@ -243,7 +244,7 @@ class SqlStore(store.Store):
     def _prepareTables(self, db):
         create = """
         CREATE TABLE IF NOT EXISTS IdIndex (
-            Path VARCHAR(25) NOT NULL PRIMARY KEY,
+            Path VARCHAR(75) NOT NULL PRIMARY KEY,
             Pkey NVARCHAR(50) NOT NULL,
             Type VARCHAR(25) NOT NULL);
         """
@@ -408,6 +409,10 @@ class SqlStore(store.Store):
 
     def _do_query(self, cursor, query):
         log.debug("running query: {}".format(query))
+
+        statements = sqlparse.parse(query)
+        if len(statements) > 1:
+            raise Exception(constants.ErrInvalidRequest)
 
         cursor.execute(query)
 

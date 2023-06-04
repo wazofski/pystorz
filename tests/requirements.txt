@@ -9,3 +9,4 @@ cherrypy
 requests
 pytest-cov
 mysql-connector-python
+sqlparse

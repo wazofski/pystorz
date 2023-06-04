@@ -31,6 +31,8 @@ setup(
         "jsonpath-python",
         "cherrypy"
         "requests"
+        "mysql-connector-python"
+        "sqlparse",
         # "pysqlite3",
     ],
     extras_require={

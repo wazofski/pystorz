@@ -26,10 +26,10 @@
 - web client store @done
 - metadata store @done
 - remove the functionality from the sql store @done
+- add mysql store (high) @done
 
 
 - test and add common casees for complex filters on datetime types (high)
-- add mysql store (high)
 
 - add the rest of the storz    
     - in memory store
@@ -45,3 +45,4 @@
     - https://github.com/wazofski/pystorz
 
 - github project
+
