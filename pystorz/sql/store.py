@@ -467,17 +467,16 @@ class SqliteStore:
         if utils.object_path(sample, filterOption.key) is None:
             raise Exception(constants.ErrInvalidFilter)
 
+        def convert_value(v):
+            # return "'{}'".format(v)
+            if isinstance(v, str):
+                return "'{}'".format(utils.encode_string(v))
+            elif isinstance(v, bool):
+                return str(v).lower()
+            else:
+                return str(v)
+        
         if isinstance(filterOption, options.InOption):
-
-            def convert_value(v):
-                # return "'{}'".format(v)
-                if isinstance(v, str):
-                    return "'{}'".format(v)
-                elif isinstance(v, bool):
-                    return str(v).lower()
-                else:
-                    return str(v)
-
             values = ", ".join([convert_value(v) for v in filterOption.values])
 
             return " json_extract(Object, '$.{}') IN ({})".format(
@@ -486,27 +485,27 @@ class SqliteStore:
 
         if isinstance(filterOption, options.EqOption):
             return " json_extract(Object, '$.{}') = {} ".format(
-                filterOption.key, filterOption.value
+                filterOption.key, convert_value(filterOption.value)
             )
 
         if isinstance(filterOption, options.LtOption):
             return " json_extract(Object, '$.{}') < {} ".format(
-                filterOption.key, filterOption.value
+                filterOption.key, convert_value(filterOption.value)
             )
 
         if isinstance(filterOption, options.GtOption):
             return " json_extract(Object, '$.{}') > {} ".format(
-                filterOption.key, filterOption.value
+                filterOption.key, convert_value(filterOption.value)
             )
 
         if isinstance(filterOption, options.LteOption):
             return " json_extract(Object, '$.{}') <= {} ".format(
-                filterOption.key, filterOption.value
+                filterOption.key, convert_value(filterOption.value)
             )
 
         if isinstance(filterOption, options.GteOption):
             return " json_extract(Object, '$.{}') >= {} ".format(
-                filterOption.key, filterOption.value
+                filterOption.key, convert_value(filterOption.value)
             )
 
         raise Exception(constants.ErrInvalidFilter)

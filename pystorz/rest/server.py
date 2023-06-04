@@ -26,9 +26,9 @@ log = logging.getLogger(__name__)
 
 FilterArg = "pf"
 IncrementalArg = "inc"
-PageSizeArg = "pageSize"
-PageOffsetArg = "pageOffset"
-OrderByArg = "orderBy"
+PageSizeArg = "ps"
+PageOffsetArg = "po"
+OrderByArg = "ob"
 
 
 ActionGet = "GET"
@@ -53,7 +53,10 @@ def _handle_exceptions(e):
 
 def _json_response(code: int, data: dict):
     ret = json.dumps(data)
-    log.debug("json response: {}".format(ret))
+    
+    log.debug("""json response: 
+{}""".format(utils.pp(data)))
+
     return ret, code, {"Content-Type": "application/json"}
 
 
@@ -154,25 +157,30 @@ def _make_type_handler(
         if request.method == ActionGet:
             url = urlparse(request.url)
             query_params = parse_qs(url.query)
+            log.debug("query params: {}".format(query_params))
 
             opts = []
             if FilterArg in query_params:
-                opts.append(options.ListDeleteOption.FromJson(query_params[FilterArg]))
+                o = options.ListDeleteOption.FromJson(
+                    query_params[FilterArg][0])
+                
+                opts.append(o)
+                log.debug("filter: {}".format(str(o)))
 
             if PageSizeArg in query_params:
-                ps = int(query_params[PageSizeArg])
+                ps = int(query_params[PageSizeArg][0])
                 opts.append(options.PageSize(ps))
 
             if PageOffsetArg in query_params:
-                ps = int(query_params[PageOffsetArg])
+                ps = int(query_params[PageOffsetArg][0])
                 opts.append(options.PageOffset(ps))
 
             if OrderByArg in query_params:
                 ascending = True
                 if IncrementalArg in query_params:
-                    ascending = query_params[IncrementalArg] != "true"
+                    ascending = query_params[IncrementalArg][0] == "true"
 
-                opts.append(options.Order(query_params[OrderByArg], ascending))
+                opts.append(options.Order(query_params[OrderByArg][0], ascending))
 
             try:
                 ret = stor.List(store.ObjectIdentity(t.lower() + "/"), *opts)

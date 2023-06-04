@@ -45,6 +45,9 @@ class InternalStore(store.Store):
         if isinstance(obj, store.ExternalHolder):
             original.ExternalInternalSet(obj.External())
 
+        if original.Metadata().Kind() != obj.Metadata().Kind():
+            raise Exception(constants.ErrObjectIdentityMismatch)
+
         return self.Store.Update(identity, original, *opt)
 
     def Delete(self, identity: store.ObjectIdentity, *opt: options.DeleteOption):

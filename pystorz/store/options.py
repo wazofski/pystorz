@@ -38,23 +38,23 @@ class ListDeleteOption(ListOption, DeleteOption):
         data = json.loads(jsn)
 
         if data["type"] == "in":
-            return InOption(data["key"], data["values"])
+            return In(data["key"], data["values"])
         elif data["type"] == "eq":
-            return EqOption(data["key"], data["value"])
+            return Eq(data["key"], data["value"])
         elif data["type"] == "lt":
-            return LtOption(data["key"], data["value"])
+            return Lt(data["key"], data["value"])
         elif data["type"] == "lte":
-            return LteOption(data["key"], data["value"])
+            return Lte(data["key"], data["value"])
         elif data["type"] == "gt":
-            return GtOption(data["key"], data["value"])
+            return Gt(data["key"], data["value"])
         elif data["type"] == "gte":
-            return GteOption(data["key"], data["value"])
+            return Gte(data["key"], data["value"])
         elif data["type"] == "and":
-            return AndOption(*[ListDeleteOption.FromJson(f) for f in data["filters"]])
+            return And(*[ListDeleteOption.FromJson(f) for f in data["filters"]])
         elif data["type"] == "or":
-            return OrOption(*[ListDeleteOption.FromJson(f) for f in data["filters"]])
+            return Or(*[ListDeleteOption.FromJson(f) for f in data["filters"]])
         elif data["type"] == "not":
-            return NotOption(ListDeleteOption.FromJson(data["filter"]))
+            return Not(ListDeleteOption.FromJson(data["filter"]))
         else:
             raise ValueError("Unknown type: {}".format(data["type"]))
 
@@ -66,76 +66,75 @@ class ListDeleteOption(ListOption, DeleteOption):
         self.ApplyFunction()(copt)
         return copt.filter.ToDict()
 
+    def __str__(self):
+        copt = CommonOptionHolderFactory()
+        self.ApplyFunction()(copt)
+        return str(copt.filter)
+    
 
 class OptionHolder:
     def common_options(self):
         raise NotImplementedError
 
 
-class InOption(ListDeleteOption):
-    def __init__(self, key: str, value: str):
-        self.key = key
-        self.value = value
-        if isinstance(self.value, str):
-            self.value = "'{}'".format(utils.encode_string(self.value))
-
-    def ToDict(self):
-        return {"type": "in", "key": self.key, "value": self.value}
-
-
 class EqOption(ListDeleteOption):
     def __init__(self, key: str, value: str):
         self.key = key
         self.value = value
-        if isinstance(self.value, str):
-            self.value = "'{}'".format(utils.encode_string(self.value))
-
+    
     def ToDict(self):
         return {"type": "eq", "key": self.key, "value": self.value}
 
+    def __str__(self):
+        return "{} = {}".format(self.key, self.value)
+    
 
 class LtOption(ListDeleteOption):
     def __init__(self, key: str, value: str):
         self.key = key
         self.value = value
-        if isinstance(self.value, str):
-            self.value = "'{}'".format(utils.encode_string(self.value))
 
     def ToDict(self):
         return {"type": "lt", "key": self.key, "value": self.value}
+
+    def __str__(self):
+        return "{} < {}".format(self.key, self.value)
 
 
 class LteOption(ListDeleteOption):
     def __init__(self, key: str, value: str):
         self.key = key
         self.value = value
-        if isinstance(self.value, str):
-            self.value = "'{}'".format(utils.encode_string(self.value))
 
     def ToDict(self):
         return {"type": "lte", "key": self.key, "value": self.value}
+
+    def __str__(self):
+        return "{} <= {}".format(self.key, self.value)
 
 
 class GtOption(ListDeleteOption):
     def __init__(self, key: str, value: str):
         self.key = key
         self.value = value
-        if isinstance(self.value, str):
-            self.value = "'{}'".format(utils.encode_string(self.value))
-
+    
     def ToDict(self):
         return {"type": "gt", "key": self.key, "value": self.value}
+
+    def __str__(self):
+        return "{} > {}".format(self.key, self.value)
 
 
 class GteOption(ListDeleteOption):
     def __init__(self, key: str, value: str):
         self.key = key
         self.value = value
-        if isinstance(self.value, str):
-            self.value = "'{}'".format(utils.encode_string(self.value))
-
+        
     def ToDict(self):
         return {"type": "gte", "key": self.key, "value": self.value}
+
+    def __str__(self):
+        return "{} >= {}".format(self.key, self.value)
 
 
 class AndOption(ListDeleteOption):
@@ -145,6 +144,10 @@ class AndOption(ListDeleteOption):
     def ToDict(self):
         return {"type": "and", "filters": [f.ToDict() for f in self.filters]}
 
+    def __str__(self):
+        return "( {} )".format(
+            " AND ".join([str(f) for f in self.filters]))
+
 
 class OrOption(ListDeleteOption):
     def __init__(self, *filters: list[ListDeleteOption]):
@@ -152,6 +155,10 @@ class OrOption(ListDeleteOption):
 
     def ToDict(self):
         return {"type": "or", "filters": [f.ToDict() for f in self.filters]}
+
+    def __str__(self):
+        return "( {} )".format(
+            " OR ".join([str(f) for f in self.filters]))
 
 
 class NotOption(ListDeleteOption):
@@ -161,6 +168,9 @@ class NotOption(ListDeleteOption):
     def ToDict(self):
         return {"type": "not", "filter": self.filter.ToDict()}
 
+    def __str__(self):
+        return "( NOT {} )".format(self.filter)
+
 
 class InOption(ListDeleteOption):
     def __init__(self, key: str, values: list):
@@ -169,6 +179,10 @@ class InOption(ListDeleteOption):
 
     def ToDict(self):
         return {"type": "in", "key": self.key, "values": self.values}
+
+    def __str__(self):
+        return "({} IN ({}))".format(
+            self.key, ", ".join([str(v) for v in self.values]))
 
 
 class CommonOptionHolder:
@@ -289,7 +303,7 @@ def Gte(prop: str, val) -> ListDeleteOption:
     return _ListDeleteOption(option_function)
 
 
-def In(key: str, *values: list) -> ListDeleteOption:
+def In(key: str, values: list) -> ListDeleteOption:
     if not key or len(key) == 0:
         raise Exception("empty key for in filter")
 
@@ -301,7 +315,7 @@ def In(key: str, *values: list) -> ListDeleteOption:
         if common_options.filter is not None:
             raise Exception("prop filter option already set")
 
-        common_options.filter = InOption(key, *values)
+        common_options.filter = InOption(key, values)
 
     return _ListDeleteOption(option_function)
 

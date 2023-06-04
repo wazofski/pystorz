@@ -97,9 +97,9 @@ def list_parameters(ropt):
         q[server.PageSizeArg] = str(opt.page_size)
 
     if opt.filter:
-        q[server.FilterArg] = opt.filter.ToDict()
+        q[server.FilterArg] = opt.filter.ToJson()
 
-    return quote(json.dumps(q))
+    return "&".join([f"{k}={v}" for k, v in q.items()])
 
 
 def strip_serialize(object):
@@ -107,6 +107,8 @@ def strip_serialize(object):
     res = {}
     if "external" in data:
         res["external"] = data["external"]
+    if "metadata" in data:
+        res["metadata"] = data["metadata"]
     
     return json.dumps(res)
 
@@ -166,11 +168,20 @@ class Client(store.Store):
         if obj is None:
             raise Exception(constants.ErrObjectNil)
 
+        if identity is None:
+            raise Exception(constants.ErrInvalidPath)
+        
         log.info("update {}".format(identity.Path()))
 
         copt = new_rest_options(self)
         for o in opt:
             o.ApplyFunction()(copt)
+        
+        # if identity.Type() != obj.Metadata().Kind():
+        #     log.debug("identity type: {}, object type: {}".format(
+        #         identity.Type(),
+        #         obj.Metadata().Kind()))
+        #     raise Exception(constants.ErrObjectIdentityMismatch)
 
         data = self._process_request(
             make_path_for_identity(self.base_url, identity, ""),
@@ -185,6 +196,9 @@ class Client(store.Store):
         return clone
 
     def Delete(self, identity, *opt):
+        if identity is None:
+            raise Exception(constants.ErrInvalidPath)
+        
         log.info("delete {}".format(identity.Path()))
 
         copt = new_rest_options(self)
@@ -199,6 +213,12 @@ class Client(store.Store):
         )
 
     def List(self, identity, *opt):
+        if identity is None:
+            raise Exception(constants.ErrInvalidPath)
+
+        if len(identity.Key()) > 0:
+            raise Exception(constants.ErrInvalidPath)
+
         log.info("list {}".format(identity))
 
         copt = new_rest_options(self)
