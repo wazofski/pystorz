@@ -19,7 +19,6 @@ from pystorz.meta.store import MetaStore
 thestore = store.Store()
 
 stopper = None
-world_id = None
 worldName = "c137zxczx"
 anotherWorldName = "j19zeta7 qweqw"
 worldDescription = "zxkjhajkshdas world of argo"
@@ -88,7 +87,8 @@ def rest():
 
 
 # @pytest.fixture(params=[sqlite()])
-@pytest.fixture(params=[rest()])
+# @pytest.fixture(params=[rest()])
+@pytest.fixture(params=[sqlite(), rest()])
 def thestore(request):
     return request.param
 
@@ -738,11 +738,15 @@ def test_list_and_eq_filter(thestore):
     assert isinstance(world, model.World)
     assert world.External().Name() == worldName
     assert world.External().Description() == worldDescription
-    global world_id
-    world_id = world.Metadata().Identity()
 
 
 def test_list_and_filter_by_id(thestore):
+    ret = thestore.List(
+        model.WorldKindIdentity,
+        options.Eq("external.name", worldName))
+    
+    world_id = ret[0].Metadata().Identity()
+    
     ret = thestore.List(
         model.WorldKindIdentity,
         options.Eq("metadata.identity", str(world_id))

@@ -36,6 +36,8 @@ class InternalStore(store.Store):
         obj: store.Object,
         *opt: options.UpdateOption,
     ) -> store.Object:
+        if identity is None:
+            raise Exception(constants.ErrInvalidPath)
         if obj is None:
             raise Exception(constants.ErrObjectNil)
 
@@ -51,17 +53,23 @@ class InternalStore(store.Store):
         return self.Store.Update(identity, original, *opt)
 
     def Delete(self, identity: store.ObjectIdentity, *opt: options.DeleteOption):
+        if identity is None:
+            raise Exception(constants.ErrInvalidPath)
         log.info("delete {}".format(identity.Path()))
         return self.Store.Delete(identity, *opt)
 
     def Get(
         self, identity: store.ObjectIdentity, *opt: options.GetOption
     ) -> store.Object:
+        if identity is None:
+            raise Exception(constants.ErrInvalidPath)
         log.info("get {}".format(identity.Path()))
         return self.Store.Get(identity, *opt)
 
     def List(
         self, identity: store.ObjectIdentity, *opt: options.ListOption
     ) -> store.ObjectList:
+        if identity is None:
+            raise Exception(constants.ErrInvalidPath)
         log.info("list {}".format(identity.Path()))
         return self.Store.List(identity, *opt)
