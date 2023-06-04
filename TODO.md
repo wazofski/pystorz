@@ -22,23 +22,21 @@
 - replace the KeyFilter with generic In @done
 - delete filtering support (high) @done
 - ability to build multiple model directories @done
+- web server @done
+- web client store @done
+- metadata store @done
+- remove the functionality from the sql store @done
+
 
 - test and add common casees for complex filters on datetime types (high)
 - add mysql store (high)
 
-- add the rest of the storz
-    - web server
-    - web client store
-
-    - metadata store
-        - remove the functionality from the sql store
-    
-    - cache store
+- add the rest of the storz    
     - in memory store
-    - mongo store
+    - cache store
     - router store
     - behavior store
-    - 
+    - mongo store
 
 
 - github documentation (high)

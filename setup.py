@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name='pystorz',
-    version='0.2.2',
+    version='0.3.0',
     author='wazofski',
     description='Python package for the Storz object store framework.',
     long_description=long_description,
@@ -14,8 +14,10 @@ setup(
     packages=[
         "pystorz",
         "pystorz/internal",
+        "pystorz/meta",
         "pystorz/mgen",
         "pystorz/mgen/templates",
+        "pystorz/rest",
         "pystorz/sql",
         "pystorz/store",
     ],
