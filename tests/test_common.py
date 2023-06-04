@@ -87,8 +87,8 @@ def rest():
     return client.Client(url, model.Schema())
 
 
-@pytest.fixture(params=[sqlite()])
-# @pytest.fixture(params=[rest()])
+# @pytest.fixture(params=[sqlite()])
+@pytest.fixture(params=[rest()])
 def thestore(request):
     return request.param
 
@@ -885,7 +885,7 @@ def test_datetime_property_type(thestore):
 
     ndt = datetime.now()
     world.External().SetDate(ndt)
-    ret = thestore.Update(world.Metadata().Identity(), world)
+    ret = thestore.Update(ret.Metadata().Identity(), world)
 
     assert ret is not None
 
@@ -990,29 +990,29 @@ def test_list_and_map_of_struct(thestore):
     nested.SetCounter(123)
     nested.SetAlive(True)
 
-    world.Internal().SetList([nested])
-    world.Internal().SetMap({"nested": nested})
+    world.External().Nested().SetL1([nested])
+    world.External().Nested().SetL2({"nested": nested})
 
-    d = world.Internal().Map()
+    d = world.External().Nested().L2()
     assert d["nested"].Counter() == 123
-    l = world.Internal().List()
+    l = world.External().Nested().L1()
     assert l[0].Counter() == 123
 
     ret = thestore.Create(world)
     assert ret is not None
-    d = ret.Internal().Map()
+    d = world.External().Nested().L2()
     assert d["nested"].Counter() == 123
-    l = ret.Internal().List()
+    l = world.External().Nested().L1()
     assert l[0].Counter() == 123
 
     ret = thestore.Get(model.WorldIdentity("test_list_and_map_of_struct"))
     assert ret is not None
 
-    d = ret.Internal().Map()
+    d = world.External().Nested().L2()
     assert d["nested"].Counter() == 123
     assert d["nested"].Alive()
 
-    l = ret.Internal().List()
+    l = world.External().Nested().L1()
     assert l[0].Counter() == 123
     assert l[0].Alive()
 

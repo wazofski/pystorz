@@ -52,12 +52,17 @@ def _handle_exceptions(e):
 
 
 def _json_response(code: int, data: dict):
-    ret = json.dumps(data)
-    
-    log.debug("""json response: 
-{}""".format(utils.pp(data)))
+    log.debug(data)
 
-    return ret, code, {"Content-Type": "application/json"}
+    try:
+        ret = json.dumps(data)
+        log.debug("""json response: 
+    {}""".format(utils.pp(data)))
+
+        return ret, code, {"Content-Type": "application/json"}
+    except Exception as e:
+        log.debug("json error: {}".format(e))
+        return _error_response(500, str(e))
 
 
 def _error_response(code: int, message: str):
@@ -89,7 +94,7 @@ def _make_id_handler(stor, schema, exposed):
 def _handle_path(
     stor: store.Store, identity: store.ObjectIdentity, object: store.Object
 ):
-    log.info("handle path {}".format(identity))
+    log.info("handle path {}".format(identity.Path()))
     log.info("method {}".format(request.method))
 
     ret = None
@@ -149,23 +154,29 @@ def _make_type_handler(
     methods: list
 ):
     def handler():
-        log.info("handle type {} {}".format(t, request.method))
+        log.info("handle type {} {} (allowed {})".format(t, request.method, methods))
 
         if request.method not in methods:
             return _error_response(405, constants.ErrInvalidMethod)
 
-        if request.method == ActionGet:
+        if request.method == ActionGet or request.method == ActionDelete:
             url = urlparse(request.url)
             query_params = parse_qs(url.query)
-            log.debug("query params: {}".format(query_params))
+            log.debug("query: {}".format(query_params))
 
             opts = []
-            if FilterArg in query_params:
+            if request.data is not None and len(request.data) > 0:
                 o = options.ListDeleteOption.FromJson(
-                    query_params[FilterArg][0])
-                
+                    request.data.decode("utf-8"))
                 opts.append(o)
                 log.debug("filter: {}".format(str(o)))
+
+            # if FilterArg in query_params:
+            #     fa = query_params[FilterArg]
+            #     o = options.ListDeleteOption.FromJson(fa[0])
+                
+            #     opts.append(o)
+            #     log.debug("filter: {}".format(str(o)))
 
             if PageSizeArg in query_params:
                 ps = int(query_params[PageSizeArg][0])
@@ -183,9 +194,12 @@ def _make_type_handler(
                 opts.append(options.Order(query_params[OrderByArg][0], ascending))
 
             try:
-                ret = stor.List(store.ObjectIdentity(t.lower() + "/"), *opts)
-                return _json_response(200, [r.ToDict() for r in ret])
-
+                if request.method == ActionGet:
+                    ret = stor.List(store.ObjectIdentity(t.lower() + "/"), *opts)
+                    return _json_response(200, [r.ToDict() for r in ret])                
+                else:
+                    ret = stor.Delete(store.ObjectIdentity(t.lower() + "/"), *opts)
+                    return _json_response(200, {})
             except Exception as e:
                 return _error_response(400, str(e))
 
@@ -299,7 +313,7 @@ class Server:
                 methods=methods,
             )
 
-            type_handler = _make_type_handler(self.Store, self.Schema, k, v)
+            type_handler = _make_type_handler(self.Store, self.Schema, k, methods)
 
             self._register_handler(
                 f"/{k.lower()}", f"{k}_type_handler1", type_handler, methods=methods

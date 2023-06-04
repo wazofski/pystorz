@@ -22,6 +22,10 @@ loggers:
     level: DEBUG 
     handlers: [console]
     propagate: no
+  pystorz.store:
+    level: DEBUG
+    handlers: [console]
+    propagate: no
   pystorz.rest:
     level: DEBUG
     handlers: [console]

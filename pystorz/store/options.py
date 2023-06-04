@@ -1,4 +1,9 @@
 import json
+import logging
+
+
+log = logging.getLogger(__name__)
+
 from pystorz.store import utils
 
 
@@ -35,7 +40,11 @@ class DeleteOption(Option):
 class ListDeleteOption(ListOption, DeleteOption):
     @staticmethod
     def FromJson(jsn):
-        data = json.loads(jsn)
+        log.debug("parsing listdeleteoption: {}".format(jsn))
+
+        data = jsn
+        if isinstance(jsn, str):
+            data = json.loads(jsn)
 
         if data["type"] == "in":
             return In(data["key"], data["values"])

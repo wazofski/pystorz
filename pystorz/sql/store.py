@@ -213,7 +213,7 @@ class SqliteStore:
         if identity is None:
             raise Exception(constants.ErrInvalidPath)
 
-        log.info("list {}".format(identity))
+        log.info("list {}".format(identity.Path()))
 
         if len(identity.Key()) > 0:
             raise Exception(constants.ErrInvalidPath)

@@ -3,6 +3,9 @@ import json
 import time
 import logging
 import pathlib
+import base64
+
+from urllib.parse import quote, unquote
 
 from jsonpath import JSONPath
 from datetime import datetime
@@ -111,3 +114,16 @@ def decode_string(soup):
     # encoded_message = bytes(soup, 'utf-8')  # Convert the soup to bytes
     # return base64.b64decode(encoded_message).decode('utf-8')  # Decode the base64 bytes and convert to string
 
+
+# encoding = 'ascii'
+encoding = 'utf-8'
+def base64_encode_string(string):
+    # encoded_message = base64.b64encode(string.encode('utf-8'))  # Encode the message as base64 bytes
+    # return str(encoded_message, 'utf-8')  # Convert the bytes to a string
+    encoded_message = base64.b64encode(string.encode(encoding))  # Encode the message as base64 bytes
+    return quote(str(encoded_message, encoding))  # Convert the bytes to a string
+
+
+def base64_decode_string(soup):
+    encoded_message = bytes(unquote(soup), encoding)  # Convert the soup to bytes
+    return base64.b64decode(encoded_message).decode(encoding)  # Decode the base64 bytes and convert to string

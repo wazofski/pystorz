@@ -96,10 +96,18 @@ def list_parameters(ropt):
     if opt.page_size and opt.page_size > 0:
         q[server.PageSizeArg] = str(opt.page_size)
 
-    if opt.filter:
-        q[server.FilterArg] = opt.filter.ToJson()
+    # if opt.filter:
+    #     q[server.FilterArg] = opt.filter.ToJson()
 
-    return "&".join([f"{k}={v}" for k, v in q.items()])
+    return "&".join([f"{k}={quote(v)}" for k, v in q.items()])
+
+
+def filter_parameter(ropt):
+    opt = ropt.common_options()
+    if opt.filter:
+        return opt.filter.ToJson()
+
+    return ""
 
 
 def strip_serialize(object):
@@ -205,12 +213,21 @@ class Client(store.Store):
         for o in opt:
             o.ApplyFunction()(copt)
 
-        self._process_request(
-            make_path_for_identity(self.base_url, identity, ""),
-            "",
+        params = list_parameters(copt)
+        body = filter_parameter(copt)
+        path = make_path_for_identity(self.base_url, identity, params)
+
+        res = self._process_request(
+            path,
+            body,
             server.ActionDelete,
             copt.headers,
         )
+
+        if res and len(res) > 0:
+            log.debug("delete response: {}".format(res))
+
+        return None
 
     def List(self, identity, *opt):
         if identity is None:
@@ -219,15 +236,17 @@ class Client(store.Store):
         if len(identity.Key()) > 0:
             raise Exception(constants.ErrInvalidPath)
 
-        log.info("list {}".format(identity))
+        log.info("list {}".format(identity.Path()))
 
         copt = new_rest_options(self)
         for o in opt:
             o.ApplyFunction()(copt)
 
         params = list_parameters(copt)
+        body = filter_parameter(copt)
+
         path = make_path_for_identity(self.base_url, identity, params)
-        res = self._process_request(path, "", server.ActionGet, copt.headers)
+        res = self._process_request(path, body, server.ActionGet, copt.headers)
 
         parsed = json.loads(res)
 
