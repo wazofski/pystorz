@@ -25,36 +25,41 @@ worldDescription = "zxkjhajkshdas world of argo"
 newWorldDescription = "is only beoaoqwiewioqu"
 
 
-def sqlite():
-    log.debug("sqlite setup")
+def sqlite(db_file="testsqlite.db"):
     import os
 
-    from pystorz.sql.store import SqliteStore, SqliteConnector
+    from pystorz.sql.sqlite import SqliteStoreFactory
     from generated.model import Schema
 
-    db_file = "testsqlite.db"
     if os.path.exists(db_file):
         os.remove(db_file)
+
     schema = Schema()
     return MetaStore(
         schema,
-        SqliteStore(
+        SqliteStoreFactory(schema, db_file))
+
+
+def mysql():
+    from pystorz.sql.mysql import MySqlStoreFactory
+    from generated.model import Schema
+
+    schema = Schema()
+    return MetaStore(
+        schema,
+        MySqlStoreFactory(
             schema,
-            SqliteConnector(db_file)))
+            "127.0.0.1",
+            "3306",
+            "root",
+            "qwerasdf",
+            "pystorztestdb"))
 
 
 def rest():
     log.debug("server/client setup")
-    import os
-
-    from pystorz.sql.store import SqliteStore, SqliteConnector
-    from generated import model
-
-    db_file = "testclient.db"
-    if os.path.exists(db_file):
-        os.remove(db_file)
-
-    sqlite_store = SqliteStore(model.Schema(), SqliteConnector(db_file))
+    
+    sqlite_store = sqlite("restsqlite.db")
 
     from pystorz.rest import server, client
 
@@ -86,9 +91,10 @@ def rest():
     return client.Client(url, model.Schema())
 
 
-# @pytest.fixture(params=[sqlite()])
+@pytest.fixture(params=[sqlite()])
+# @pytest.fixture(params=[mysql()])
 # @pytest.fixture(params=[rest()])
-@pytest.fixture(params=[sqlite(), rest()])
+# @pytest.fixture(params=[sqlite(), rest()])
 def thestore(request):
     return request.param
 

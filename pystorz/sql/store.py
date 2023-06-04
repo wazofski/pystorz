@@ -1,30 +1,16 @@
-import threading
 import logging
-import sqlite3
+import threading
+
 from pystorz.internal import constants
 from pystorz.store import store, options, utils
-from datetime import datetime
 
 log = logging.getLogger(__name__)
 
 
-def SqliteConnector(path):
-    def func():
-        return sqlite3.connect(path)
-
-    return func
-
-
-# def MySqlConnection(path):
-#     def __call__():
-#         log.info("mysql connection %s", path)
-#         return mysql.connect(path)
-
-
-class SqliteStore:
-    def __init__(self, Schema, MakeConnection):
+class SqlStore(store.Store):
+    def __init__(self, Schema, connector):
         self._schema = Schema
-        self._makeConnection = MakeConnection
+        self._makeConnection = connector
         self._connection_cache = {}
 
     def _connection(self):

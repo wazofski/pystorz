@@ -12,8 +12,6 @@ from pystorz.store import options
 from pystorz.store import utils
 
 from pystorz.rest.internals import InternalStore
-from pystorz.meta.store import MetaStore
-
 
 from flask import Flask, request
 
@@ -168,6 +166,7 @@ def _make_type_handler(
             if request.data is not None and len(request.data) > 0:
                 o = options.ListDeleteOption.FromJson(
                     request.data.decode("utf-8"))
+                
                 opts.append(o)
                 log.debug("filter: {}".format(str(o)))
 
@@ -226,11 +225,7 @@ class Expose:
 class Server:
     def __init__(self, schema, thestore, *to_expose: list[Expose]):
         self.Schema = schema
-        self.Store = InternalStore(
-            schema, 
-            MetaStore(
-                schema,
-                thestore))
+        self.Store = InternalStore(schema, thestore)
 
         accepted_actions = set([ActionGet, ActionCreate, ActionUpdate, ActionDelete])
 

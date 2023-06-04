@@ -8,3 +8,4 @@ flask
 cherrypy
 requests
 pytest-cov
+mysql-connector-python
