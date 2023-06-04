@@ -283,7 +283,8 @@ class Server:
     
     def Stop(self):
         try:
-            cherrypy.engine.stop()
+            # cherrypy.engine.stop()
+            cherrypy.engine.exit()
         except Exception as e:
             log.error("error stopping server: {}".format(e))
         
