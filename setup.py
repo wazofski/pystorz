@@ -29,9 +29,9 @@ setup(
         "jinja2",
         "black",
         "jsonpath-python",
-        "cherrypy"
-        "requests"
-        "mysql-connector-python"
+        "cherrypy",
+        "requests",
+        "mysql-connector-python",
         "sqlparse",
         # "pysqlite3",
     ],
