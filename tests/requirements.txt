@@ -7,3 +7,4 @@ matplotlib
 flask
 cherrypy
 requests
+pytest-cov
