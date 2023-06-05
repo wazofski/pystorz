@@ -38,8 +38,7 @@ def test_sample_request():
 
     response = requests.request(
         "GET",
-        "http://localhost:8080/worlds",
-        "",
+        "http://localhost:8080/world",
         headers={})
 
     assert response is not None

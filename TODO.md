@@ -28,21 +28,26 @@
 - remove the functionality from the sql store @done
 - add mysql store (high) @done
 
+- github
+    - project (high)
+    - documentation (high)
 
+    - links
+        - https://pypi.org/project/pystorz/
+        - https://github.com/wazofski/pystorz
+
+- router store (high)
+- behavior store (high)
+
+- add enums ?
 - test and add common casees for complex filters on datetime types (high)
+- store migration tool
+- object browser
 
-- add the rest of the storz    
-    - in memory store
-    - cache store
-    - router store
-    - behavior store
-    - mongo store
+- autoconfig
+    - DB init
+    - object config
 
-
-- github documentation (high)
-- links
-    - https://pypi.org/project/pystorz/
-    - https://github.com/wazofski/pystorz
-
-- github project
-
+- in memory store
+- cache store
+- mongo store

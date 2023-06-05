@@ -18,15 +18,19 @@ loggers:
     level: INFO
     handlers: [console]
     propagate: no
-  pystorz.sql:
-    level: DEBUG 
-    handlers: [console]
-    propagate: no
   pystorz.store:
     level: DEBUG
     handlers: [console]
     propagate: no
+  pystorz.sql:
+    level: DEBUG 
+    handlers: [console]
+    propagate: no
   pystorz.rest:
+    level: DEBUG
+    handlers: [console]
+    propagate: no
+  pystorz.router:
     level: DEBUG
     handlers: [console]
     propagate: no

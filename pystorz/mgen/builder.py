@@ -109,7 +109,7 @@ def compileStruct(s: Struct) -> str:
 
     s.properties = addDefaultPropValues(s.properties)
 
-    parent = "store.Object"
+    parent = "" # s.implements
 
     for p in s.properties:
         if p.name != "Meta":
