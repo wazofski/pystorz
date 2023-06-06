@@ -18,10 +18,8 @@ def sqlite(db_file):
     if os.path.exists(db_file):
         os.remove(db_file)
 
-    schema = model.Schema()
     return MetaStore(
-        schema,
-        SqliteStoreFactory(schema, db_file))
+        SqliteStoreFactory(model.Schema(), db_file))
 
 
 def router():

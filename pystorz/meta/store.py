@@ -10,9 +10,8 @@ from pystorz.store import options
 
 
 class MetaStore(store.Store):
-    def __init__(self, schema: store.SchemaHolder, data: store.Store):
-        self.Schema = schema
-        self.Store = data
+    def __init__(self, data: store.Store):
+        self._Store = data
 
     def Create(self, obj: store.Object, *opt: options.CreateOption) -> store.Object:
         if obj is None:
@@ -26,7 +25,7 @@ class MetaStore(store.Store):
         obj.Metadata().SetUpdated(obj.Metadata().Created())
         obj.Metadata().SetRevision(1)
 
-        return self.Store.Create(obj, *opt)
+        return self._Store.Create(obj, *opt)
 
     def Update(
         self,
@@ -41,7 +40,7 @@ class MetaStore(store.Store):
 
         log.info("update {}".format(identity.Path()))
 
-        original = self.Store.Get(identity)
+        original = self._Store.Get(identity)
         # if original.Metadata().Kind() != obj.Metadata().Kind():
         #     return constants.ErrObjectIdentityMismatch
 
@@ -51,13 +50,13 @@ class MetaStore(store.Store):
         obj.Metadata().SetUpdated(datetime.now())
         obj.Metadata().SetRevision(original.Metadata().Revision() + 1)
         
-        return self.Store.Update(identity, obj, *opt)
+        return self._Store.Update(identity, obj, *opt)
 
     def Delete(self, identity: store.ObjectIdentity, *opt: options.DeleteOption):
         if identity is None:
             raise Exception(constants.ErrInvalidPath)
         log.info("delete {}".format(identity.Path()))
-        return self.Store.Delete(identity, *opt)
+        return self._Store.Delete(identity, *opt)
 
     def Get(
         self, identity: store.ObjectIdentity, *opt: options.GetOption
@@ -65,7 +64,7 @@ class MetaStore(store.Store):
         if identity is None:
             raise Exception(constants.ErrInvalidPath)
         log.info("get {}".format(identity.Path()))
-        return self.Store.Get(identity, *opt)
+        return self._Store.Get(identity, *opt)
 
     def List(
         self, identity: store.ObjectIdentity, *opt: options.ListOption
@@ -73,4 +72,4 @@ class MetaStore(store.Store):
         if identity is None:
             raise Exception(constants.ErrInvalidPath)
         log.info("list {}".format(identity.Path()))
-        return self.Store.List(identity, *opt)
+        return self._Store.List(identity, *opt)

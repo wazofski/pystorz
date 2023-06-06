@@ -33,21 +33,18 @@ def sqlite(db_file="testsqlite.db"):
     if os.path.exists(db_file):
         os.remove(db_file)
 
-    schema = Schema()
     return MetaStore(
-        schema,
-        SqliteStoreFactory(schema, db_file))
+        SqliteStoreFactory(
+            Schema(), db_file))
 
 
 def mysql():
     from pystorz.sql.mysql import MySqlStoreFactory
     from generated.model import Schema
 
-    schema = Schema()
     return MetaStore(
-        schema,
         MySqlStoreFactory(
-            schema,
+            Schema(),
             "127.0.0.1",
             "3306",
             "root",

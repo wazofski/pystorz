@@ -26,9 +26,12 @@ class RouteStore(store.Store):
         if obj is None:
             raise Exception(constants.ErrObjectNil)
 
+        if identity is None:
+            raise Exception(constants.ErrInvalidPath)
+
         log.info(f"update {identity.Path()}")
 
-        return self._getStore(identity.Type()).Update(identity, obj, *opt)
+        return self._getStore(obj.Metadata().Kind()).Update(identity, obj, *opt)
 
     def Delete(self, identity: store.ObjectIdentity, *opt: options.DeleteOption) -> None:
         if identity is None:
@@ -58,8 +61,10 @@ class RouteStore(store.Store):
         kind = kind.lower().replace("/", "")
 
         if kind in self.Mapping:
-            return self.Mapping[kind].Store
+            return self.Mapping[kind]
+
+        if self.Default is None:
+            raise Exception(constants.ErrInvalidPath)
 
         log.debug(f"kind {kind} not found in mapping, using default store")
-
         return self.Default
