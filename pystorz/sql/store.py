@@ -190,11 +190,15 @@ class SqlStore(store.Store):
         db = self._connection()
         cursor = db.cursor()
 
+        res = None
         if identity.IsId():
             pkey, typ = self._getIdentity(cursor, identity.Path())
-            return self._getObject(cursor, pkey, typ)
-
-        return self._getObject(cursor, identity.Key(), identity.Type())
+            res = self._getObject(cursor, pkey, typ)
+        else:
+            res = self._getObject(cursor, identity.Key(), identity.Type())
+        
+        db.commit()
+        return res
 
     def List(self, identity, *opt: list[options.ListOption]):
         if identity is None:
@@ -239,7 +243,9 @@ class SqlStore(store.Store):
         self._do_query(cursor, query)
         rows = cursor.fetchall()
 
-        return self._parseObjectRows(rows, identity.Type())
+        res = self._parseObjectRows(rows, identity.Type())
+        db.commit()
+        return res
 
     def _prepareTables(self, db):
         create = """
