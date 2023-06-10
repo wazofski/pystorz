@@ -28,6 +28,7 @@
 - remove the functionality from the sql store @done
 - add mysql store (high) @done
 - fix mysql list and get autocommit issue @done
+- mysql auto-reconnect @done
 
 - github
     - project (high)

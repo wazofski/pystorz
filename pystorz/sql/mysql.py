@@ -40,7 +40,11 @@ class _MySQLAdapter:
             return self._cursor
         except Exception as err:
             log.error("cursor", err)
-            raise err
+            if self.connection is None:
+                raise err
+            self.connection = None
+        
+        return self.cursor()
 
     def close(self):
         try:
