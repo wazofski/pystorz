@@ -7,7 +7,7 @@ log = logging.getLogger(__name__)
 
 
 class RouteStore(store.Store):
-    def __init__(self, default: store.Store, mapping: dict):
+    def __init__(self, mapping: dict, default=None):
         self.Default = default
         self.Mapping = {}
 

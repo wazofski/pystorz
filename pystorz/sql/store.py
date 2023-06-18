@@ -50,16 +50,15 @@ class SqlStore(store.Store):
         try:
             # Start a transaction
             db.execute("BEGIN")
-            cursor = db.cursor()
 
             self._setIdentity(
-                cursor,
+                db,
                 obj.Metadata().Identity().Path(),
                 obj.PrimaryKey(),
                 obj.Metadata().Kind(),
             )
 
-            self._setObject(cursor, obj.PrimaryKey(), obj.Metadata().Kind(), obj)
+            self._setObject(db, obj.PrimaryKey(), obj.Metadata().Kind(), obj)
 
             # Commit the transaction
             db.commit()
@@ -115,24 +114,23 @@ class SqlStore(store.Store):
         try:
             # Start a transaction
             db.execute("BEGIN")
-            cursor = db.cursor()
-
-            self._removeIdentity(cursor, existing.Metadata().Identity().Path())
+            
+            self._removeIdentity(db, existing.Metadata().Identity().Path())
 
             obj.Metadata().SetIdentity(existing.Metadata().Identity())
 
             self._setIdentity(
-                cursor,
+                db,
                 obj.Metadata().Identity().Path(),
                 obj.PrimaryKey(),
                 obj.Metadata().Kind(),
             )
 
             self._removeObject(
-                cursor, existing.PrimaryKey(), existing.Metadata().Kind()
+                db, existing.PrimaryKey(), existing.Metadata().Kind()
             )
 
-            self._setObject(cursor, obj.PrimaryKey(), obj.Metadata().Kind(), obj)
+            self._setObject(db, obj.PrimaryKey(), obj.Metadata().Kind(), obj)
 
             db.commit()
             return obj.Clone()
@@ -158,19 +156,18 @@ class SqlStore(store.Store):
         # try:
         # Start a transaction
         db.execute("BEGIN")
-        cursor = db.cursor()
-
+        
         if copt.filter is None:
-            self._removeIdentity(cursor, existing.Metadata().Identity().Path())
+            self._removeIdentity(db, existing.Metadata().Identity().Path())
             self._removeObject(
-                cursor, existing.PrimaryKey(), existing.Metadata().Kind()
+                db, existing.PrimaryKey(), existing.Metadata().Kind()
             )
         else:
             clause = self._buildFilterClause(copt, identity)
-            keys = self._getObjectKeys(cursor, identity.Type(), clause)
+            keys = self._getObjectKeys(db, identity.Type(), clause)
 
-            self._removeObjects(cursor, identity.Type(), clause)
-            self._removeIdentities(cursor, identity.Type(), keys)
+            self._removeObjects(db, identity.Type(), clause)
+            self._removeIdentities(db, identity.Type(), keys)
 
         db.commit()
         # except Exception as e:
@@ -188,14 +185,13 @@ class SqlStore(store.Store):
             o.ApplyFunction()(copt)
 
         db = self._connection()
-        cursor = db.cursor()
 
         res = None
         if identity.IsId():
-            pkey, typ = self._getIdentity(cursor, identity.Path())
-            res = self._getObject(cursor, pkey, typ)
+            pkey, typ = self._getIdentity(db, identity.Path())
+            res = self._getObject(db, pkey, typ)
         else:
-            res = self._getObject(cursor, identity.Key(), identity.Type())
+            res = self._getObject(db, identity.Key(), identity.Type())
         
         db.commit()
         return res
@@ -215,8 +211,7 @@ class SqlStore(store.Store):
             o.ApplyFunction()(copt)
 
         db = self._connection()
-        cursor = db.cursor()
-
+        
         query = """SELECT Object FROM Objects 
         WHERE Type = '{}'""".format(
             identity.Type()
@@ -240,8 +235,8 @@ class SqlStore(store.Store):
         if copt.page_offset is not None and copt.page_offset > 0:
             query = query + " OFFSET {}".format(copt.page_offset)
 
-        self._do_query(cursor, query)
-        rows = cursor.fetchall()
+        self._do_query(db, query)
+        rows = db.fetchall()
 
         res = self._parseObjectRows(rows, identity.Type())
         db.commit()
@@ -255,8 +250,7 @@ class SqlStore(store.Store):
             Type VARCHAR(25) NOT NULL);
         """
 
-        cursor = db.cursor()
-        self._do_query(cursor, create)
+        self._do_query(db, create)
 
         create = """
         CREATE TABLE IF NOT EXISTS Objects (
@@ -266,19 +260,18 @@ class SqlStore(store.Store):
             PRIMARY KEY (Pkey,Type));
         """
 
-        cursor.execute(create)
-        cursor.close()
-
+        db.execute(create)
+        
         db.commit()
 
-    def _getIdentity(self, cursor, path):
+    def _getIdentity(self, db, path):
         query = """SELECT Pkey, Type FROM IdIndex 
         WHERE Path='{}'""".format(
             path
         )
 
-        self._do_query(cursor, query)
-        result = cursor.fetchone()
+        self._do_query(db, query)
+        result = db.fetchone()
 
         if result is not None:
             pkey, typ = result
@@ -286,11 +279,11 @@ class SqlStore(store.Store):
         else:
             raise Exception(constants.ErrNoSuchObject)
 
-    def _setIdentity(self, cursor, path, pkey, typ):
+    def _setIdentity(self, db, path, pkey, typ):
         # existing_pkey, existing_typ = None, None
 
         # try:
-        #     existing_pkey, existing_typ = self._getIdentity(cursor, path)
+        #     existing_pkey, existing_typ = self._getIdentity(db, path)
         # except Exception as e:
         #     log.debug("identity get failed: {}".format(e))
 
@@ -306,24 +299,24 @@ class SqlStore(store.Store):
             pkey, typ.lower(), path
         )
 
-        self._do_query(cursor, query)
+        self._do_query(db, query)
 
-    def _removeIdentity(self, cursor, path):
+    def _removeIdentity(self, db, path):
         query = """DELETE FROM IdIndex
         WHERE Path = '{}'""".format(
             path
         )
 
-        self._do_query(cursor, query)
+        self._do_query(db, query)
 
-    def _getObject(self, cursor, pkey, typ):
+    def _getObject(self, db, pkey, typ):
         query = """SELECT Object FROM Objects
         WHERE Pkey='{}' AND Type='{}'""".format(
             pkey, typ.lower()
         )
 
-        self._do_query(cursor, query)
-        result = cursor.fetchone()
+        self._do_query(db, query)
+        result = db.fetchone()
 
         if result is not None:
             data = result[0]
@@ -332,12 +325,12 @@ class SqlStore(store.Store):
         else:
             raise Exception(constants.ErrNoSuchObject)
 
-    def _setObject(self, cursor, pkey, typ, obj):
+    def _setObject(self, db, pkey, typ, obj):
         query = ""
         # existing_obj = None
 
         # try:
-        #     existing_obj = self._getObject(cursor, pkey, typ)
+        #     existing_obj = self._getObject(db, pkey, typ)
         # except Exception as e:
         #     log.debug("object get failed: {}".format(e))
 
@@ -356,31 +349,31 @@ class SqlStore(store.Store):
             data, pkey, typ.lower()
         )
 
-        self._do_query(cursor, query)
+        self._do_query(db, query)
 
-    def _removeObject(self, cursor, pkey, typ):
+    def _removeObject(self, db, pkey, typ):
         query = """DELETE FROM Objects
         WHERE Pkey = '{}' AND Type = '{}'""".format(
             pkey, typ.lower()
         )
 
-        self._do_query(cursor, query)
+        self._do_query(db, query)
 
-    def _getObjectKeys(self, cursor, typ, clause):
+    def _getObjectKeys(self, db, typ, clause):
         query = """SELECT Pkey FROM Objects
         WHERE Type = '{}' {}""".format(
             typ.lower(),
             clause,
         )
 
-        self._do_query(cursor, query)
-        rows = cursor.fetchall()
+        self._do_query(db, query)
+        rows = db.fetchall()
         res = []
         for row in rows:
             res.append(row[0])
         return res
 
-    def _removeIdentities(self, cursor, typ, keys):
+    def _removeIdentities(self, db, typ, keys):
         batch_size = 100
         for i in range(0, len(keys), batch_size):
             batch = keys[i : i + batch_size]
@@ -392,16 +385,16 @@ class SqlStore(store.Store):
                 clause,
             )
 
-            self._do_query(cursor, query)
+            self._do_query(db, query)
 
-    def _removeObjects(self, cursor, typ, clause):
+    def _removeObjects(self, db, typ, clause):
         query = """DELETE FROM Objects
         WHERE Type = '{}' {}""".format(
             typ.lower(),
             clause,
         )
 
-        self._do_query(cursor, query)
+        self._do_query(db, query)
 
     def _parseObjectRow(self, data, typ):
         return utils.unmarshal_object(data, self._schema, typ)
@@ -413,14 +406,14 @@ class SqlStore(store.Store):
             res.append(self._parseObjectRow(data, typ))
         return res
 
-    def _do_query(self, cursor, query):
+    def _do_query(self, db, query):
         log.debug("running query: {}".format(query))
 
         statements = sqlparse.parse(query)
         if len(statements) > 1:
             raise Exception(constants.ErrInvalidRequest)
 
-        cursor.execute(query)
+        db.execute(query)
 
     def _buildFilterClause(self, copt, identity):
         if copt.filter is None:

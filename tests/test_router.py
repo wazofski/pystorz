@@ -24,7 +24,6 @@ def sqlite(db_file):
 
 def router():
     return RouteStore(
-        None,
         {
             model.WorldKind: sqlite("world.db"),
             model.SecondWorldKind: sqlite("second_world.db"),
