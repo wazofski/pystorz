@@ -44,7 +44,7 @@ class InternalStore(store.Store):
         log.info("update {}".format(identity.Path()))
 
         original = self.Store.Get(identity)
-        if isinstance(obj, store.ExternalHolder):
+        if isinstance(original, store.ExternalHolder):
             original.SetExternal(obj.External())
 
         if original.Metadata().Kind() != obj.Metadata().Kind():

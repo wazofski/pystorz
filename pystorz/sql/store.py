@@ -22,7 +22,7 @@ class SqlStore(store.Store):
 
         return self._connection_cache[tid]
 
-    def Create(self, obj, *opt):
+    def Create(self, obj: store.Object, *opt: options.CreateOption) -> store.Object:
         if obj is None:
             raise Exception(constants.ErrObjectNil)
 
@@ -67,7 +67,7 @@ class SqlStore(store.Store):
             db.rollback()
             raise e
 
-    def Update(self, identity, obj, *opt):
+    def Update(self, identity: store.ObjectIdentity, obj: store.Object, *opt: options.UpdateOption) -> store.Object:
         # copt = options.CommonOptionHolderFactory()
         # for o in opt:
         #     o.ApplyFunction()(copt)
@@ -117,9 +117,6 @@ class SqlStore(store.Store):
             db.execute("BEGIN")
 
             self._removeIdentity(db, existing.Metadata().Identity().Path())
-
-            obj.Metadata().SetIdentity(existing.Metadata().Identity())
-
             self._setIdentity(
                 db,
                 obj.Metadata().Identity().Path(),
@@ -130,7 +127,6 @@ class SqlStore(store.Store):
             self._removeObject(
                 db, existing.PrimaryKey(), existing.Metadata().Kind()
             )
-
             self._setObject(db, obj.PrimaryKey(), obj.Metadata().Kind(), obj)
 
             db.commit()
@@ -139,7 +135,7 @@ class SqlStore(store.Store):
             db.rollback()
             raise e
 
-    def Delete(self, identity, *opt):
+    def Delete(self, identity: store.ObjectIdentity, *opt: options.DeleteOption):
         if identity is None:
             raise Exception(constants.ErrInvalidPath)
 
@@ -173,7 +169,7 @@ class SqlStore(store.Store):
             db.rollback()
             raise e
 
-    def Get(self, identity, *opt):
+    def Get(self, identity: store.ObjectIdentity, *opt: options.GetOption) -> store.Object:
         if identity is None:
             raise Exception(constants.ErrInvalidPath)
 
@@ -195,7 +191,7 @@ class SqlStore(store.Store):
         db.commit()
         return res
 
-    def List(self, identity, *opt: options.ListOption):
+    def List(self, identity: store.ObjectIdentity, *opt: options.ListOption) -> store.ObjectList:
         if identity is None:
             raise Exception(constants.ErrInvalidPath)
 
@@ -397,8 +393,8 @@ class SqlStore(store.Store):
     def _parseObjectRow(self, data, typ):
         return utils.unmarshal_object(data, self._schema, typ)
 
-    def _parseObjectRows(self, rows, typ):
-        res = []
+    def _parseObjectRows(self, rows, typ) -> store.ObjectList:
+        res = store.ObjectList()
         for row in rows:
             data = utils.decode_string(row[0])
             res.append(self._parseObjectRow(data, typ))

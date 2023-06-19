@@ -3,6 +3,7 @@ import json
 
 from datetime import datetime
 from pystorz.store import utils
+from pystorz.store import options
 
 
 class ObjectIdentity:
@@ -186,7 +187,7 @@ class Object:
 class ExternalHolder(Object):
     def SetExternal(self, obj: object):
         pass
-    
+
     def External(self) -> object:
         pass
 
@@ -203,19 +204,19 @@ def ObjectIdentityFactory() -> ObjectIdentity:
 
 
 class Store:
-    def Get(self, identity: ObjectIdentity, *options) -> Object:
+    def Get(self, identity: ObjectIdentity, *options: options.GetOption) -> Object:
         raise Exception("Object is an interface")
 
-    def List(self, identity: ObjectIdentity, *options) -> ObjectList:
+    def List(self, identity: ObjectIdentity, *options: options.ListOption) -> ObjectList:
         raise Exception("Object is an interface")
 
-    def Create(self, obj: Object, *options) -> Object:
+    def Create(self, obj: Object, *options: options.CreateOption) -> Object:
         raise Exception("Object is an interface")
 
-    def Delete(self, identity: ObjectIdentity, *options) -> Exception:
+    def Update(self, identity: ObjectIdentity, obj: Object, *options: options.UpdateOption) -> Object:
         raise Exception("Object is an interface")
 
-    def Update(self, identity: ObjectIdentity, obj: Object, *options) -> Object:
+    def Delete(self, identity: ObjectIdentity, *options: options.DeleteOption):
         raise Exception("Object is an interface")
 
 

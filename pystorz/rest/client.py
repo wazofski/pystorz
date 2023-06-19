@@ -127,7 +127,7 @@ class Client(store.Store):
         self.schema = schema
         self.headers = header_options
 
-    def Create(self, obj, *opt):
+    def Create(self, obj: store.Object, *opt: options.CreateOption) -> store.Object:
         if obj is None:
             raise ValueError(constants.ErrObjectNil)
 
@@ -149,7 +149,7 @@ class Client(store.Store):
 
         return clone
 
-    def Get(self, identity, *opt):
+    def Get(self, identity: store.ObjectIdentity, *opt: options.GetOption) -> store.Object:
         if identity is None:
             raise Exception(constants.ErrInvalidPath)
 
@@ -172,7 +172,7 @@ class Client(store.Store):
 
         return utils.unmarshal_object(resp, self.schema, tp)
 
-    def Update(self, identity, obj, *opt):
+    def Update(self, identity: store.ObjectIdentity, obj: store.Object, *opt: options.UpdateOption) -> store.Object:
         if obj is None:
             raise Exception(constants.ErrObjectNil)
 
@@ -203,7 +203,7 @@ class Client(store.Store):
 
         return clone
 
-    def Delete(self, identity, *opt):
+    def Delete(self, identity: store.ObjectIdentity, *opt: options.DeleteOption):
         if identity is None:
             raise Exception(constants.ErrInvalidPath)
         
@@ -229,7 +229,7 @@ class Client(store.Store):
 
         return None
 
-    def List(self, identity, *opt):
+    def List(self, identity: store.ObjectIdentity, *opt: options.ListOption) -> store.ObjectList:
         if identity is None:
             raise Exception(constants.ErrInvalidPath)
 

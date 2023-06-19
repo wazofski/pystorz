@@ -33,7 +33,7 @@ class RouteStore(store.Store):
 
         return self._getStore(obj.Metadata().Kind()).Update(identity, obj, *opt)
 
-    def Delete(self, identity: store.ObjectIdentity, *opt: options.DeleteOption) -> None:
+    def Delete(self, identity: store.ObjectIdentity, *opt: options.DeleteOption):
         if identity is None:
             raise Exception(constants.ErrInvalidPath)
         

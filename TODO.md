@@ -36,9 +36,8 @@
 
 - router store (high) @done
 
-- add retrun and arguments types to all stores
-    - interface
-    - implementations
+- add argument and return types to all stores @done
+    - interface adn implementations @done
 
 - add common test for complex datetime filtering (high)
 

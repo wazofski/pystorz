@@ -1,3 +1,4 @@
+from pystorz.store import options
 import logging
 
 from datetime import datetime
@@ -5,8 +6,6 @@ from pystorz.internal import constants
 from pystorz.store import store
 
 log = logging.getLogger(__name__)
-
-from pystorz.store import options
 
 
 class MetaStore(store.Store):
@@ -20,10 +19,12 @@ class MetaStore(store.Store):
         log.info("create {} {}".format(
             obj.Metadata().Kind(), obj.PrimaryKey()))
 
-        obj.Metadata().SetIdentity(store.ObjectIdentityFactory())
-        obj.Metadata().SetCreated(datetime.now())
-        obj.Metadata().SetUpdated(obj.Metadata().Created())
-        obj.Metadata().SetRevision(1)
+        meta = obj.Metadata()
+        if isinstance(meta, store.MetaSetter):
+            meta.SetIdentity(store.ObjectIdentityFactory())
+            meta.SetCreated(datetime.now())
+            meta.SetUpdated(obj.Metadata().Created())
+            meta.SetRevision(1)
 
         return self._Store.Create(obj, *opt)
 
@@ -45,11 +46,13 @@ class MetaStore(store.Store):
         #     return constants.ErrObjectIdentityMismatch
 
         # obj.Metadata().SetKind(original.Metadata().Kind())
-        obj.Metadata().SetIdentity(original.Metadata().Identity())
-        obj.Metadata().SetCreated(original.Metadata().Created())
-        obj.Metadata().SetUpdated(datetime.now())
-        obj.Metadata().SetRevision(original.Metadata().Revision() + 1)
-        
+        meta = obj.Metadata()
+        if isinstance(meta, store.MetaSetter):
+            meta.SetIdentity(original.Metadata().Identity())
+            meta.SetCreated(original.Metadata().Created())
+            meta.SetUpdated(datetime.now())
+            meta.SetRevision(original.Metadata().Revision() + 1)
+
         return self._Store.Update(identity, obj, *opt)
 
     def Delete(self, identity: store.ObjectIdentity, *opt: options.DeleteOption):

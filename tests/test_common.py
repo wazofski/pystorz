@@ -214,6 +214,7 @@ def test_can_put_change_naming_props(thestore):
     ret = thestore.Update(original.Metadata().Identity(), original)
 
     assert ret is not None
+    assert original.Metadata().Identity() == ret.Metadata().Identity()
 
     obj_def = thestore.Get(ret.Metadata().Identity())
     assert obj_def is not None
