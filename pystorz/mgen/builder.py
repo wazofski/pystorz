@@ -98,21 +98,19 @@ def compileResources(resources: list[Resource]) -> str:
 def compileStructs(structs: list[Struct]) -> str:
     b = StringIO()
 
-    dep, nodep = checkDependencies(structs)
-
-    for s in nodep:
-        b.write(compileStruct(s))
-    
-    for s in dep:
+    for s in dependencyOrder(structs):
         b.write(compileStruct(s))
     
     return b.getvalue()
 
 
-def checkDependencies(structs: list[Struct]) -> tuple[list[Struct], list[Struct]]:
-    dep = []
-    nodep = []
-
+def dependencyOrder(structs: list[Struct]) -> list[Struct]:
+    all_structs = {}
+    dependencies = {}
+    for s in structs:
+        all_structs[s.name] = s
+        dependencies[s.name] = set()
+    
     known_types = ["string", "int", "float", "bool", "datetime"]
 
     for s in structs:
@@ -120,33 +118,48 @@ def checkDependencies(structs: list[Struct]) -> tuple[list[Struct], list[Struct]
             if p.IsArray():
                 elem_type = p.SubType()
                 if elem_type not in known_types:
-                    dep.append(s)
-                    break
+                    dependencies[s.name].add(elem_type)
+                    
                 continue
 
             if p.IsMap():
-                # map[int]string
+                # map[string]bla
                 elem_type = p.SubType()
                 key_type = p.type[4:].split("]")[0]
-                val_type = p.type[4:].split("]")[1]
                 if key_type not in known_types:
-                    dep.append(s)
-                    break
+                    raise Exception(f"Invalid type {key_type} in {p.type}. Please use one of {known_types} as map key type")
 
+                val_type = p.type[4:].split("]")[1]
                 if val_type not in known_types:
-                    dep.append(s)
-                    break
+                    dependencies[s.name].add(val_type)
+                
                 continue
 
             if p.type not in known_types:
-                dep.append(s)
-                break
+                dependencies[s.name].add(p.type)
     
-    for s in structs:
-        if s not in dep:
-            nodep.append(s)
+    ordered = []
+    while len(ordered) < len(structs):
+        did_stuff = False
+        for s in structs:
+            if s in ordered:
+                continue
+            
+            if len(dependencies[s.name]) == 0:
+                ordered.append(s)
+                for k in dependencies.keys():
+                    if s.name in dependencies[k]:
+                        dependencies[k].remove(s.name)
+                        did_stuff = True
+        
+        if not did_stuff and len(ordered) < len(structs):
+            log.debug(f"dependencies: {dependencies}")
+            log.debug(f"ordered: {[ o.name for o in ordered]}")
+            log.debug(f"lengths: {len(dependencies)} {len(ordered)} {len(structs)}")
 
-    return (dep, nodep)
+            raise Exception("Circular dependency detected")
+
+    return ordered
 
 
 def compileStruct(s: Struct) -> str:

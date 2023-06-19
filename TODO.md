@@ -39,6 +39,8 @@
 - add argument and return types to all stores @done
     - interface adn implementations @done
 
+- fix mgen dependency issues @done
+
 - add common test for complex datetime filtering (high)
 
 - github

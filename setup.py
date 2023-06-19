@@ -1,11 +1,11 @@
-from setuptools import setup, find_packages
+from setuptools import setup
 
 with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
 setup(
     name='pystorz',
-    version='0.4.2',
+    version='0.4.4',
     author='wazofski',
     description='Python package for the Storz object store framework.',
     long_description=long_description,
