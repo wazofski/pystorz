@@ -12,9 +12,9 @@ class SQLAdapter:
 
     def connection(self):
         if not self._connection:
-            self._connection = self.connect()
             self._cursor = None
-        
+            self._connection = self.connect()
+
         return self._connection
 
     def cursor(self, retry=True):
@@ -56,6 +56,7 @@ class SQLAdapter:
             if not retry:
                 raise err
 
+        self._cursor = None
         self._connection = None
         return self.execute(query, params, False)
 
@@ -66,9 +67,9 @@ class SQLAdapter:
             if not retry:
                 raise err
 
+        self._cursor = None
         self._connection = None
         return self.fetchall(False)
-    
 
     def fetchone(self, retry=True):
         try:
@@ -77,6 +78,7 @@ class SQLAdapter:
             if not retry:
                 raise err
 
+        self._cursor = None
         self._connection = None
         return self.fetchone(False)
 
@@ -88,6 +90,7 @@ class SQLAdapter:
             if not retry:
                 raise err
 
+        self._cursor = None
         self._connection = None
         return self.commit(False)
 
@@ -98,5 +101,6 @@ class SQLAdapter:
             if not retry:
                 raise err
 
+        self._cursor = None
         self._connection = None
         return self.rollback(False)
