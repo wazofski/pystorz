@@ -2,8 +2,16 @@ import uuid
 import json
 
 from datetime import datetime
-from pystorz.store import utils
+from pystorz.internal import constants
 from pystorz.store import options
+
+
+def datetime_parse(dtstr) -> datetime:
+    return datetime.strptime(dtstr, constants.DATETIME_FORMAT)
+
+
+def datetime_string(dt) -> str:
+    return dt.strftime(constants.DATETIME_FORMAT)
 
 
 class ObjectIdentity:
@@ -106,10 +114,10 @@ class _MetaWrapper(Meta, MetaSetter):
         return self.kind_
 
     def Created(self) -> datetime:
-        return utils.datetime_parse(self.created_)
+        return datetime_parse(self.created_)
 
     def Updated(self) -> datetime:
-        return utils.datetime_parse(self.updated_)
+        return datetime_parse(self.updated_)
 
     def Identity(self) -> ObjectIdentity:
         return self.identity_
@@ -124,10 +132,10 @@ class _MetaWrapper(Meta, MetaSetter):
         self.identity_ = identity
 
     def SetCreated(self, created: datetime) -> None:
-        self.created_ = utils.datetime_string(created)
+        self.created_ = datetime_string(created)
 
     def SetUpdated(self, updated: datetime) -> None:
-        self.updated_ = utils.datetime_string(updated)
+        self.updated_ = datetime_string(updated)
 
     def SetRevision(self, revision: int) -> None:
         self.revision_ = revision

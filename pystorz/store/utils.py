@@ -83,18 +83,6 @@ def runtime_dir() -> str:
     return str(pathlib.Path(__file__).parent.parent.absolute())
 
 
-def datetime_current() -> str:
-    return datetime_string(datetime.now())
-
-
-def datetime_parse(dtstr) -> datetime:
-    return datetime.strptime(dtstr, constants.DATETIME_FORMAT)
-
-
-def datetime_string(dt) -> str:
-    return dt.strftime(constants.DATETIME_FORMAT)
-
-
 def encode_string(string):
     return str(string).replace("'", "$%#")
     # encoded_message = base64.b64encode(string.encode('utf-8'))  # Encode the message as base64 bytes

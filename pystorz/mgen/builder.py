@@ -28,7 +28,7 @@ def Generate(*models) -> None:
     imports = [
         "import json",
         "from pystorz.internal import constants",
-        "from pystorz.store import utils",
+        # "from pystorz.store import utils",
         "from pystorz.store import store",
         "from datetime import datetime",
         "from typing import Type",

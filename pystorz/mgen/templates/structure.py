@@ -18,7 +18,7 @@ class _{{ data.name }}({{data.name}}):
 
 	def Set{{ prop.name }}(self, val):
 		{% if prop.type == "datetime" %}
-		self.{{ prop.name }}_ = utils.datetime_string(val)
+		self.{{ prop.name }}_ = store.datetime_string(val)
 		{% elif prop.type == "string" %}
 		self.{{ prop.name }}_ = str(val)
 		{% elif prop.type == "int" %}
@@ -33,7 +33,7 @@ class _{{ data.name }}({{data.name}}):
 
 	def {{ prop.name }}(self):
 		{% if prop.type == "datetime" %}
-		return utils.datetime_parse(self.{{ prop.name }}_)
+		return store.datetime_parse(self.{{ prop.name }}_)
 		{% else %}
 		return self.{{ prop.name }}_
 		{% endif %}
