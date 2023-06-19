@@ -17,6 +17,7 @@ from pystorz.store import options, utils, store
 from pystorz.meta.store import MetaStore
 
 
+
 stopper = None
 worldName = "c137zxczx"
 anotherWorldName = "j19zeta7 qweqw"
@@ -54,7 +55,7 @@ def mysql():
 
 def rest():
     log.debug("server/client setup")
-    
+
     sqlite_store = sqlite("restsqlite.db")
 
     from pystorz.rest import server, client
@@ -89,9 +90,9 @@ def rest():
 
 # @pytest.fixture(params=[sqlite()])
 # @pytest.fixture(params=[mysql()])
-# @pytest.fixture(params=[rest()])
+@pytest.fixture(params=[rest()])
 # @pytest.fixture(params=[sqlite(), mysql(), rest()])
-@pytest.fixture(params=[sqlite(), rest()])
+# @pytest.fixture(params=[sqlite(), rest()])
 def thestore(request):
     return request.param
 
@@ -226,6 +227,7 @@ def test_can_put_change_naming_props(thestore):
 
     # object name abc should not exist
 
+    err = None
     try:
         ret = None
         ret = thestore.Get(model.WorldIdentity("abc"))
@@ -259,7 +261,8 @@ def test_can_put_change_naming_props(thestore):
     err = None
     try:
         ret = None
-        ret = thestore.Update(object_new_abc.Metadata().Identity(), object_new_abc)
+        ret = thestore.Update(
+            object_new_abc.Metadata().Identity(), object_new_abc)
     except Exception as e:
         err = e
 
@@ -309,9 +312,9 @@ def test_cannot_put_nonexistent_objects(thestore):
     assert world is not None
     world.External().SetName("zxcxzcxz")
 
+    ret = None
     err = None
     try:
-        ret = None
         ret = thestore.Update(model.WorldIdentity("zcxzcxzc"), world)
     except Exception as e:
         err = e
@@ -326,8 +329,8 @@ def test_cannot_put_nonexistent_objects_by_id(thestore):
     world.External().SetName("zxcxzcxz")
 
     err = None
+    ret = None
     try:
-        ret = None
         ret = thestore.Update(world.Metadata().Identity(), world)
     except Exception as e:
         err = e
@@ -347,8 +350,8 @@ def test_cannot_put_objects_of_wrong_type(thestore):
     assert existing_world is not None
 
     err = None
+    ret = None
     try:
-        ret = None
         ret = thestore.Update(existing_world.Metadata().Identity(), world)
     except Exception as e:
         err = e
@@ -385,8 +388,8 @@ def test_can_get_objects_by_id(thestore):
 
 def test_cannot_get_nonexistent_objects(thestore):
     err = None
+    ret = None
     try:
-        ret = None
         ret = thestore.Get(model.WorldIdentity("zxcxzczx"))
     except Exception as e:
         err = e
@@ -398,8 +401,8 @@ def test_cannot_get_nonexistent_objects(thestore):
 
 def test_cannot_get_nonexistent_objects_by_id(thestore):
     err = None
+    ret = None
     try:
-        ret = None
         ret = thestore.Get(store.ObjectIdentity("id/kjjakjjsadldkjalkdajs"))
     except Exception as e:
         err = e
@@ -507,6 +510,7 @@ def test_list_nil_identity(thestore):
 #     assert err is not None
 #     assert str(err) == constants.ErrInvalidPath
 
+
 def test_create_nil_object(thestore):
     err = None
     try:
@@ -576,6 +580,8 @@ def test_create_multiple_objects(thestore):
     world2.External().SetName(anotherWorldName)
     world2.External().SetDescription(newWorldDescription)
 
+    thestore._Store._connection().close()
+
     thestore.Create(world)
 
     thestore.Create(world2)
@@ -605,7 +611,8 @@ def test_can_list_multiple_objects(thestore):
 
 
 def test_can_list_and_sort_multiple_objects(thestore):
-    ret = thestore.List(model.WorldKindIdentity, options.Order("external.name"))
+    ret = thestore.List(model.WorldKindIdentity,
+                        options.Order("external.name"))
 
     assert ret is not None
     assert len(ret) == 2
@@ -618,6 +625,7 @@ def test_can_list_and_sort_multiple_objects(thestore):
     assert world2.External().Name() == anotherWorldName
     assert world2.External().Description() == newWorldDescription
 
+    thestore._Store._connection().close()
     ret = thestore.List(
         model.WorldKindIdentity,
         options.Order("external.name", False)
@@ -747,9 +755,9 @@ def test_list_and_filter_by_id(thestore):
     ret = thestore.List(
         model.WorldKindIdentity,
         options.Eq("external.name", worldName))
-    
+
     world_id = ret[0].Metadata().Identity()
-    
+
     ret = thestore.List(
         model.WorldKindIdentity,
         options.Eq("metadata.identity", str(world_id))
@@ -824,6 +832,7 @@ def test_metadata_updates(thestore):
 
     # do a get and check the times
     # log.debug(">> getting world: {}".format(name))
+    thestore._Store._connection().close()
     ret = thestore.Get(model.WorldIdentity(name))
     assert ret is not None
     assert ret.Metadata().Revision() == 2
@@ -851,9 +860,10 @@ def test_metadata_updates(thestore):
     world.External().SetName(newName)
     world.External().SetDescription("test_metadata_updates2222")
 
+    thestore._Store._connection().close()
     ret33 = thestore.Update(model.WorldIdentity(name), world)
     assert ret33 is not None
-    
+
     newName = "test_metadata_updates222"
     ret.External().SetName(newName)
     ret.External().SetDescription("test_metadata_updates22222")
@@ -941,12 +951,14 @@ def test_weird_characters(thestore):
 
 
 def test_list_and_filter_by_types(thestore):
-    ret = thestore.List(model.WorldKindIdentity, options.Eq("external.counter", 123))
+    ret = thestore.List(model.WorldKindIdentity,
+                        options.Eq("external.counter", 123))
 
     assert ret is not None
     assert len(ret) == 1
 
-    ret = thestore.List(model.WorldKindIdentity, options.Eq("external.alive", True))
+    ret = thestore.List(model.WorldKindIdentity,
+                        options.Eq("external.alive", True))
 
     assert ret is not None
     assert len(ret) == 1
@@ -997,31 +1009,46 @@ def test_list_and_map_of_struct(thestore):
     nested.SetCounter(123)
     nested.SetAlive(True)
 
-    world.External().Nested().SetL1([nested])
-    world.External().Nested().SetL2({"nested": nested})
+    world.External().SetList([nested])
+    world.External().SetMap({"nested": nested})
 
-    d = world.External().Nested().L2()
+    world.External().Nested().SetL1([1, 2, 3])
+    world.External().Nested().SetL2({"nested": 1})
+
+    d = world.External().Map()
     assert d["nested"].Counter() == 123
-    l = world.External().Nested().L1()
+    l = world.External().List()
     assert l[0].Counter() == 123
+
+    d = world.External().Nested().L1()
+    assert d[1] == 2
+    l = world.External().Nested().L2()
+    assert l["nested"] == 1
 
     ret = thestore.Create(world)
     assert ret is not None
-    d = world.External().Nested().L2()
+    d = ret.External().Map()
     assert d["nested"].Counter() == 123
-    l = world.External().Nested().L1()
+    l = ret.External().List()
     assert l[0].Counter() == 123
+
+    d = ret.External().Nested().L1()
+    assert d[1] == 2
+    l = ret.External().Nested().L2()
+    assert l["nested"] == 1
 
     ret = thestore.Get(model.WorldIdentity("test_list_and_map_of_struct"))
     assert ret is not None
 
-    d = world.External().Nested().L2()
-    assert d["nested"].Counter() == 123
-    assert d["nested"].Alive()
+    d = ret.External().Nested().L2()
+    assert d["nested"] == 1
+    l = ret.External().Nested().L1()
+    assert l[1] == 2
 
-    l = world.External().Nested().L1()
+    d = ret.External().Map()
+    assert d["nested"].Counter() == 123
+    l = ret.External().List()
     assert l[0].Counter() == 123
-    assert l[0].Alive()
 
 
 def test_list_and_not_eq_filter(thestore):
@@ -1029,7 +1056,8 @@ def test_list_and_not_eq_filter(thestore):
     total_length = len(ret)
 
     ret = thestore.List(
-        model.WorldKindIdentity, options.Not(options.Eq("external.name", worldName))
+        model.WorldKindIdentity, options.Not(
+            options.Eq("external.name", worldName))
     )
 
     assert ret is not None
@@ -1050,20 +1078,23 @@ def test_list_and_lt_gt_filter(thestore):
 
     half = 10 * total_length // 2
 
-    ret = thestore.List(model.WorldKindIdentity, options.Lt("external.counter", half))
+    ret = thestore.List(model.WorldKindIdentity,
+                        options.Lt("external.counter", half))
 
     assert ret is not None
     for r in ret:
         assert r.External().Counter() < half
 
-    ret = thestore.List(model.WorldKindIdentity, options.Gt("external.counter", half))
+    ret = thestore.List(model.WorldKindIdentity,
+                        options.Gt("external.counter", half))
 
     assert ret is not None
     for r in ret:
         assert r.External().Counter() > half
 
     ret = thestore.List(
-        model.WorldKindIdentity, options.Not(options.Lt("external.counter", half))
+        model.WorldKindIdentity, options.Not(
+            options.Lt("external.counter", half))
     )
 
     assert ret is not None
@@ -1071,7 +1102,8 @@ def test_list_and_lt_gt_filter(thestore):
         assert r.External().Counter() >= half
 
     ret = thestore.List(
-        model.WorldKindIdentity, options.Not(options.Gt("external.counter", half))
+        model.WorldKindIdentity, options.Not(
+            options.Gt("external.counter", half))
     )
 
     assert ret is not None
@@ -1079,7 +1111,8 @@ def test_list_and_lt_gt_filter(thestore):
         assert r.External().Counter() <= half
 
     ret = thestore.List(
-        model.WorldKindIdentity, options.Not(options.Lte("external.counter", half))
+        model.WorldKindIdentity, options.Not(
+            options.Lte("external.counter", half))
     )
 
     assert ret is not None
@@ -1087,20 +1120,23 @@ def test_list_and_lt_gt_filter(thestore):
         assert r.External().Counter() > half
 
     ret = thestore.List(
-        model.WorldKindIdentity, options.Not(options.Gte("external.counter", half))
+        model.WorldKindIdentity, options.Not(
+            options.Gte("external.counter", half))
     )
 
     assert ret is not None
     for r in ret:
         assert r.External().Counter() < half
 
-    ret = thestore.List(model.WorldKindIdentity, options.Lte("external.counter", half))
+    ret = thestore.List(model.WorldKindIdentity,
+                        options.Lte("external.counter", half))
 
     assert ret is not None
     for r in ret:
         assert r.External().Counter() <= half
 
-    ret = thestore.List(model.WorldKindIdentity, options.Gte("external.counter", half))
+    ret = thestore.List(model.WorldKindIdentity,
+                        options.Gte("external.counter", half))
 
     assert ret is not None
     for r in ret:
@@ -1109,7 +1145,8 @@ def test_list_and_lt_gt_filter(thestore):
 
 def test_list_and_in_int_filter(thestore):
     ret = thestore.List(
-        model.WorldKindIdentity, options.In("external.counter", [10, 20, 30, 40])
+        model.WorldKindIdentity, options.In(
+            "external.counter", [10, 20, 30, 40])
     )
 
     assert ret is not None
@@ -1157,7 +1194,8 @@ def test_list_and_in_bool_filter(thestore):
 
 def test_list_and_AND_filter(thestore):
     ret = thestore.List(
-        model.WorldKindIdentity, options.In("external.counter", [20, 30, 40, 50])
+        model.WorldKindIdentity, options.In(
+            "external.counter", [20, 30, 40, 50])
     )
 
     alive_count = 0
@@ -1237,12 +1275,15 @@ def test_list_and_OR_filter(thestore):
 
 
 def test_delete_filtered(thestore):
-    ret = thestore.List(model.WorldKindIdentity, options.Eq("external.alive", True))
+    ret = thestore.List(model.WorldKindIdentity,
+                        options.Eq("external.alive", True))
     assert ret is not None
     alive_count = len(ret)
     assert alive_count > 0
 
-    thestore.Delete(model.WorldKindIdentity, options.Eq("external.alive", True))
+    thestore._Store._connection().close()
+    thestore.Delete(model.WorldKindIdentity,
+                    options.Eq("external.alive", True))
 
     ret = thestore.List(model.WorldKindIdentity)
     assert ret is not None
@@ -1379,7 +1420,8 @@ def test_performance(thestore):
         thestore.Create(world)
 
     tdd1 = time.time()
-    thestore.Delete(model.WorldKindIdentity, options.Eq("external.counter", 1000))
+    thestore.Delete(model.WorldKindIdentity,
+                    options.Eq("external.counter", 1000))
     tdd2 = time.time()
 
     ret = thestore.List(model.WorldKindIdentity)

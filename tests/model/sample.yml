@@ -30,6 +30,10 @@ types:
         type: datetime
       - name: nested
         type: NestedWorld
+      - name: map
+        type: "map[string]NestedWorld"
+      - name: list
+        type: "[]NestedWorld"
   - kind: Struct
     name: WorldInternal
     properties:

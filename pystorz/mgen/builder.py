@@ -27,14 +27,17 @@ def Generate(*models) -> None:
 
     imports = [
         "import json",
+        "from pystorz.internal import constants",
         "from pystorz.store import utils",
         "from pystorz.store import store",
-        "from pystorz.store import meta",
+        "from datetime import datetime",
+        "from typing import Type",
     ]
 
     b = StringIO()
 
     b.write(render("mgen/templates/imports.py", {"imports": imports}))
+
     b.write(compileStructs(structs))
     b.write(compileResources(resources))
 
@@ -63,7 +66,7 @@ def compileResources(resources: list[Resource]) -> str:
                 "Meta",
                 "store.Meta",
                 "metadata",
-                f'meta.MetaFactory("{r.name}")')
+                f'store.MetaFactory("{r.name}")')
         ]
 
         if r.external:
@@ -80,7 +83,7 @@ def compileResources(resources: list[Resource]) -> str:
 
         s = Struct(
             r.name,
-            r.name,
+            "store.Object",
             props,
         )
 
@@ -95,10 +98,55 @@ def compileResources(resources: list[Resource]) -> str:
 def compileStructs(structs: list[Struct]) -> str:
     b = StringIO()
 
-    for s in structs:
-        b.write(compileStruct(s))
+    dep, nodep = checkDependencies(structs)
 
+    for s in nodep:
+        b.write(compileStruct(s))
+    
+    for s in dep:
+        b.write(compileStruct(s))
+    
     return b.getvalue()
+
+
+def checkDependencies(structs: list[Struct]) -> tuple[list[Struct], list[Struct]]:
+    dep = []
+    nodep = []
+
+    known_types = ["string", "int", "float", "bool", "datetime"]
+
+    for s in structs:
+        for p in s.properties:
+            if p.IsArray():
+                elem_type = p.SubType()
+                if elem_type not in known_types:
+                    dep.append(s)
+                    break
+                continue
+
+            if p.IsMap():
+                # map[int]string
+                elem_type = p.SubType()
+                key_type = p.type[4:].split("]")[0]
+                val_type = p.type[4:].split("]")[1]
+                if key_type not in known_types:
+                    dep.append(s)
+                    break
+
+                if val_type not in known_types:
+                    dep.append(s)
+                    break
+                continue
+
+            if p.type not in known_types:
+                dep.append(s)
+                break
+    
+    for s in structs:
+        if s not in dep:
+            nodep.append(s)
+
+    return (dep, nodep)
 
 
 def compileStruct(s: Struct) -> str:
@@ -109,16 +157,16 @@ def compileStruct(s: Struct) -> str:
 
     s.properties = addDefaultPropValues(s.properties)
 
-    parent = "" # s.implements
+    parent = s.implements
 
     for p in s.properties:
         if p.name != "Meta":
             # methods.append(f"{p.name}(self) -> {p.StrippedType()}")
-            methods.append(f"{p.name}(self)")
+            methods.append((f"{p.name}(self)", p.StrippedType()))
 
         if p.name != "Meta" and p.name != "External" and p.name != "Internal":
             # methods.append(f"Set{p.name}(self, val: {p.StrippedType()})")
-            methods.append(f"Set{p.name}(self, val)")
+            methods.append((f"Set{p.name}(self, val: {p.StrippedType()})", ""))
 
         if p.name == "External":
             parent = "store.ExternalHolder"
@@ -132,12 +180,14 @@ def compileStruct(s: Struct) -> str:
                 'implements': parent
             }))
 
-    for p in s.properties:
-        if p.name == "External":
-            b.write(render("mgen/templates/specinternal.py", None))
+    if parent in ["store.Object", "store.ExternalHolder"]:
+        b.write(render("mgen/templates/clone.py", s))
 
     b.write(render("mgen/templates/structure.py", s))
     b.write(render("mgen/templates/unmarshall.py", s))
+
+    if parent in ["store.Object", "store.ExternalHolder"]:
+        b.write(render("mgen/templates/cloneimp.py", s))
 
     return b.getvalue()
 

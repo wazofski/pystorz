@@ -1,51 +1,15 @@
 import uuid
 import json
 
-
-class Object:
-
-    def __init__(self):
-        raise Exception("Object is an interface")
-
-    def Metadata(self):
-        pass
-
-    def Clone(self):
-        pass
-
-    def ToJson(self) -> str:
-        pass
-
-    def FromJson(self, jstr):
-        pass
-
-    def FromDict(self, dict) -> Exception:
-        pass
-
-    def ToDict(self) -> dict:
-        pass
-
-    def PrimaryKey(self) -> str:
-        pass
-
-
-class ExternalHolder(Object):
-    def ExternalInternalSet(self, obj: object):
-        pass
-
-    def ExternalInternal(self) -> object:
-        pass
-
-
-class ObjectList(list[Object]):
-    pass
+from datetime import datetime
+from pystorz.store import utils
 
 
 class ObjectIdentity:
     def __init__(self, id: str):
         self.id_ = id
 
-    def FromString(self, str) -> Exception:
+    def FromString(self, str):
         self.id_ = str
 
     def __str__(self) -> str:
@@ -76,56 +40,188 @@ class ObjectIdentity:
             return self.id_ == other.id_
         elif isinstance(other, str):
             return self.id_ == other
-        
+
         return False
 
     def __hash__(self):
         return hash(self.id_)
-    
 
     def __len__(self):
         return len(self.id_)
 
 
+class Meta:
+    def Kind(self) -> str:
+        raise NotImplementedError()
+
+    def Identity(self) -> ObjectIdentity:
+        raise NotImplementedError()
+
+    def Created(self) -> datetime:
+        raise NotImplementedError()
+
+    def Updated(self) -> datetime:
+        raise NotImplementedError()
+
+    def Revision(self) -> int:
+        raise NotImplementedError()
+
+    def ToJson(self) -> str:
+        raise NotImplementedError()
+
+    def FromDict(self, d: dict):
+        raise NotImplementedError()
+
+    def ToDict(self) -> str:
+        raise NotImplementedError()
+
+
+class MetaSetter:
+    def SetKind(self, kind: str):
+        raise NotImplementedError()
+
+    def SetIdentity(self, identity: ObjectIdentity):
+        raise NotImplementedError()
+
+    def SetCreated(self, created: datetime):
+        raise NotImplementedError()
+
+    def SetUpdated(self, updated: datetime):
+        raise NotImplementedError()
+
+    def SetRevision(self, revision: int):
+        raise NotImplementedError()
+
+
+class _MetaWrapper(Meta, MetaSetter):
+    def __init__(self, kind):
+        self.revision_ = 0
+        self.kind_ = kind
+        self.identity_ = ObjectIdentityFactory()
+        self.created_ = ""
+        self.updated_ = ""
+
+    def Kind(self) -> str:
+        return self.kind_
+
+    def Created(self) -> datetime:
+        return utils.datetime_parse(self.created_)
+
+    def Updated(self) -> datetime:
+        return utils.datetime_parse(self.updated_)
+
+    def Identity(self) -> ObjectIdentity:
+        return self.identity_
+
+    def Revision(self) -> int:
+        return self.revision_
+
+    def SetKind(self, kind: str) -> None:
+        self.kind_ = kind
+
+    def SetIdentity(self, identity: ObjectIdentity) -> None:
+        self.identity_ = identity
+
+    def SetCreated(self, created: datetime) -> None:
+        self.created_ = utils.datetime_string(created)
+
+    def SetUpdated(self, updated: datetime) -> None:
+        self.updated_ = utils.datetime_string(updated)
+
+    def SetRevision(self, revision: int) -> None:
+        self.revision_ = revision
+
+    def ToJson(self) -> str:
+        return json.dumps(self.ToDict())
+
+    def ToDict(self) -> dict:
+        return {
+            "kind": self.Kind(),
+            "identity": str(self.Identity()),
+            "created": self.created_,
+            "updated": self.updated_,
+            "revision": self.revision_,
+        }
+
+    def FromDict(self, d: dict) -> None:
+        self.SetKind(d["kind"])
+        self.SetIdentity(ObjectIdentityFactory())
+        self.Identity().FromString(d["identity"])
+        self.created_ = d["created"]
+        self.updated_ = d["updated"]
+        self.revision_ = d["revision"]
+
+
+def MetaFactory(kind: str) -> Meta:
+    return _MetaWrapper(kind)
+
+
+class Object:
+
+    def __init__(self):
+        raise Exception("Object is an interface")
+
+    def Metadata(self) -> Meta:
+        raise Exception("Object is an interface")
+
+    def Clone(self):
+        raise Exception("Object is an interface")
+
+    def ToJson(self) -> str:
+        raise Exception("Object is an interface")
+
+    def FromJson(self, jstr):
+        raise Exception("Object is an interface")
+
+    def FromDict(self, dict) -> Exception:
+        raise Exception("Object is an interface")
+
+    def ToDict(self) -> dict:
+        raise Exception("Object is an interface")
+
+    def PrimaryKey(self) -> str:
+        raise Exception("Object is an interface")
+
+
+class ExternalHolder(Object):
+    def SetExternal(self, obj: object):
+        pass
+
+
+class ObjectList(list[Object]):
+    pass
+
+
 def ObjectIdentityFactory() -> ObjectIdentity:
     id = str(uuid.uuid1())
     id = id.replace("-", "")
-    
+
     return ObjectIdentity(id)
 
 
 class Store:
     def Get(self, identity: ObjectIdentity, *options) -> Object:
-        pass
+        raise Exception("Object is an interface")
 
     def List(self, identity: ObjectIdentity, *options) -> ObjectList:
-        pass
+        raise Exception("Object is an interface")
 
     def Create(self, obj: Object, *options) -> Object:
-        pass
+        raise Exception("Object is an interface")
 
     def Delete(self, identity: ObjectIdentity, *options) -> Exception:
-        pass
+        raise Exception("Object is an interface")
 
     def Update(self, identity: ObjectIdentity, obj: Object, *options) -> Object:
-        pass
+        raise Exception("Object is an interface")
 
 
 class SchemaHolder:
     def ObjectForKind(self, kind: str) -> Object:
-        pass
+        raise Exception("Object is an interface")
 
     def Types(self) -> list[str]:
-        pass
-
-
-class Factory:
-    def __call__(self, schema: SchemaHolder) -> Store:
-        pass
-
-
-def New(schema: SchemaHolder, factory: Factory) -> Store:
-    return factory(schema)
+        raise Exception("Object is an interface")
 
 
 class StoreJsonDecoder(json.JSONDecoder):

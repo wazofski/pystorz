@@ -41,6 +41,17 @@ class Prop:
 
         return self.type[:2] == "[]"
 
+    def SubType(self):
+        if self.IsMap() or self.IsArray():
+            return self.type.split("]")[1]
+
+        return self.type
+
+    def IsComplexType(self):
+        res = self.SubType() not in ["string", "int", "float", "bool", "datetime"]
+        log.debug("IsComplexType: {} {} -> {}".format(self.name, self.SubType(), res))
+        return res
+
     def StrippedType(self):
         if self.IsMap():
             return "dict"
@@ -93,7 +104,8 @@ def load_model(path: str):
                     raise Exception("duplicate struct: {}".format(m["name"]))
                 struct_cache.add(m["name"])
 
-                structs.append(Struct(m["name"], "", capitalize_props(m["properties"])))
+                structs.append(
+                    Struct(m["name"], "", capitalize_props(m["properties"])))
                 continue
             if m["kind"].lower() == "object":
                 if m["name"] in resource_cache:
@@ -142,7 +154,7 @@ def validate_model(structs, resources):
     for s in structs:
         for p in s.properties:
             if p.IsArray():
-                elem_type = p.type[2:]
+                elem_type = p.SubType()
                 if elem_type not in known_types:
                     errors.append(
                         "struct {} property {}: unknown type: {}".format(
@@ -153,6 +165,7 @@ def validate_model(structs, resources):
 
             if p.IsMap():
                 # map[int]string
+                elem_type = p.SubType()
                 key_type = p.type[4:].split("]")[0]
                 val_type = p.type[4:].split("]")[1]
                 if key_type not in known_types:
@@ -178,19 +191,22 @@ def validate_model(structs, resources):
 
     for r in resources:
         if r.external is None and r.internal is None:
-            errors.append("resource {} has no internal and external".format(r.name))
+            errors.append(
+                "resource {} has no internal and external".format(r.name))
             continue
 
         if r.external is not None:
             if r.external not in known_types:
                 errors.append(
-                    "resource {} external: unknown type: {}".format(r.name, r.external)
+                    "resource {} external: unknown type: {}".format(
+                        r.name, r.external)
                 )
 
         if r.internal is not None:
             if r.internal not in known_types:
                 errors.append(
-                    "resource {} internal: unknown type: {}".format(r.name, r.internal)
+                    "resource {} internal: unknown type: {}".format(
+                        r.name, r.internal)
                 )
 
     return errors
@@ -250,8 +266,6 @@ def typeDefault(tp: str) -> str:
 
 
 def complexTypeValueDefault(tp: str) -> str:
-    log.debug(f"typeValueDefault: {tp}")
-
     if tp.startswith("[]"):
         return typeDefault(tp[2:])
 
@@ -260,6 +274,6 @@ def complexTypeValueDefault(tp: str) -> str:
         if closing_bracket_index == -1:
             raise Exception("invalid map type: {}".format(tp))
 
-        return typeDefault(tp[closing_bracket_index + 1 :])
+        return typeDefault(tp[closing_bracket_index + 1:])
 
     raise Exception("unknown type: {}".format(tp))

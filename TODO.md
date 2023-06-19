@@ -30,6 +30,18 @@
 - fix mysql list and get autocommit issue @done
 - mysql auto-reconnect @done
 
+- the factory must return the interface type @done
+- generated model flake compatibility @done
+- make the intellisence work @done
+
+- router store (high) @done
+
+- add retrun and arguments types to all stores
+    - interface
+    - implementations
+
+- add common test for complex datetime filtering (high)
+
 - github
     - project (high)
     - documentation (high)
@@ -38,11 +50,9 @@
         - https://pypi.org/project/pystorz/
         - https://github.com/wazofski/pystorz
 
-- router store (high)
 - behavior store (high)
 
 - add enums ?
-- test and add common casees for complex filters on datetime types (high)
 - store migration tool
 - object browser
 

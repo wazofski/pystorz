@@ -5,11 +5,30 @@ import logging
 log = logging.getLogger(__name__)
 
 from pystorz.store import utils
+from typing import Callable
+
+
+class CommonOptionHolder:
+    def __init__(self):
+        self.filter = None
+        self.order_by = None
+        self.order_incremental = None
+        self.page_size = None
+        self.page_offset = None
+
+    def common_options(self):
+        return self
 
 
 class Option:
-    def ApplyFunction(self):
-        pass
+    def ApplyFunction(self) -> Callable[[CommonOptionHolder], None]:
+        raise NotImplementedError
+    
+    def ToJson(self) -> str:
+        raise NotImplementedError
+
+    def ToDict(self) -> dict:
+        raise NotImplementedError
 
 
 class CreateOption(Option):
@@ -67,15 +86,17 @@ class ListDeleteOption(ListOption, DeleteOption):
         else:
             raise ValueError("Unknown type: {}".format(data["type"]))
 
-    def ToJson(self):
+    def ToJson(self) -> str:
         return json.dumps(self.ToDict())
 
-    def ToDict(self):
+    def ToDict(self) -> dict:
         copt = CommonOptionHolderFactory()
         self.ApplyFunction()(copt)
-        return copt.filter.ToDict()
+        if isinstance(copt.filter, Option):
+            return copt.filter.ToDict()
+        return {}
 
-    def __str__(self):
+    def __str__(self) -> str:
         copt = CommonOptionHolderFactory()
         self.ApplyFunction()(copt)
         return str(copt.filter)
@@ -147,7 +168,7 @@ class GteOption(ListDeleteOption):
 
 
 class AndOption(ListDeleteOption):
-    def __init__(self, *filters: list[ListDeleteOption]):
+    def __init__(self, *filters: ListDeleteOption):
         self.filters = filters
 
     def ToDict(self):
@@ -159,7 +180,7 @@ class AndOption(ListDeleteOption):
 
 
 class OrOption(ListDeleteOption):
-    def __init__(self, *filters: list[ListDeleteOption]):
+    def __init__(self, *filters: ListDeleteOption):
         self.filters = filters
 
     def ToDict(self):
@@ -194,18 +215,6 @@ class InOption(ListDeleteOption):
             self.key, ", ".join([str(v) for v in self.values]))
 
 
-class CommonOptionHolder:
-    def __init__(self):
-        self.filter = None
-        self.order_by = None
-        self.order_incremental = None
-        self.page_size = None
-        self.page_offset = None
-
-    def common_options(self):
-        return self
-
-
 def CommonOptionHolderFactory() -> CommonOptionHolder:
     return CommonOptionHolder()
 
@@ -224,7 +233,7 @@ class _ListDeleteOption(ListDeleteOption):
         return self.function
 
 
-def And(*filters: list[ListDeleteOption]) -> ListDeleteOption:
+def And(*filters: ListDeleteOption) -> ListDeleteOption:
     def option_function(options: OptionHolder):
         common_options = options.common_options()
         if common_options.filter is not None:
@@ -235,7 +244,7 @@ def And(*filters: list[ListDeleteOption]) -> ListDeleteOption:
     return _ListDeleteOption(option_function)
 
 
-def Or(*filters: list[ListDeleteOption]) -> ListDeleteOption:
+def Or(*filters: ListDeleteOption) -> ListDeleteOption:
     def option_function(options: OptionHolder):
         common_options = options.common_options()
         if common_options.filter is not None:

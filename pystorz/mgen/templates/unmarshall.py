@@ -14,27 +14,31 @@
 		{% if prop.IsArray() %}
 		rawList = []
 		for v in self.{{prop.name}}_:
-			if hasattr(v, "ToDict"):
-				rawList.append(v.ToDict())
-			else:
-				rawList.append(v)
+			{% if prop.IsComplexType() %}
+			rawList.append(v.ToDict())
+			{% else %}
+			rawList.append(v)
+			{% endif %}
 
 		data["{{prop.json}}"] = rawList
 		{% elif prop.IsMap() %}
 		rawSubmap = {}
 		for k, v in self.{{prop.name}}_.items():
-			if hasattr(v, "ToDict"):
-				rawSubmap[k] = v.ToDict()
-			else:
-				rawSubmap[k] = v
+			{% if prop.IsComplexType() %}
+			rawSubmap[k] = v.ToDict()
+			{% else %}
+			rawSubmap[k] = v
+			{% endif %}
 
 		data["{{prop.json}}"] = rawSubmap
 		{% else %}
-	
-		if self.{{prop.name}}_ is not None and hasattr(self.{{prop.name}}_, "ToDict"):
-			data["{{prop.json}}"] = self.{{prop.name}}_.ToDict()
-		else:
-			data["{{prop.json}}"] = self.{{prop.name}}_
+		
+		{% if prop.IsComplexType() %}
+		# if self.{{prop.name}}_ is not None:
+		data["{{prop.json}}"] = self.{{prop.name}}_.ToDict()
+		{% else %}
+		data["{{prop.json}}"] = self.{{prop.name}}_
+		{% endif %}
 	
 		{% endif %}
 		{% endfor %}
@@ -53,10 +57,11 @@
 
 				for rw in rawValue:
 					ud = {{ prop.ComplexTypeValueDefault() }}
-					if hasattr(ud, "FromDict"):
-						ud.FromDict(rw)
-					else:
-						ud = rw
+					{% if prop.IsComplexType() %}
+					ud.FromDict(rw)
+					{% else %}
+					ud = rw
+					{% endif %}
 					res.append(ud)
 
 				self.{{prop.name}}_ = res
@@ -65,18 +70,20 @@
 				
 				for rk, rw in rawValue.items():
 					ud = {{prop.ComplexTypeValueDefault()}}
-					if hasattr(ud, "FromDict"):
-						ud.FromDict(rw)
-					else:
-						ud = rw
+					{% if prop.IsComplexType() %}
+					ud.FromDict(rw)
+					{% else %}
+					ud = rw
+					{% endif %}
 					res[rk] = ud
 
 				self.{{prop.name}}_ = res
 				{% else %}
-				if hasattr(self.{{prop.name}}_, "FromDict"):
-					self.{{prop.name}}_.FromDict(rawValue)
-				else:
-					self.{{prop.name}}_ = rawValue
+				{% if prop.IsComplexType() %}
+				self.{{prop.name}}_.FromDict(rawValue)
+				{% else %}
+				self.{{prop.name}}_ = rawValue
+				{% endif %}
 				
 				{% endif %}
 			{% endfor %}

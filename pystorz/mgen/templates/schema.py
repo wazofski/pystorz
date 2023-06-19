@@ -1,10 +1,10 @@
  
 
-class _Schema:
+class _Schema(store.SchemaHolder):
 	def __init__(self, objects):
 		self.objects = objects
 	
-	def ObjectForKind(self, kind):
+	def ObjectForKind(self, kind) -> store.Object:
 		{% for r in data["resources"] %}
 		
 		if kind == "{{r.name}}":
@@ -14,7 +14,7 @@ class _Schema:
 
 		{% endfor %}
 		
-		return None
+		raise Exception(constants.ErrNoSuchObject)
 	
 	def types(self):
 		return self.objects

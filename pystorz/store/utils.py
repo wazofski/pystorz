@@ -25,13 +25,6 @@ from pystorz.store import store
 #         self.Internal = None
 
 
-def clone_object(obj: store.Object, schema: store.SchemaHolder) -> store.Object:
-    ret = schema.ObjectForKind(obj.Metadata().Kind())
-    jsn = obj.ToJson()
-    ret.FromJson(jsn)
-    return ret
-
-
 def unmarshal_object(
     body: str, schema: store.SchemaHolder, kind: str
 ) -> store.Object:
@@ -42,10 +35,10 @@ def unmarshal_object(
 
 def object_kind(data) -> str:
     if "metadata" not in data:
-        return None
+        return ""
     
     if "kind" not in data["metadata"]:
-        return None
+        return ""
     
     return data["metadata"]["kind"]
 
@@ -64,11 +57,11 @@ def timestamp() -> str:
 
 def serialize(mo: store.Object) -> str:
     if mo is None:
-        raise constants.ErrObjectNil
+        raise Exception(constants.ErrObjectNil)
     return json.dumps(mo, default=lambda x: x.to_dict())
 
 
-def object_path(obj: store.Object, path: str) -> str:
+def object_path(obj: store.Object, path: str) -> object:
     # print("object_path: {} {}".format(obj, path))
     data = obj.ToDict()
     # print(pp(data))
@@ -87,15 +80,14 @@ def export_file(target_dir: str, name: str, content: str) -> None:
 
 
 def runtime_dir() -> str:
-    rd = pathlib.Path(__file__).parent.parent.absolute()
-    return rd
+    return str(pathlib.Path(__file__).parent.parent.absolute())
 
 
 def datetime_current() -> str:
     return datetime_string(datetime.now())
 
 
-def datetime_parse(dtstr) -> str:
+def datetime_parse(dtstr) -> datetime:
     return datetime.strptime(dtstr, constants.DATETIME_FORMAT)
 
 

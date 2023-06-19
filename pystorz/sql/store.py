@@ -97,7 +97,8 @@ class SqlStore(store.Store):
 
             # see if there is an object with the new primary key value
             target_identity = store.ObjectIdentity(
-                "{}/{}".format(existing.Metadata().Kind().lower(), obj.PrimaryKey())
+                "{}/{}".format(existing.Metadata().Kind().lower(),
+                               obj.PrimaryKey())
             )
 
             target = None
@@ -114,7 +115,7 @@ class SqlStore(store.Store):
         try:
             # Start a transaction
             db.execute("BEGIN")
-            
+
             self._removeIdentity(db, existing.Metadata().Identity().Path())
 
             obj.Metadata().SetIdentity(existing.Metadata().Identity())
@@ -147,32 +148,30 @@ class SqlStore(store.Store):
         for o in opt:
             o.ApplyFunction()(copt)
 
-        existing = None
-        if copt.filter is None:
-            existing = self.Get(identity)
-
         db = self._connection()
 
-        # try:
-        # Start a transaction
-        db.execute("BEGIN")
-        
-        if copt.filter is None:
-            self._removeIdentity(db, existing.Metadata().Identity().Path())
-            self._removeObject(
-                db, existing.PrimaryKey(), existing.Metadata().Kind()
-            )
-        else:
-            clause = self._buildFilterClause(copt, identity)
-            keys = self._getObjectKeys(db, identity.Type(), clause)
+        try:
+            # Start a transaction
+            db.execute("BEGIN")
 
-            self._removeObjects(db, identity.Type(), clause)
-            self._removeIdentities(db, identity.Type(), keys)
+            if copt.filter is None:
+                existing = self.Get(identity)
 
-        db.commit()
-        # except Exception as e:
-        #     db.rollback()
-        #     raise e
+                self._removeIdentity(db, existing.Metadata().Identity().Path())
+                self._removeObject(
+                    db, existing.PrimaryKey(), existing.Metadata().Kind()
+                )
+            else:
+                clause = self._buildFilterClause(copt, identity)
+                keys = self._getObjectKeys(db, identity.Type(), clause)
+
+                self._removeObjects(db, identity.Type(), clause)
+                self._removeIdentities(db, identity.Type(), keys)
+
+            db.commit()
+        except Exception as e:
+            db.rollback()
+            raise e
 
     def Get(self, identity, *opt):
         if identity is None:
@@ -192,11 +191,11 @@ class SqlStore(store.Store):
             res = self._getObject(db, pkey, typ)
         else:
             res = self._getObject(db, identity.Key(), identity.Type())
-        
+
         db.commit()
         return res
 
-    def List(self, identity, *opt: list[options.ListOption]):
+    def List(self, identity, *opt: options.ListOption):
         if identity is None:
             raise Exception(constants.ErrInvalidPath)
 
@@ -206,12 +205,11 @@ class SqlStore(store.Store):
             raise Exception(constants.ErrInvalidPath)
 
         copt = options.CommonOptionHolderFactory()
-
         for o in opt:
             o.ApplyFunction()(copt)
 
         db = self._connection()
-        
+
         query = """SELECT Object FROM Objects 
         WHERE Type = '{}'""".format(
             identity.Type()
@@ -261,7 +259,6 @@ class SqlStore(store.Store):
         """
 
         db.execute(create)
-        
         db.commit()
 
     def _getIdentity(self, db, path):
@@ -376,8 +373,9 @@ class SqlStore(store.Store):
     def _removeIdentities(self, db, typ, keys):
         batch_size = 100
         for i in range(0, len(keys), batch_size):
-            batch = keys[i : i + batch_size]
-            clause = "Pkey IN ({})".format(",".join(["'{}'".format(k) for k in batch]))
+            batch = keys[i: i + batch_size]
+            clause = "Pkey IN ({})".format(
+                ",".join(["'{}'".format(k) for k in batch]))
 
             query = """DELETE FROM IdIndex
                 WHERE Type = '{}' AND {}""".format(
@@ -438,14 +436,16 @@ class SqlStore(store.Store):
         if isinstance(filterOption, options.AndOption):
             return "( {} )".format(
                 " AND ".join(
-                    [self._convertFilter(f, sample) for f in filterOption.filters]
+                    [self._convertFilter(f, sample)
+                     for f in filterOption.filters]
                 )
             )
 
         if isinstance(filterOption, options.OrOption):
             return "( {} )".format(
                 " OR ".join(
-                    [self._convertFilter(f, sample) for f in filterOption.filters]
+                    [self._convertFilter(f, sample)
+                     for f in filterOption.filters]
                 )
             )
 
@@ -465,7 +465,7 @@ class SqlStore(store.Store):
                 return str(v).lower()
             else:
                 return str(v)
-        
+
         if isinstance(filterOption, options.InOption):
             values = ", ".join([convert_value(v) for v in filterOption.values])
 

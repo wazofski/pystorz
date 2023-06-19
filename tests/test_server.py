@@ -9,7 +9,7 @@ globals.logger_config()
 log = logging.getLogger(__name__)
 
 from pystorz.store import store
-from pystorz.rest import server
+from pystorz.rest import server, client
 from generated import model
 
 def test_server_can_start():
@@ -28,10 +28,12 @@ def test_server_can_start():
     port = 8080
     url = f"{host}:{port}"
 
-    client = client.Client(url, model.Schema())
-    srv.serve(host, port)
+    srv.Serve(host, port)
     time.sleep(3)
 
+    cli = client.Client(url, model.Schema())
+    assert len(cli.List(model.WorldKindIdentity)) == 0
+    
 
 def test_sample_request():
     # make an http request to localhost:8080

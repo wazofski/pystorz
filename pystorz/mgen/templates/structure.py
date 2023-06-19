@@ -1,6 +1,6 @@
  
 
-def {{ data.name }}Factory():
+def {{ data.name }}Factory() -> {{ data.name }}:
 	ret = _{{ data.name }}()
 	{% for prop in data.properties %}
 	ret.{{ prop.name }}_ = {{ prop.default }}{% endfor %}
@@ -8,14 +8,13 @@ def {{ data.name }}Factory():
 	return ret
 
 
-class _{{ data.name }}({{data.implements}}):
+class _{{ data.name }}({{data.name}}):
 
 	def __init__(self):
 		{% for prop in data.properties %}
 		self.{{ prop.name }}_ = {{prop.default}}{% endfor %}
 
 	{% for prop in data.properties %}
-	{% if prop.name != "External" %}
 
 	def Set{{ prop.name }}(self, val):
 		{% if prop.type == "datetime" %}
@@ -39,9 +38,5 @@ class _{{ data.name }}({{data.implements}}):
 		return self.{{ prop.name }}_
 		{% endif %}
 
-	{% endif %}
 	{% endfor %}
-
-	def Clone(entity):
-		return utils.clone_object(entity, Schema())
 
