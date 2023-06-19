@@ -42,6 +42,7 @@
 - fix mgen dependency issues @done
 
 - add common test for complex datetime filtering (high)
+- intellisense - full return and argument types for lists and maps
 
 - github
     - project (high)
