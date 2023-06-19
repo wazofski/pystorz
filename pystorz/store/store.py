@@ -186,6 +186,9 @@ class Object:
 class ExternalHolder(Object):
     def SetExternal(self, obj: object):
         pass
+    
+    def External(self) -> object:
+        pass
 
 
 class ObjectList(list[Object]):

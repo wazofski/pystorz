@@ -25,8 +25,8 @@ class InternalStore(store.Store):
         if original is None:
             raise Exception(constants.ErrInvalidPath)
 
-        if isinstance(obj, store.ExternalHolder):
-            original.ExternalInternalSet(obj.External())
+        if isinstance(original, store.ExternalHolder):
+            original.SetExternal(obj.External())
 
         return self.Store.Create(original, *opt)
 
@@ -45,7 +45,7 @@ class InternalStore(store.Store):
 
         original = self.Store.Get(identity)
         if isinstance(obj, store.ExternalHolder):
-            original.ExternalInternalSet(obj.External())
+            original.SetExternal(obj.External())
 
         if original.Metadata().Kind() != obj.Metadata().Kind():
             raise Exception(constants.ErrObjectIdentityMismatch)

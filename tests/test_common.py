@@ -90,8 +90,8 @@ def rest():
 
 # @pytest.fixture(params=[sqlite()])
 # @pytest.fixture(params=[mysql()])
-@pytest.fixture(params=[rest()])
-# @pytest.fixture(params=[sqlite(), mysql(), rest()])
+# @pytest.fixture(params=[rest()])
+@pytest.fixture(params=[sqlite(), mysql(), rest()])
 # @pytest.fixture(params=[sqlite(), rest()])
 def thestore(request):
     return request.param
@@ -580,7 +580,7 @@ def test_create_multiple_objects(thestore):
     world2.External().SetName(anotherWorldName)
     world2.External().SetDescription(newWorldDescription)
 
-    thestore._Store._connection().close()
+    # thestore._Store._connection().close()
 
     thestore.Create(world)
 
@@ -625,7 +625,7 @@ def test_can_list_and_sort_multiple_objects(thestore):
     assert world2.External().Name() == anotherWorldName
     assert world2.External().Description() == newWorldDescription
 
-    thestore._Store._connection().close()
+    # thestore._Store._connection().close()
     ret = thestore.List(
         model.WorldKindIdentity,
         options.Order("external.name", False)
@@ -832,7 +832,7 @@ def test_metadata_updates(thestore):
 
     # do a get and check the times
     # log.debug(">> getting world: {}".format(name))
-    thestore._Store._connection().close()
+    # thestore._Store._connection().close()
     ret = thestore.Get(model.WorldIdentity(name))
     assert ret is not None
     assert ret.Metadata().Revision() == 2
@@ -860,7 +860,7 @@ def test_metadata_updates(thestore):
     world.External().SetName(newName)
     world.External().SetDescription("test_metadata_updates2222")
 
-    thestore._Store._connection().close()
+    # thestore._Store._connection().close()
     ret33 = thestore.Update(model.WorldIdentity(name), world)
     assert ret33 is not None
 
@@ -1281,7 +1281,7 @@ def test_delete_filtered(thestore):
     alive_count = len(ret)
     assert alive_count > 0
 
-    thestore._Store._connection().close()
+    # thestore._Store._connection().close()
     thestore.Delete(model.WorldKindIdentity,
                     options.Eq("external.alive", True))
 

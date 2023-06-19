@@ -15,13 +15,13 @@ from urllib.parse import quote, urlparse
 log = logging.getLogger(__name__)
 
 
-class RestOptions:
+class RestOptions(options.CommonOptionHolder):
     def __init__(self):
-        self.common_option_holder = options.CommonOptionHolderFactory()
+        super().__init__()
         self.headers = {}
 
-    def common_options(self):
-        return self.common_option_holder
+    def common_options(self) -> options.CommonOptionHolder:
+        return self
 
 
 def new_rest_options(d):
@@ -254,7 +254,8 @@ class Client(store.Store):
         if len(parsed) == 0:
             return marshalledResult
 
-        resource = self.schema.ObjectForKind(utils.object_kind(parsed[0]))
+        resource = self.schema.ObjectForKind(
+            utils.object_kind(parsed[0]))
 
         for r in parsed:
             clone = resource.Clone()
@@ -275,6 +276,7 @@ class Client(store.Store):
         # response.raise_for_status()
 
         return response.content
+        # return str(response.content)
 
     def _process_request(self, request_url, content, method, headers):
         req_id = str(uuid.uuid4())

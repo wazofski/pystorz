@@ -26,7 +26,7 @@ from pystorz.store import store
 
 
 def unmarshal_object(
-    body: str, schema: store.SchemaHolder, kind: str
+    body, schema: store.SchemaHolder, kind: str
 ) -> store.Object:
     resource = schema.ObjectForKind(kind)
     resource.FromJson(body)

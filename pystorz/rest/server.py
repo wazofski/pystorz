@@ -49,9 +49,7 @@ def _handle_exceptions(e):
     return _error_response(error_code, msg)
 
 
-def _json_response(code: int, data: dict):
-    log.debug(data)
-
+def _json_response(code: int, data):
     try:
         ret = json.dumps(data)
         log.debug("""json response: 
@@ -90,8 +88,7 @@ def _make_id_handler(stor, schema, exposed):
 
 
 def _handle_path(
-    stor: store.Store, identity: store.ObjectIdentity, object: store.Object
-):
+    stor: store.Store, identity: store.ObjectIdentity, object):
     log.info("handle path {}".format(identity.Path()))
     log.info("method {}".format(request.method))
 
@@ -217,13 +214,13 @@ def _make_type_handler(
 
 
 class Expose:
-    def __init__(self, kind: str, *actions: list):
+    def __init__(self, kind: str, *actions: str):
         self.Kind = kind
         self.Actions = actions
 
 
 class Server:
-    def __init__(self, schema, thestore, *to_expose: list[Expose]):
+    def __init__(self, schema, thestore, *to_expose: Expose):
         self.Schema = schema
         self.Store = InternalStore(schema, thestore)
 
