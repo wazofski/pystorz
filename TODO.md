@@ -40,6 +40,7 @@
     - interface adn implementations @done
 
 - fix mgen dependency issues @done
+- object browser @done
 
 - add common test for complex datetime filtering (high)
 - intellisense - full return and argument types for lists and maps
@@ -56,7 +57,6 @@
 
 - add enums ?
 - store migration tool
-- object browser
 
 - autoconfig
     - DB init

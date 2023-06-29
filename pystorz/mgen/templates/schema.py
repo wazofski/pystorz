@@ -16,7 +16,7 @@ class _Schema(store.SchemaHolder):
 		
 		raise Exception(constants.ErrNoSuchObject)
 	
-	def types(self):
+	def Types(self):
 		return self.objects
 
 def Schema():

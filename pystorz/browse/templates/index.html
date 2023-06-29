@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+
+{% block title %} Types {% endblock %}
+
+{% block head %}
+
+{% endblock %}
+
+{% block content %}
+
+<div class="container m-0 p-0 mb-3">
+    <h1>Schema types</h1>
+    <div class="container" style="overflow: auto;" >
+        <ul class="list">
+        {% for t in types %}
+            <li><a href="{{ t.lower() }}">{{ t }}</a></li>
+        {% endfor %}
+        </ul>
+    </div>
+</div>
+
+{% endblock %}
+
+
+{% block scripts %}
+
+{% endblock %}
