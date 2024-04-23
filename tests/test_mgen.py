@@ -1,7 +1,7 @@
 from config import globals
 
 from datetime import datetime
-from pystorz.mgen.builder import Generate
+from pystorz.mgen.generator import Generate
 
 import logging
 

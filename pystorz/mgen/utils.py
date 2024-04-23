@@ -1,5 +1,6 @@
 import os
 import re
+import json
 import logging
 
 log = logging.getLogger(__name__)
@@ -28,3 +29,11 @@ def decapitalize(s):
 def read_file(path):
     with open(path, "rb") as f:
         return f.read()
+
+def jopp(obj):
+    # json pretty print
+    jstring = """JSON pretty print
+""" + json.dumps(
+        obj, indent=4, sort_keys=True
+    )
+    return jstring

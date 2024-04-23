@@ -42,6 +42,10 @@
 - fix mgen dependency issues @done
 - object browser @done
 
+- refactor python templates into single file @done
+- javascript metadata gen
+- javascript client store
+
 - add common test for complex datetime filtering (high)
 - intellisense - full return and argument types for lists and maps
 
@@ -55,8 +59,14 @@
 
 - behavior store (high)
 
+- add type meta
+
 - add enums ?
-- store migration tool
+- store tools
+    - replicator
+    - merger
+    - exporter
+    - importer
 
 - autoconfig
     - DB init
@@ -65,3 +75,6 @@
 - in memory store
 - cache store
 - mongo store
+- redis store
+
+- sharded store
