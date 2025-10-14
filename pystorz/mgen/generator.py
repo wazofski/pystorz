@@ -45,6 +45,18 @@ def Generate(*models) -> None:
     utils.export_file(targetDir, "model.py", res)
 
 
+    res = _render(
+            "mgen/templates/javascript.js",
+            resources,
+            _dependency_order(structs))
+
+    # refactor and format javascript code
+    targetDir = "generated"
+
+    utils.export_file(targetDir, "model.js", res)
+
+    
+
 def _load_model(path: str):
     yamls = yaml_files(path)
     structs = dict()
