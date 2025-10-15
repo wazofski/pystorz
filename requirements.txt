@@ -6,3 +6,8 @@ cherrypy
 requests
 mysql-connector-python
 sqlparse
+flask
+pytest
+# matplotlib
+# pytest-cov
+
