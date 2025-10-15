@@ -57,7 +57,7 @@ def mongo():
     from pystorz.mongo.mongo import MongoStore
     from generated.model import Schema
 
-    MONGODB_URI="mongodb+srv://Vercel-Admin-atlas-gray-village:KAmtNvR3pOwiJQnC@atlas-gray-village.fio3wzy.mongodb.net/?retryWrites=true&w=majority"
+    MONGODB_URI=""
 
     return MetaStore(
         MongoStore(
