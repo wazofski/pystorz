@@ -4,8 +4,6 @@ from pymongo import MongoClient, ASCENDING, DESCENDING
 from pystorz.internal import constants
 from pystorz.store import store, options, utils
 
-from bson import json_util
-
 
 log = logging.getLogger(__name__)
 
@@ -14,20 +12,20 @@ DATABASE_NAME = "pystorz"
 TIMEOUT = 10  # seconds
 
 
-def __convertFilter(filterOption, sample):
+def _convert_filter(filterOption, sample):
     if isinstance(filterOption, options._ListDeleteOption):
         copt = options.CommonOptionHolderFactory()
         filterOption.ApplyFunction()(copt)
         filterOption = copt.filter
 
     if isinstance(filterOption, options.AndOption):
-        return {"$and": [__convertFilter(f, sample) for f in filterOption.filters]}
+        return {"$and": [_convert_filter(f, sample) for f in filterOption.filters]}
 
     if isinstance(filterOption, options.OrOption):
-        return {"$or": [__convertFilter(f, sample) for f in filterOption.filters]}
+        return {"$or": [_convert_filter(f, sample) for f in filterOption.filters]}
 
     if isinstance(filterOption, options.NotOption):
-        return {"$nor": [__convertFilter(filterOption.filter, sample)]}
+        return {"$nor": [_convert_filter(filterOption.filter, sample)]}
 
     if utils.object_path(sample, filterOption.key) is None:
         raise Exception(constants.ErrInvalidFilter)
@@ -35,16 +33,15 @@ def __convertFilter(filterOption, sample):
     def convert_value(v):
         # return "'{}'".format(v)
         if isinstance(v, str):
-            return "'{}'".format(utils.encode_string(v))
-        elif isinstance(v, bool):
-            return str(v).lower()
-        else:
-            return str(v)
+            return utils.encode_string(v)
+        return v
 
     if isinstance(filterOption, options.InOption):
-        values = ", ".join([convert_value(v) for v in filterOption.values])
-
-        return {f"object.{filterOption.key}": {"$in": values}}
+        return {
+            f"object.{filterOption.key}": {
+                "$in": [convert_value(v) for v in filterOption.values]
+            }
+        }
 
     if isinstance(filterOption, options.EqOption):
         return {f"object.{filterOption.key}": filterOption.value}
@@ -110,7 +107,7 @@ class MongoStore(store.Store):
             "pkpath": f"{typ}/{obj.PrimaryKey()}",
             "pkey": obj.PrimaryKey(),
             "type": typ,
-            "object": json_util.dumps(obj.ToDict()),
+            "object": obj.ToDict(),
         }
         collection.insert_one(record)
         return obj.Clone()
@@ -166,10 +163,17 @@ class MongoStore(store.Store):
             else:
                 collection.delete_many({"pkpath": identity.Path()})
         else:
-            # TODO: implement filter-based delete for Mongo
-            raise NotImplementedError(
-                "Filter-based delete not implemented for MongoStore"
-            )
+            obj = self._schema.ObjectForKind(identity.Type())
+            if obj is None:
+                raise Exception(constants.ErrNoSuchObject)
+
+            filter_ = {
+                "$and": [{"type": identity.Type()},
+                         _convert_filter(copt.filter, obj)]
+            }
+            
+            log.info(f"filter: {filter_}")
+            collection.delete_many(filter_)
 
     def Get(
         self, identity: store.ObjectIdentity, *opt: options.GetOption
@@ -190,7 +194,7 @@ class MongoStore(store.Store):
             raise Exception(constants.ErrNoSuchObject)
 
         resource = self._schema.ObjectForKind(res["type"])
-        resource.FromJson(res["object"])
+        resource.FromDict(res["object"])
         return resource
 
     def List(
@@ -204,36 +208,38 @@ class MongoStore(store.Store):
         copt = options.CommonOptionHolderFactory()
         for o in opt:
             o.ApplyFunction()(copt)
+
         self._test_connection()
         collection = self._client[self._db][COLLECTION_NAME]
         filter_ = {"type": identity.Type()}
-        if copt.filter is not None:
-            filter_ = {**filter_, **copt.filter.ToMongo()}
-        find_opts = {}
-        if copt.order_by:
-            order = ASCENDING if copt.order_incremental else DESCENDING
-            find_opts["sort"] = [(f"object.{copt.order_by}", order)]
+
         if copt.filter:
             obj = self._schema.ObjectForKind(identity.Type())
             if obj is None:
                 raise Exception(constants.ErrNoSuchObject)
-            if utils.object_path(obj, copt.filter.key) is None:
-                raise Exception(constants.ErrInvalidFilter)
 
-            filter_ = __convertFilter(copt.filter, obj)
+            filter_ = {"$and": [filter_, _convert_filter(copt.filter, obj)]}
             log.info(f"filter: {filter_}")
 
+        cur = collection.find(filter_)
+
+        if copt.order_by:
+            cur = cur.sort(
+                f"object.{copt.order_by}",
+                ASCENDING if copt.order_incremental else DESCENDING,
+            )
+
         if copt.page_size is not None and copt.page_size > 0:
-            find_opts["limit"] = int(copt.page_size)
+            cur = cur.limit(int(copt.page_size))
         if copt.page_offset is not None and copt.page_offset > 0:
-            find_opts["skip"] = int(copt.page_offset)
-        cur = collection.find(filter_, **find_opts)
+            cur = cur.skip(int(copt.page_offset))
+
         rows = list(cur)
         res = store.ObjectList()
         for r in rows:
             try:
                 resource = self._schema.ObjectForKind(identity.Type())
-                resource.FromJson(r["object"])
+                resource.FromDict(r["object"])
 
                 res.append(resource)
             except Exception as e:
