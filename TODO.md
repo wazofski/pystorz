@@ -43,7 +43,8 @@
 - object browser @done
 
 - refactor python templates into single file @done
-- javascript metadata gen
+- javascript metadata gen @done
+
 - javascript client store
 
 - add common test for complex datetime filtering (high)
