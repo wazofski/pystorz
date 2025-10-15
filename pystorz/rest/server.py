@@ -37,7 +37,6 @@ ActionDelete = "DELETE"
 
 def _handle_exceptions(e):
     # traceback.print_stack()
-    # print("exception: {}".format(e))
 
     error_code = 500
     msg = str(e)

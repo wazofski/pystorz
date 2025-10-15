@@ -31,7 +31,6 @@ def _error_response(code: int, message: str):
 
 def _handle_exceptions(e):
     # traceback.print_stack()
-    # print("exception: {}".format(e))
 
     error_code = 500
     msg = str(e)

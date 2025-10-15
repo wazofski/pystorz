@@ -85,12 +85,10 @@ def test_serialization():
     world.External().Nested().SetAnotherDescription("qwe")
 
     data = world.ToJson()
-    # print(utils.pps(data))
 
     newWorld = model.WorldFactory()
     newWorld.FromJson(data)
 
-    # print(utils.pps(newWorld.ToJson()))
     assert newWorld.External().Nested().Alive() is True
     assert newWorld.External().Nested().Counter() == 10
     assert newWorld.External().Name() == "abc"

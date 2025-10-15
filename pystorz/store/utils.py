@@ -62,12 +62,9 @@ def serialize(mo: store.Object) -> str:
 
 
 def object_path(obj: store.Object, path: str) -> object:
-    # print("object_path: {} {}".format(obj, path))
     data = obj.ToDict()
-    # print(pp(data))
     ret = JSONPath("$.{}".format(path)).parse(data)
     if not ret or len(ret) == 0:
-        # print("object_path: no result for {} in {}".format(path, data))
         return None
     return ret[0]
 
