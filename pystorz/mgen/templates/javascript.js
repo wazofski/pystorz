@@ -72,15 +72,15 @@ class _{{ data.name }} extends {{data.name}} {
         const data = {};
         {% for prop in data.properties %}
         {% if prop.IsArray() %}
-        const rawList = [];
+        const rawList{{prop.name}} = [];
         for (const v of (this.{{prop.name}}_ || [])) {
             {% if prop.IsComplexType() %}
-            rawList.push(v.ToDict());
+            rawList{{prop.name}}.push(v.ToDict());
             {% else %}
-            rawList.push(v);
+            rawList{{prop.name}}.push(v);
             {% endif %}
         }
-        data["{{prop.name}}"] = rawList;
+        data["{{prop.name}}"] = rawList{{prop.name}};
         {% elif prop.IsMap() %}
         const rawSubmap = {};
         for (const k in (this.{{prop.name}}_ || {})) {
