@@ -53,6 +53,18 @@ def mysql():
             "pystorztestdb"))
 
 
+def mongo():
+    from pystorz.mongo.mongo import MongoStore
+    from generated.model import Schema
+
+    MONGODB_URI="mongodb+srv://Vercel-Admin-atlas-gray-village:KAmtNvR3pOwiJQnC@atlas-gray-village.fio3wzy.mongodb.net/?retryWrites=true&w=majority"
+
+    return MetaStore(
+        MongoStore(
+            Schema(),
+            MONGODB_URI))
+
+
 def rest():
     log.debug("server/client setup")
 
@@ -91,8 +103,9 @@ def rest():
 # @pytest.fixture(params=[sqlite()])
 # @pytest.fixture(params=[mysql()])
 # @pytest.fixture(params=[rest()])
+@pytest.fixture(params=[mongo()])
 # @pytest.fixture(params=[sqlite(), mysql(), rest()])
-@pytest.fixture(params=[sqlite(), rest()])
+# @pytest.fixture(params=[sqlite(), rest()])
 def thestore(request):
     return request.param
 

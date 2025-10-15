@@ -8,6 +8,7 @@ mysql-connector-python
 sqlparse
 flask
 pytest
+pymongo
 # matplotlib
 # pytest-cov
 
