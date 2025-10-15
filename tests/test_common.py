@@ -103,9 +103,9 @@ def rest():
 # @pytest.fixture(params=[sqlite()])
 # @pytest.fixture(params=[mysql()])
 # @pytest.fixture(params=[rest()])
-@pytest.fixture(params=[mongo()])
+# @pytest.fixture(params=[mongo()])
 # @pytest.fixture(params=[sqlite(), mysql(), rest()])
-# @pytest.fixture(params=[sqlite(), rest()])
+@pytest.fixture(params=[sqlite(), rest()])
 def thestore(request):
     return request.param
 
