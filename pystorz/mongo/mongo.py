@@ -248,10 +248,6 @@ class MongoStore(store.Store):
         return res
 
 
-def Factory(URI: str):
-    def _factory(schema):
-        client = MongoStore(schema, URI)
-        log.info(f"initialized {URI}")
-        return client, None
-
-    return _factory
+def MongoStoreFactory(schema: store.SchemaHolder, URI: str):
+    return MongoStore(schema, URI)
+    
