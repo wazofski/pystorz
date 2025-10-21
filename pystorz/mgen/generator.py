@@ -15,6 +15,10 @@ log = logging.getLogger(__name__)
 log.debug("loading generator.py...")
 
 
+def _javascript_cleanup(content: str) -> str:
+    return content.replace("False", "false")
+
+
 def Generate(*models) -> None:
     structs = dict()
     resources = dict()
@@ -49,6 +53,8 @@ def Generate(*models) -> None:
             "mgen/templates/javascript.js",
             resources,
             _dependency_order(structs))
+
+    res = _javascript_cleanup(res)
 
     # refactor and format javascript code
     targetDir = "generated"
@@ -244,7 +250,6 @@ def _reformat_python_code(code_str):
         formatted_code = black.format_str(code_str, mode=black.FileMode())
 
         return formatted_code
-
     except Exception as e:
         log.error("failed to reformat code:", e)
         return code_str

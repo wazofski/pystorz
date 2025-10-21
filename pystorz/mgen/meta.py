@@ -6,10 +6,10 @@ BASIC_TYPES = ["string", "int", "float", "bool", "datetime"]
 
 def typeDefault(tp: str) -> str:
     if tp.startswith("list") or tp.startswith("[]"):
-        return "list()"
+        return "[]"
         # return f"{tp} {{}}"
     if tp.startswith("dict") or tp.startswith("map"):
-        return "dict()"
+        return "{}"
         # return f"make({tp})"
 
     if tp == "str" or tp == "string":
