@@ -24,7 +24,6 @@ function {{ data.name }}Factory() {
 
 class _{{ data.name }} extends {{data.name}} {
     constructor() {
-        super();
         {% for prop in data.properties %}
         this.{{ prop.name }}_ = {{prop.Default()}};
         {% endfor %}
@@ -195,7 +194,6 @@ function {{ data.name }}Factory() {
 
 class _{{ data.name }} extends {{data.name}} {
     constructor() {
-        super();
         this.meta_ = [];
         this.meta_["kind"] = "{{ data.name }}";
         this.external_ = null;
