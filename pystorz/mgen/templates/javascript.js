@@ -1,5 +1,3 @@
-const store = require("pystorz/store");
-
 {% for data in structs %}
 
 class {{ data.name }} {
@@ -35,7 +33,7 @@ class _{{ data.name }} extends {{data.name}} {
     {% for prop in data.properties %}
     Set{{ prop.CapitalizedName() }}(val) {
         {% if prop.type == "datetime" %}
-        this.{{ prop.name }}_ = store.datetime_string(val);
+        this.{{ prop.name }}_ = val.ToString();
         {% elif prop.type == "string" %}
         this.{{ prop.name }}_ = String(val);
         {% elif prop.type == "int" %}
@@ -51,7 +49,7 @@ class _{{ data.name }} extends {{data.name}} {
 
     {{ prop.CapitalizedName() }}() {
         {% if prop.type == "datetime" %}
-        return store.datetime_parse(this.{{ prop.name }}_);
+        return Date.parse(this.{{ prop.name }}_);
         {% else %}
         return this.{{ prop.name }}_;
         {% endif %}
@@ -159,12 +157,11 @@ class _{{ data.name }} extends {{data.name}} {
 {% for _, data in resources.items() %}
 
 {% if data.external %}
-class {{ data.name }} extends store.ExternalHolder {
+class {{ data.name }} {
 {% else %}
-class {{ data.name }} extends store.Object {
+class {{ data.name }} {
 {% endif %}
     constructor() {
-        super();
         throw new Error("cannot initialize like this. use the factory method");
     }
 
@@ -199,7 +196,8 @@ function {{ data.name }}Factory() {
 class _{{ data.name }} extends {{data.name}} {
     constructor() {
         super();
-        this.meta_ = store.MetaFactory("{{ data.name }}");
+        this.meta_ = [];
+        this.meta_["kind"] = "{{ data.name }}";
         this.external_ = null;
         this.internal_ = null;
     }
@@ -219,7 +217,7 @@ class _{{ data.name }} extends {{data.name}} {
 
     ToDict() {
         const data = {};
-        data["metadata"] = this.meta_.ToDict();
+        data["metadata"] = this.meta_;
         {% if data.external %}data["external"] = this.external_.ToDict(); {% endif %}
         {% if data.internal %}data["internal"] = this.internal_.ToDict(); {% endif %}
         return data;
@@ -231,7 +229,7 @@ class _{{ data.name }} extends {{data.name}} {
             if (rawValue === null || rawValue === undefined) continue;
 
             if (key === "metadata") {
-                this.meta_.FromDict(rawValue);
+                this.meta_ = rawValue;
             }
 
             {% if data.external %}
@@ -259,10 +257,10 @@ class _{{ data.name }} extends {{data.name}} {
 }
 
 function {{data.name}}Identity(pkey) {
-    return store.ObjectIdentity("{{ data.IdentityPrefix() }}/" + pkey);
+    return "{{ data.IdentityPrefix() }}/" + pkey;
 }
 
-const {{data.name}}KindIdentity = store.ObjectIdentity("{{ data.IdentityPrefix() }}/");
+const {{data.name}}KindIdentity = "{{ data.IdentityPrefix() }}/";
 
 const {{data.name}}Kind = "{{ data.name }}";
 
@@ -270,9 +268,8 @@ const {{data.name}}Kind = "{{ data.name }}";
 
 
 
-class _Schema extends store.SchemaHolder {
+class _Schema {
     constructor(objects) {
-        super();
         this.objects = objects;
     }
 
