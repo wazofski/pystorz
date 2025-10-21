@@ -34,6 +34,11 @@ ActionCreate = "POST"
 ActionUpdate = "PUT"
 ActionDelete = "DELETE"
 
+HEADERS = {
+    "Content-Type": "application/json",
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "GET, POST"
+}
 
 def _handle_exceptions(e):
     # traceback.print_stack()
@@ -48,13 +53,12 @@ def _handle_exceptions(e):
     return _error_response(error_code, msg)
 
 
-def _json_response(code: int, data):
+def _json_response(code: int, data: dict):
     try:
         ret = json.dumps(data)
         log.debug("""json response: 
     {}""".format(utils.pp(data)))
-
-        return ret, code, {"Content-Type": "application/json"}
+        return ret, code, HEADERS
     except Exception as e:
         log.debug("json error: {}".format(e))
         return _error_response(500, str(e))
