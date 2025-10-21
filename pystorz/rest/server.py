@@ -5,7 +5,7 @@ import logging
 import cherrypy
 
 from pystorz.internal import constants
-from urllib.parse import urlparse, parse_qs
+from urllib.parse import urlparse, parse_qs, unquote
 
 from pystorz.store import store
 from pystorz.store import options
@@ -14,7 +14,6 @@ from pystorz.store import utils
 from pystorz.rest.internals import InternalStore
 
 from flask import Flask, request
-
 
 # from urllib.parse import parse_qs, urlparse
 
@@ -170,12 +169,12 @@ def _make_type_handler(
                 opts.append(o)
                 log.debug("filter: {}".format(str(o)))
 
-            # if FilterArg in query_params:
-            #     fa = query_params[FilterArg]
-            #     o = options.ListDeleteOption.FromJson(fa[0])
-                
-            #     opts.append(o)
-            #     log.debug("filter: {}".format(str(o)))
+            if FilterArg in query_params:
+                fa = query_params[FilterArg]
+                o = options.ListDeleteOption.FromJson(unquote(fa[0]))
+
+                opts.append(o)
+                log.debug("filter from query param: {}".format(str(o)))
 
             if PageSizeArg in query_params:
                 ps = int(query_params[PageSizeArg][0])

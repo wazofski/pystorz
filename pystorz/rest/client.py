@@ -96,8 +96,8 @@ def list_parameters(ropt):
     if opt.page_size and opt.page_size > 0:
         q[server.PageSizeArg] = str(opt.page_size)
 
-    # if opt.filter:
-    #     q[server.FilterArg] = opt.filter.ToJson()
+    if opt.filter:
+        q[server.FilterArg] = opt.filter.ToJson()
 
     return "&".join([f"{k}={quote(v)}" for k, v in q.items()])
 
@@ -214,7 +214,7 @@ class Client(store.Store):
             o.ApplyFunction()(copt)
 
         params = list_parameters(copt)
-        body = filter_parameter(copt)
+        body = "" # filter_parameter(copt)
         path = make_path_for_identity(self.base_url, identity, params)
 
         res = self._process_request(
@@ -243,7 +243,7 @@ class Client(store.Store):
             o.ApplyFunction()(copt)
 
         params = list_parameters(copt)
-        body = filter_parameter(copt)
+        body = "" # filter_parameter(copt)
 
         path = make_path_for_identity(self.base_url, identity, params)
         res = self._process_request(path, body, server.ActionGet, copt.headers)
