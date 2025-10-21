@@ -2,7 +2,7 @@
 
 class {{ data.name }} {
     constructor() {
-        throw new Error("cannot initialize like this. use the factory method");
+        // throw new Error("cannot initialize like this. use the factory method");
     }
 
     ToDict() { throw new Error("not implemented"); }
@@ -24,6 +24,7 @@ function {{ data.name }}Factory() {
 
 class _{{ data.name }} extends {{data.name}} {
     constructor() {
+        super();
         {% for prop in data.properties %}
         this.{{ prop.name }}_ = {{prop.Default()}};
         {% endfor %}
@@ -161,7 +162,7 @@ class {{ data.name }} {
 class {{ data.name }} {
 {% endif %}
     constructor() {
-        throw new Error("cannot initialize like this. use the factory method");
+        // throw new Error("cannot initialize like this. use the factory method");
     }
 
     ToDict() { throw new Error("not implemented"); }
@@ -194,6 +195,7 @@ function {{ data.name }}Factory() {
 
 class _{{ data.name }} extends {{data.name}} {
     constructor() {
+        super();
         this.meta_ = [];
         this.meta_["kind"] = "{{ data.name }}";
         this.external_ = null;
