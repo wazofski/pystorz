@@ -80,16 +80,16 @@ class _{{ data.name }} extends {{data.name}} {
         }
         data["{{prop.name}}"] = rawList{{prop.name}};
         {% elif prop.IsMap() %}
-        const rawSubmap = {};
+        const rawSubmap{{prop.name}} = {};
         for (const k in (this.{{prop.name}}_ || {})) {
             const v = this.{{prop.name}}_[k];
             {% if prop.IsComplexType() %}
-            rawSubmap[k] = v.ToDict();
+            rawSubmap{{prop.name}}[k] = v.ToDict();
             {% else %}
-            rawSubmap[k] = v;
+            rawSubmap{{prop.name}}[k] = v;
             {% endif %}
         }
-        data["{{prop.name}}"] = rawSubmap;
+        data["{{prop.name}}"] = rawSubmap{{prop.name}};
         {% else %}
         {% if prop.IsComplexType() %}
         data["{{prop.name}}"] = this.{{prop.name}}_ ? this.{{prop.name}}_.ToDict() : null;
