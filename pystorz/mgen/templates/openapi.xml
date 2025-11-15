@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openapi version="3.0.0">
+  <info>
+    <title>Pystorz API</title>
+    <version>1.0.0</version>
+  </info>
+  <servers>
+    <server>
+      <url>http://localhost/</url>
+    </server>
+  </servers>
+  <paths>
+    <path name="/id/{id}">
+      <parameter name="id" in="path" required="true">
+        <schema><type>string</type></schema>
+      </parameter>
+      <get>
+        <responses>
+          <response code="200"/>
+          <response code="404"/>
+        </responses>
+      </get>
+      <post>
+        <responses><response code="200"/></responses>
+      </post>
+      <put>
+        <responses><response code="200"/></responses>
+      </put>
+      <delete>
+        <responses><response code="200"/></responses>
+      </delete>
+    </path>
+
+    {% for _, data in resources.items() %}
+    <path name="/{{ data.name.lower() }}/">
+      <get>
+        <summary>List {{ data.name }}</summary>
+        <parameters>
+          <parameter name="pf" in="query"><schema><type>string</type></schema></parameter>
+          <parameter name="ps" in="query"><schema><type>integer</type></schema></parameter>
+          <parameter name="po" in="query"><schema><type>integer</type></schema></parameter>
+          <parameter name="ob" in="query"><schema><type>string</type></schema></parameter>
+          <parameter name="inc" in="query"><schema><type>boolean</type></schema></parameter>
+        </parameters>
+        <responses>
+          <response code="200">
+            <content>
+              <mediaType contentType="application/json">
+                <schema>
+                  <type>array</type>
+                  <items><ref>#/components/schemas/{{ data.name }}</ref></items>
+                </schema>
+              </mediaType>
+            </content>
+          </response>
+        </responses>
+      </get>
+
+      <post>
+        <summary>Create {{ data.name }}</summary>
+        <requestBody required="true">
+          <content>
+            <mediaType contentType="application/json">
+              <schema><ref>#/components/schemas/{{ data.name }}</ref></schema>
+            </mediaType>
+          </content>
+        </requestBody>
+        <responses><response code="200"/></responses>
+      </post>
+
+      <delete>
+        <summary>Bulk delete {{ data.name }}</summary>
+        <parameters>
+          <parameter name="pf" in="query"><schema><type>string</type></schema></parameter>
+        </parameters>
+        <responses><response code="200"/></responses>
+      </delete>
+    </path>
+
+    <path name="/{{ data.name.lower() }}/{pkey}">
+      <parameter name="pkey" in="path" required="true"><schema><type>string</type></schema></parameter>
+      <get>
+        <responses>
+          <response code="200"><content><mediaType contentType="application/json"><schema><ref>#/components/schemas/{{ data.name }}</ref></schema></mediaType></content></response>
+          <response code="404"/>
+        </responses>
+      </get>
+      <post>
+        <requestBody required="true"><content><mediaType contentType="application/json"><schema><ref>#/components/schemas/{{ data.name }}</ref></schema></mediaType></content></requestBody>
+        <responses><response code="200"/></responses>
+      </post>
+      <put>
+        <requestBody required="true"><content><mediaType contentType="application/json"><schema><ref>#/components/schemas/{{ data.name }}</ref></schema></mediaType></content></requestBody>
+        <responses><response code="200"/></responses>
+      </put>
+      <delete>
+        <responses><response code="200"/><response code="404"/></responses>
+      </delete>
+    </path>
+    {% endfor %}
+
+  </paths>
+
+  <components>
+    <schemas>
+      {% for data in structs %}
+      <schema name="{{ data.name }}">
+        <type>object</type>
+        <properties>
+          {% for prop in data.properties %}
+          <property name="{{ prop.name }}">
+            {% if prop.IsArray() %}
+            <type>array</type>
+            <items>
+              {% if prop.IsComplexType() %}
+              <ref>#/components/schemas/{{ prop.StrippedType() }}</ref>
+              {% else %}
+              <type>{% if prop.type == 'int' %}integer{% elif prop.type == 'float' %}number{% elif prop.type == 'bool' %}boolean{% elif prop.type == 'datetime' %}string{% else %}string{% endif %}</type>
+              {% endif %}
+            </items>
+            {% elif prop.IsMap() %}
+            <type>object</type>
+            <additionalProperties>
+              {% if prop.IsComplexType() %}
+              <ref>#/components/schemas/{{ prop.StrippedType() }}</ref>
+              {% else %}
+              <type>string</type>
+              {% endif %}
+            </additionalProperties>
+            {% else %}
+              {% if prop.IsComplexType() %}
+              <ref>#/components/schemas/{{ prop.StrippedType() }}</ref>
+              {% else %}
+              <type>{% if prop.type == 'int' %}integer{% elif prop.type == 'float' %}number{% elif prop.type == 'bool' %}boolean{% elif prop.type == 'datetime' %}string{% else %}string{% endif %}</type>
+              {% if prop.type == 'datetime' %}<format>date-time</format>{% endif %}
+              {% endif %}
+            {% endif %}
+          </property>
+          {% endfor %}
+        </properties>
+      </schema>
+      {% endfor %}
+
+      {% for _, data in resources.items() %}
+      <schema name="{{ data.name }}">
+        <type>object</type>
+        <properties>
+          <property name="metadata"><ref>#/components/schemas/Meta</ref></property>
+          {% if data.external %}<property name="external"><ref>#/components/schemas/{{ data.external }}</ref></property>{% endif %}
+          {% if data.internal %}<property name="internal"><ref>#/components/schemas/{{ data.internal }}</ref></property>{% endif %}
+        </properties>
+      </schema>
+      {% endfor %}
+
+      <!-- Minimal Meta schema used by resources -->
+      <schema name="Meta">
+        <type>object</type>
+        <properties>
+          <property name="kind"><type>string</type></property>
+          <property name="created"><type>string</type><format>date-time</format></property>
+          <property name="updated"><type>string</type><format>date-time</format></property>
+          <property name="version"><type>integer</type></property>
+        </properties>
+      </schema>
+
+    </schemas>
+  </components>
+
+</openapi>
