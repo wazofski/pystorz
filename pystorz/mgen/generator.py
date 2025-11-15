@@ -15,6 +15,9 @@ log = logging.getLogger(__name__)
 log.debug("loading generator.py...")
 
 
+_KNOWN_TYPES = ["string", "str", "int", "float", "bool", "datetime"]
+
+
 def _javascript_cleanup(content: str) -> str:
     return content.replace("False", "false")
 
@@ -111,7 +114,8 @@ def _load_model(path: str):
 
 def _validate_model(structs, resources):
     errors = []
-    known_types = ["string", "int", "float", "bool", "datetime"]
+
+    known_types = _KNOWN_TYPES.copy()
 
     for _, s in structs.items():
         known_types.append(s.name)
@@ -189,13 +193,11 @@ def _dependency_order(structs) -> list[Struct]:
         all_structs[s.name] = s
         dependencies[s.name] = set()
 
-    known_types = ["string", "int", "float", "bool", "datetime"]
-
     for _, s in structs.items():
         for p in s.properties:
             if p.IsArray():
                 elem_type = p.SubType()
-                if elem_type not in known_types:
+                if elem_type not in _KNOWN_TYPES:
                     dependencies[s.name].add(elem_type)
 
                 continue
@@ -204,18 +206,18 @@ def _dependency_order(structs) -> list[Struct]:
                 # map[string]bla
                 elem_type = p.SubType()
                 key_type = p.type[4:].split("]")[0]
-                if key_type not in known_types:
+                if key_type not in _KNOWN_TYPES:
                     raise Exception(
-                        f"Invalid type {key_type} in {p.type}. Please use one of {known_types} as map key type"
+                        f"Invalid type {key_type} in {p.type}. Please use one of {_KNOWN_TYPES} as map key type"
                     )
 
                 val_type = p.type[4:].split("]")[1]
-                if val_type not in known_types:
+                if val_type not in _KNOWN_TYPES:
                     dependencies[s.name].add(val_type)
 
                 continue
 
-            if p.type not in known_types:
+            if p.type not in _KNOWN_TYPES:
                 dependencies[s.name].add(p.type)
 
     ordered = []
