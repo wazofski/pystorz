@@ -12,7 +12,7 @@ from generated import model
 
 from pystorz.meta.store import MetaStore
 from pystorz.sql.sqlite import SqliteStoreFactory
-from pystorz.router.store import RouteStore
+from pystorz.router.store import RouterStore
 
 def sqlite(db_file):
     if os.path.exists(db_file):
@@ -23,7 +23,7 @@ def sqlite(db_file):
 
 
 def router():
-    return RouteStore(
+    return RouterStore(
         {
             model.WorldKind: sqlite("world.db"),
             model.SecondWorldKind: sqlite("second_world.db"),

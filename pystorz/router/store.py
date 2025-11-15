@@ -6,7 +6,7 @@ from pystorz.internal import constants
 log = logging.getLogger(__name__)
 
 
-class RouteStore(store.Store):
+class RouterStore(store.Store):
     def __init__(self, mapping: dict, default=None):
         self.Default = default
         self.Mapping = {}
