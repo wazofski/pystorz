@@ -45,7 +45,7 @@ class _{{ data.name }}({{data.name}}):
 		{% endfor %}
 
 	{% for prop in data.properties %}
-	def Set{{ prop.CapitalizedName() }}(self, val):
+	def Set{{ prop.CapitalizedName() }}(self, val: {{prop.StrippedType()}}):
 		{% if prop.type == "datetime" %}
 		self.{{ prop.name }}_ = store.datetime_string(val)
 		{% elif prop.type == "string" %}
@@ -60,7 +60,7 @@ class _{{ data.name }}({{data.name}}):
 		self.{{ prop.name }}_ = val
 		{% endif %}
 
-	def {{ prop.CapitalizedName() }}(self):
+	def {{ prop.CapitalizedName() }}(self) -> {{prop.StrippedType()}}:
 		{% if prop.type == "datetime" %}
 		return store.datetime_parse(self.{{ prop.name }}_)
 		{% else %}
@@ -220,7 +220,7 @@ class _{{ data.name }}({{data.name}}):
 		self.internal_ = None
 
 	{% if data.external %}
-	def SetExternal(self, val):
+	def SetExternal(self, val: {{ data.external }}):
 		self.external_ = val
 
 	def External(self) -> {{ data.external }}:
@@ -229,7 +229,7 @@ class _{{ data.name }}({{data.name}}):
 	{% endif %}
 
 	{% if data.internal %}
-	def SetInternal(self, val):
+	def SetInternal(self, val: {{ data.internal }}):
 		self.internal_ = val
 	
 	def Internal(self) -> {{ data.internal }}:

@@ -1,7 +1,7 @@
 from pystorz.mgen.utils import capitalize
 
 
-BASIC_TYPES = ["string", "int", "float", "bool", "datetime"]
+BASIC_TYPES = ["str", "string", "int", "float", "bool", "datetime"]
 
 
 def typeDefault(tp: str) -> str:
@@ -57,6 +57,9 @@ class Property:
         if self.IsMap() or self.IsArray():
             return self.type.split("]")[1]
 
+        if self.type == "string":
+            return "str"
+
         return self.type
 
     def IsComplexType(self):
@@ -67,9 +70,9 @@ class Property:
             return 'typing.Dict[typing.Any, "{}"]'.format(self.SubType())
         if self.IsArray():
             return 'typing.List["{}"]'.format(self.SubType())
-        if self.type == "string":
-            return "str"
-        return '"{}"'.format(self.type)
+        if self.IsComplexType():
+            return '"{}"'.format(self.SubType())
+        return self.SubType()
 
     def ComplexTypeValueDefault(self):
         if self.type.startswith("[]"):
