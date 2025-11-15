@@ -54,13 +54,14 @@ class Property:
         return self.type[:2] == "[]"
 
     def SubType(self):
+        val = self.type
         if self.IsMap() or self.IsArray():
-            return self.type.split("]")[1]
+            val = self.type.split("]")[1]
 
-        if self.type == "string":
+        if val == "string":
             return "str"
 
-        return self.type
+        return val
 
     def IsComplexType(self):
         return self.SubType() not in BASIC_TYPES
