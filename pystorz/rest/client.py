@@ -281,7 +281,7 @@ class Client(store.Store):
     def _process_request(self, request_url, content, method, headers):
         req_id = str(uuid.uuid4())
 
-        request_url = request_url.lower()
+        # request_url = request_url
         url = urlparse(request_url)
         path = url.path
         new_path = path.replace("//", "/")

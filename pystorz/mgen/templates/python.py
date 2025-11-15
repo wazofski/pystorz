@@ -1,9 +1,10 @@
 import json
+import typing
+
 from pystorz.internal import constants
-# "from pystorz.store import utils",
 from pystorz.store import store
 from datetime import datetime
-from typing import Type
+
 
 
 {% for data in structs %}
@@ -178,7 +179,7 @@ class {{ data.name }}(store.Object):
 	def FromDict(self, data):
 		raise Exception("not implemented")
 
-	def Clone(self) -> Type["{{data.name}}"]:
+	def Clone(self) -> "{{data.name}}":
 		raise NotImplementedError()
 
 	def Meta(self) -> store.Meta:

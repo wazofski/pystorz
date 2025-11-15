@@ -58,3 +58,7 @@ types:
         type: "[]bool"
       - name: l2
         type: map[string]int
+      - name: nwDict
+        type: "map[string]NestedWorld"
+      - name: nwList
+        type: "[]NestedWorld"

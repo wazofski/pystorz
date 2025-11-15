@@ -48,7 +48,6 @@ def Generate(*models) -> None:
 
     utils.export_file(targetDir, "model.py", res)
 
-
     res = _render(
             "mgen/templates/javascript.js",
             resources,
@@ -61,6 +60,15 @@ def Generate(*models) -> None:
 
     utils.export_file(targetDir, "model.js", res)
 
+    res = _render(
+        "mgen/templates/openapi.xml",
+        resources,
+        _dependency_order(structs))
+
+    # refactor and format javascript code
+    targetDir = "generated"
+
+    utils.export_file(targetDir, "openapi.xml", res)
     
 
 def _load_model(path: str):
@@ -211,23 +219,32 @@ def _dependency_order(structs) -> list[Struct]:
                 dependencies[s.name].add(p.type)
 
     ordered = []
+    ordered_names = set()
     while len(ordered) < len(structs):
         did_stuff = False
         for _, s in structs.items():
-            if s in ordered:
+            if s.name in ordered_names:
                 continue
 
             if len(dependencies[s.name]) == 0:
                 ordered.append(s)
+                ordered_names.add(s.name)
                 for k in dependencies.keys():
                     if s.name in dependencies[k]:
                         dependencies[k].remove(s.name)
                         did_stuff = True
-
+            
+            if len(dependencies[s.name]) == 1:
+                if list(dependencies[s.name])[0] == s.name:
+                    dependencies[s.name] = set()
+                    did_stuff = True 
+        
         if not did_stuff and len(ordered) < len(structs):
-            log.debug(f"dependencies: {dependencies}")
-            log.debug(f"ordered: {[ o.name for o in ordered]}")
-            log.debug(f"lengths: {len(dependencies)} {len(ordered)} {len(structs)}")
+            for _, s in structs.items():
+                log.error(f"{s.name}: {dependencies[s.name]}")
+
+            log.error(f"ordered: {[ o.name for o in ordered]}")
+            log.error(f"lengths: {len(dependencies)} {len(ordered)} {len(structs)}")
 
             raise Exception("Circular dependency detected")
 

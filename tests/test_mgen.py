@@ -12,7 +12,8 @@ globals.logger_config()
 
 def test_mgen_can_generate():
     # ensure empty directory before generating
-    import os, shutil
+    import os
+    import shutil
 
     generated_model_path = "generated"
     if os.path.exists(generated_model_path):
@@ -53,7 +54,8 @@ def test_generated_model():
     world.External().Nested().SetAnotherDescription("qwe")
     world.External().SetName("abc")
     world.Internal().SetDescription("qwe")
-    world.Internal().SetList([model.NestedWorldFactory(), model.NestedWorldFactory()])
+    world.Internal().SetList(
+        [model.NestedWorldFactory(), model.NestedWorldFactory()])
 
     world.Internal().SetMap(
         {
@@ -64,6 +66,11 @@ def test_generated_model():
 
     world.Internal().Map()["a"].SetL1([False, False, True])
 
+    nwt = model.NestedWorldFactory()
+    nwt.SetCounter(5)
+    world.Internal().Map()["a"].SetNwDict({"key1": nwt, "key2": nwt})
+    world.Internal().Map()["a"].SetNwList([nwt])
+
 
 def test_serialization():
     from generated import model
@@ -71,7 +78,8 @@ def test_serialization():
     world = model.WorldFactory()
     world.External().SetName("abc")
     world.Internal().SetDescription("qwe")
-    world.Internal().SetList([model.NestedWorldFactory(), model.NestedWorldFactory()])
+    world.Internal().SetList(
+        [model.NestedWorldFactory(), model.NestedWorldFactory()])
 
     world.Internal().SetMap(
         {
@@ -84,6 +92,13 @@ def test_serialization():
     world.External().Nested().SetAlive(True)
     world.External().Nested().SetAnotherDescription("qwe")
 
+    world.Internal().Map()["a"].SetL1([False, False, True])
+
+    nwt = model.NestedWorldFactory()
+    nwt.SetCounter(5)
+    world.Internal().Map()["a"].SetNwDict({"key1": nwt, "key2": nwt})
+    world.Internal().Map()["a"].SetNwList([nwt])
+
     data = world.ToJson()
 
     newWorld = model.WorldFactory()
@@ -94,8 +109,12 @@ def test_serialization():
     assert newWorld.External().Name() == "abc"
     assert newWorld.Internal().Description() == "qwe"
     assert len(newWorld.Internal().List()) == 2
+    
     data2 = newWorld.ToJson()
     assert data == data2
+    assert newWorld.Internal().Map()["a"].L1() == [False, False, True]
+    assert newWorld.Internal().Map()["a"].NwDict()["key1"].Counter() == 5
+    assert newWorld.Internal().Map()["a"].NwList()[0].Counter() == 5
 
 
 def test_schema():
@@ -124,7 +143,8 @@ def test_cloning():
     world.External().Nested().SetAnotherDescription("qwe")
     world.External().SetName("abc")
     world.Internal().SetDescription("qwe")
-    world.Internal().SetList([model.NestedWorldFactory(), model.NestedWorldFactory()])
+    world.Internal().SetList(
+        [model.NestedWorldFactory(), model.NestedWorldFactory()])
 
     world.Internal().SetMap(
         {
@@ -135,6 +155,11 @@ def test_cloning():
 
     world.Internal().Map()["a"].SetL1([False, False, True])
 
+    nwt = model.NestedWorldFactory()
+    nwt.SetCounter(5)
+    world.Internal().Map()["a"].SetNwDict({"key1": nwt, "key2": nwt})
+    world.Internal().Map()["a"].SetNwList([nwt])
+
     newWorld = world.Clone()
     assert newWorld.External().Nested().Alive() is True
     assert newWorld.External().Nested().Counter() == 10
@@ -142,6 +167,9 @@ def test_cloning():
     assert newWorld.External().Name() == "abc"
     assert newWorld.Internal().Description() == "qwe"
     assert len(newWorld.Internal().List()) == 2
+    assert newWorld.Internal().Map()["a"].L1() == [False, False, True]
+    assert newWorld.Internal().Map()["a"].NwDict()["key1"].Counter() == 5
+    assert newWorld.Internal().Map()["a"].NwList()[0].Counter() == 5
 
 
 def test_datetime_property_type():

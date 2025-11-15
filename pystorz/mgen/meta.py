@@ -64,12 +64,12 @@ class Property:
 
     def StrippedType(self):
         if self.IsMap():
-            return "dict"
+            return 'typing.Dict[typing.Any, "{}"]'.format(self.SubType())
         if self.IsArray():
-            return "list"
+            return 'typing.List["{}"]'.format(self.SubType())
         if self.type == "string":
             return "str"
-        return self.type
+        return '"{}"'.format(self.type)
 
     def ComplexTypeValueDefault(self):
         if self.type.startswith("[]"):
@@ -80,7 +80,7 @@ class Property:
             if closing_bracket_index == -1:
                 raise Exception("invalid map type: {}".format(self.type))
 
-            return typeDefault(self.type[closing_bracket_index + 1 :])
+            return typeDefault(self.type[closing_bracket_index + 1:])
 
         raise Exception("unknown type: {}".format(self.type))
 
@@ -97,7 +97,7 @@ class Struct:
 class Resource:
     def __init__(self, yaml):
         self.name = yaml["name"]
-        
+
         self.primary_key = "metadata.identity"
         if "primarykey" in yaml:
             self.primary_key = yaml["primarykey"]
@@ -105,7 +105,7 @@ class Resource:
         self.external = None
         if "external" in yaml:
             self.external = yaml["external"]
-        
+
         self.internal = None
         if "internal" in yaml:
             self.internal = yaml["internal"]
@@ -113,6 +113,6 @@ class Resource:
     def PrimaryKeyFunctionCaller(self):
         tok = self.primary_key.split(".")
         return ".".join(["{}()".format(capitalize(t)) for t in tok])
-    
+
     def IdentityPrefix(self):
         return self.name.lower()
