@@ -196,7 +196,7 @@ function {{ data.name }}Factory() {
 class _{{ data.name }} extends {{data.name}} {
     constructor() {
         super();
-        this.meta_ = [];
+        this.meta_ = {};
         this.meta_["kind"] = "{{ data.name }}";
         this.external_ = null;
         this.internal_ = null;
