@@ -198,6 +198,10 @@ class _{{ data.name }} extends {{data.name}} {
         super();
         this.meta_ = {};
         this.meta_["kind"] = "{{ data.name }}";
+        this.meta_["identity"] = "";
+        this.meta_["created"] = "";
+        this.meta_["updated"] = "";
+        this.meta_["revision"] = "";
         this.external_ = null;
         this.internal_ = null;
     }
