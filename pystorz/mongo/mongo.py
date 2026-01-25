@@ -76,7 +76,8 @@ class MongoStore(store.Store):
                 return
             except Exception:
                 pass
-        self._client = MongoClient(self._URI, serverSelectionTimeoutMS=TIMEOUT * 1000)
+        self._client = MongoClient(
+            self._URI, serverSelectionTimeoutMS=TIMEOUT * 1000)
         self._client.admin.command("ping")
         self._prepare()
 
@@ -171,7 +172,7 @@ class MongoStore(store.Store):
                 "$and": [{"type": identity.Type()},
                          _convert_filter(copt.filter, obj)]
             }
-            
+
             log.info(f"filter: {filter_}")
             collection.delete_many(filter_)
 
@@ -250,4 +251,3 @@ class MongoStore(store.Store):
 
 def MongoStoreFactory(schema: store.SchemaHolder, URI: str):
     return MongoStore(schema, URI)
-    

@@ -45,7 +45,13 @@
 - refactor python templates into single file @done
 - javascript metadata gen @done
 
-- javascript client store
+- javascript client store @done
+- javascript bindings (codegen) @done
+- openapi bindings (codegen) @done
+
+- mongo store @done
+- in memory store @done
+- cache store
 
 - add common test for complex datetime filtering (high)
 - intellisense - full return and argument types for lists and maps
@@ -73,9 +79,6 @@
     - DB init
     - object config
 
-- in memory store
-- cache store
-- mongo store
 - redis store
 
 - sharded store

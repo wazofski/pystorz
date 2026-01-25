@@ -65,6 +65,15 @@ def mongo():
             MONGODB_URI))
 
 
+def inmemory():
+    from pystorz.memory.memory import MemoryStore
+    from generated.model import Schema
+
+    return MetaStore(
+        MemoryStore(
+            Schema()))
+
+
 def rest():
     log.debug("server/client setup")
 
@@ -103,9 +112,10 @@ def rest():
 # @pytest.fixture(params=[sqlite()])
 # @pytest.fixture(params=[mysql()])
 # @pytest.fixture(params=[rest()])
+# @pytest.fixture(params=[inmemory()])
 # @pytest.fixture(params=[mongo()])
 # @pytest.fixture(params=[sqlite(), mysql(), rest()])
-@pytest.fixture(params=[sqlite(), rest()])
+@pytest.fixture(params=[inmemory(), sqlite(), rest()])
 def thestore(request):
     return request.param
 
