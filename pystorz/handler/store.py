@@ -98,5 +98,5 @@ class HandlerStore(store.Store):
         return self._inner.List(identity, *opt)
 
 
-def HandlerStoreFactory(inner: store.Store, handlers: Dict[str, Dict[str, Callable]] | None = None):
+def HandlerStoreFactory(inner: store.Store, handlers: Dict[str, Dict[str, Callable]] = {}) -> store.Store:
     return HandlerStore(inner, handlers)
