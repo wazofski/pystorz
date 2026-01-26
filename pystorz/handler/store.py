@@ -17,7 +17,7 @@ class HandlerStore(store.Store):
     - If a callback raises an exception, the underlying store operation is not performed.
     """
 
-    def __init__(self, inner: store.Store, handlers: Dict[str, Dict[str, Callable]] | None = None):
+    def __init__(self, inner: store.Store, handlers: Dict[str, Dict[str, Callable]] = {}):
         self._inner = inner
         self._handlers = handlers or {}
 
@@ -71,7 +71,8 @@ class HandlerStore(store.Store):
             objs = self._inner.List(identity, *opt)
             # run callbacks for all and abort if any raises
             for o in objs:
-                cb = self._get_handler(o.Metadata().Kind(), constants.ActionDelete)
+                cb = self._get_handler(
+                    o.Metadata().Kind(), constants.ActionDelete)
                 if cb:
                     cb(o, self)
 
