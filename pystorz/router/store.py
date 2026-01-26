@@ -68,3 +68,7 @@ class RouterStore(store.Store):
 
         log.debug(f"kind {kind} not found in mapping, using default store")
         return self.Default
+
+
+def RouterStoreFactory(mapping: dict, default=None) -> RouterStore:
+    return RouterStore(mapping, default)

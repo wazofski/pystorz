@@ -9,3 +9,7 @@ ErrInvalidPath = "invalid request path"
 ErrInvalidRequest = "invalid request content"
 
 DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
+
+ActionCreate = "create"
+ActionUpdate = "update"
+ActionDelete = "delete"

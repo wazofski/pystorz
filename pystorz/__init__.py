@@ -21,6 +21,9 @@ from pystorz.store.options import (
     Order
 )
 
+# INTERNAL
+from pystorz.internal import constants
+
 # CODE GENERATION
 from pystorz.mgen.generator import Generate
 
@@ -32,8 +35,9 @@ from pystorz.rest.server import Server as RESTServer
 from pystorz.browse.server import Server as BrowseServer
 
 # FUNCTIONAL
-from pystorz.router.store import RouterStore
-from pystorz.meta.store import MetaStore
+from pystorz.router.store import RouterStoreFactory
+from pystorz.meta.store import MetaStoreFactory
+from pystorz.handler.store import HandlerStoreFactory
 
 # SQL
 from pystorz.sql.sqlite import SqliteStoreFactory
@@ -41,6 +45,9 @@ from pystorz.sql.mysql import MySqlStoreFactory as MySQLStoreFactory
 
 # MONGO
 from pystorz.mongo.mongo import MongoStoreFactory
+
+# MEMORY
+from pystorz.memory.memory import MemoryStoreFactory
 
 
 # Define __all__ to explicitly declare what's exported
@@ -54,7 +61,9 @@ __all__ = [
     "Generate",
     "RESTClient", "RESTServer",
     "BrowseServer",
-    "RouterStore", "MetaStore",
+    "RouterStoreFactory", "MetaStoreFactory", "HandlerStoreFactory",
     "SqliteStoreFactory", "MySQLStoreFactory",
-    "MongoStoreFactory"
+    "MongoStoreFactory",
+    "MemoryStoreFactory",
+    "constants",
 ]

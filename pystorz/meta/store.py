@@ -76,3 +76,7 @@ class MetaStore(store.Store):
             raise Exception(constants.ErrInvalidPath)
         log.info("list {}".format(identity.Path()))
         return self._Store.List(identity, *opt)
+
+
+def MetaStoreFactory(data: store.Store) -> store.Store:
+    return MetaStore(data)
