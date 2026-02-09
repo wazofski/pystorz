@@ -144,8 +144,25 @@ class MongoStore(store.Store):
             if target is not None:
                 raise Exception(constants.ErrObjectExists)
         self._test_connection()
-        self.Delete(identity)
-        return self.Create(obj)
+        typ = obj.Metadata().Kind().lower()
+        collection = self._client[self._db][COLLECTION_NAME]
+        
+        update_fields = {
+            "pkey": obj.PrimaryKey(),
+            "pkpath": f"{typ}/{obj.PrimaryKey()}",
+            "object": obj.ToDict(),
+        }
+        
+        key = "idpath" if identity.IsId() else "pkpath"
+        result = collection.update_one(
+            {key: identity.Path()},
+            {"$set": update_fields}
+        )
+        
+        if result.matched_count == 0:
+            raise Exception(constants.ErrNoSuchObject)
+        
+        return obj.Clone()
 
     def Delete(self, identity: store.ObjectIdentity, *opt: options.DeleteOption):
         if identity is None:
