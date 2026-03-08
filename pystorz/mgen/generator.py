@@ -22,7 +22,7 @@ def _javascript_cleanup(content: str) -> str:
     return content.replace("False", "false")
 
 
-def Generate(*models) -> None:
+def Generate(*models, targetDir: str = "generated") -> None:
     structs = dict()
     resources = dict()
 
@@ -43,8 +43,6 @@ def Generate(*models) -> None:
     # refactor and format python code
     res = _reformat_python_code(res)
 
-    targetDir = "generated"
-
     if os.path.exists(targetDir):
         # delete the directory with contents
         shutil.rmtree(targetDir)
@@ -58,18 +56,12 @@ def Generate(*models) -> None:
 
     res = _javascript_cleanup(res)
 
-    # refactor and format javascript code
-    targetDir = "generated"
-
     utils.export_file(targetDir, "model.js", res)
 
     res = _render(
         "mgen/templates/openapi.xml.j2",
         resources,
         _dependency_order(structs))
-
-    # refactor and format javascript code
-    targetDir = "generated"
 
     utils.export_file(targetDir, "openapi.xml", res)
     

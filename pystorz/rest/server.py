@@ -222,9 +222,13 @@ class Expose:
 
 
 class Server:
-    def __init__(self, schema, thestore, *to_expose: Expose):
+    def __init__(self, schema, thestore, *to_expose: Expose, ignore_internals=True):
         self.Schema = schema
-        self.Store = InternalStore(schema, thestore)
+
+        if ignore_internals:
+            self.Store = InternalStore(schema, thestore)
+        else:
+            self.Store = thestore
 
         accepted_actions = set([ActionGet, ActionCreate, ActionUpdate, ActionDelete])
 
