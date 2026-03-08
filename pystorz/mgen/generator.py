@@ -36,7 +36,7 @@ def Generate(*models) -> None:
 
     res = _cleanup(
         _render(
-            "mgen/templates/python.py",
+            "mgen/templates/python.py.j2",
             resources,
             _dependency_order(structs)))    
 
@@ -52,7 +52,7 @@ def Generate(*models) -> None:
     utils.export_file(targetDir, "model.py", res)
 
     res = _render(
-            "mgen/templates/javascript.js",
+            "mgen/templates/javascript.js.j2",
             resources,
             _dependency_order(structs))
 
@@ -64,7 +64,7 @@ def Generate(*models) -> None:
     utils.export_file(targetDir, "model.js", res)
 
     res = _render(
-        "mgen/templates/openapi.xml",
+        "mgen/templates/openapi.xml.j2",
         resources,
         _dependency_order(structs))
 

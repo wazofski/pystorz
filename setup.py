@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name='pystorz',
-    version='0.7.14',
+    version='0.7.15',
     author='wazofski',
     description='Python package for the Storz object store framework.',
     long_description=long_description,
@@ -27,7 +27,7 @@ setup(
         "pystorz/browse",
         "pystorz/browse/templates",
     ],
-    package_data={'': ['*.py', '*.js', '*.xml', '*.template', '*.html']},
+    package_data={'': ['*.py', '*.js', '*.xml', '*.j2', '*.html']},
     # package_dir={'': 'src'},
     include_package_data=True,
     install_requires=[
