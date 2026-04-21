@@ -186,7 +186,7 @@ class {{ data.name }}(store.Object):
 		raise Exception("not implemented")
 
 	{% if data.external %}
-	def External() -> {{ data.external }}:
+	def External(self) -> {{ data.external }}:
 		raise Exception("not implemented")
 
 	{% endif %}
